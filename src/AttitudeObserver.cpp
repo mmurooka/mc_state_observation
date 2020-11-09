@@ -1,6 +1,6 @@
 #include <mc_control/MCController.h>
 #include <mc_observers/ObserverMacros.h>
-#include <AttitudeObserver.h>
+#include <mc_state_observation/AttitudeObserver.h>
 
 namespace mc_state_observation
 {
@@ -150,7 +150,7 @@ void AttitudeObserver::addToLogger(const mc_control::MCController &,
                                    mc_rtc::Logger & logger,
                                    const std::string & category)
 {
-  logger.addLogEntry(category + "_orientation", [this]() -> sva::PTransformd { return m_orientation.inverse(); });
+  logger.addLogEntry(category + "_orientation", [this]() -> sva::PTransformd { return sva::PTransformd{m_orientation.inverse(), Eigen::Vector3d::Zero()}; });
   logger.addLogEntry(category + "_covariance_state", [this]() { return m_stateCov; });
   logger.addLogEntry(category + "_covariance_ori_acc", [this]() { return m_orientationAccCov; });
   logger.addLogEntry(category + "_covariance_acc", [this]() { return m_acceleroCovariance; });

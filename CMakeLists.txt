@@ -15,7 +15,6 @@ include(cmake/base.cmake)
 project(${PROJECT_NAME} LANGUAGES CXX)
 
 find_package(mc_rtc 1.6 REQUIRED)
-find_package(Eigen3 REQUIRED)
 find_package(state-observation 1.3 REQUIRED)
 
 add_subdirectory(src)

@@ -6,6 +6,9 @@ macro(add_observer observer_name observer_SRC observer_HDR)
   install(TARGETS ${observer_name} DESTINATION "${MC_OBSERVERS_INSTALL_PREFIX}")
 endmacro()
 
-add_observer(AttitudeObserver AttitudeObserver.cpp AttitudeObserver.h)
+add_observer(AttitudeObserver AttitudeObserver.cpp ../include/${PROJECT_NAME}/AttitudeObserver.h)
 target_link_libraries(AttitudeObserver PUBLIC state-observation::state-observation)
-target_include_directories(AttitudeObserver PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> $<INSTALL_INTERFACE:include>)
+target_include_directories(AttitudeObserver PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
+
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}
+  DESTINATION include)
