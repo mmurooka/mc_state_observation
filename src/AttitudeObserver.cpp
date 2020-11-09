@@ -63,6 +63,7 @@ void AttitudeObserver::reset(const mc_control::MCController & /*ctl*/) {}
 bool AttitudeObserver::run(const mc_control::MCController & ctl)
 {
   using indexes = so::kine::indexes<so::kine::rotationVector>;
+  bool ret = true;
 
   imuFunctor_.setSamplingPeriod(dt_);
 
@@ -92,20 +93,19 @@ bool AttitudeObserver::run(const mc_control::MCController & ctl)
     if(ctl.datastore().has(datastoreName_ + "::accRef"))
     {
       const Eigen::Vector3d & accRef = ctl.datastore().get<Eigen::Vector3d>(datastoreName_ + "::accRef");
-      measurement.segment<3>(0) = accIn - accRef;
+      measurement.head<3>() = accIn - accRef;
     }
     else
     {
-      // XXX should this be zero
-      measurement[0] = measurement[1] = measurement[2] = 0;
-      return false;
+      measurement.head<3>() = accIn;
+      ret = false;
     }
   }
   else
   {
-    measurement.segment<3>(0) = accIn;
+    measurement.head<3>() = accIn;
   }
-  measurement.segment<3>(3) = rateIn;
+  measurement.tail<3>() = rateIn;
 
   auto time = filter_.getCurrentTime();
 
@@ -137,7 +137,7 @@ bool AttitudeObserver::run(const mc_control::MCController & ctl)
   m_orientation = mat;
   m_rpy = euler;
 
-  return true;
+  return ret;
 }
 
 void AttitudeObserver::update(mc_control::MCController & ctl)
