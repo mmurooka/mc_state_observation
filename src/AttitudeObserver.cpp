@@ -1,6 +1,7 @@
 #include <mc_control/MCController.h>
 #include <mc_observers/ObserverMacros.h>
 #include <mc_state_observation/AttitudeObserver.h>
+#include <mc_state_observation/gui_helpers.h>
 
 namespace mc_state_observation
 {
@@ -9,26 +10,13 @@ namespace so = stateObservation;
 
 AttitudeObserver::AttitudeObserver(const std::string & type, double dt)
 : mc_observers::Observer(type, dt), filter_(stateSize_, measurementSize_, inputSize_, false),
-  q_(so::Matrix::Identity(stateSize_, stateSize_) * m_stateCov),
-  r_(so::Matrix::Identity(measurementSize_, measurementSize_) * m_acceleroCovariance), uk_(inputSize_), xk_(stateSize_)
+  q_(so::Matrix::Identity(stateSize_, stateSize_) * defaultConfig_.stateCov),
+  r_(so::Matrix::Identity(measurementSize_, measurementSize_) * defaultConfig_.acceleroCovariance), uk_(inputSize_),
+  xk_(stateSize_)
 {
-  q_(9, 9) = q_(10, 10) = q_(11, 11) = m_orientationAccCov;
-  q_(6, 6) = q_(7, 7) = q_(8, 8) = m_linearAccCov;
-  r_(3, 3) = r_(4, 4) = r_(5, 5) = m_gyroCovariance;
-
   /// initialization of the extended Kalman filter
   imuFunctor_.setSamplingPeriod(dt_);
   filter_.setFunctor(&imuFunctor_);
-
-  filter_.setQ(q_);
-  filter_.setR(r_);
-  xk_.setZero();
-  uk_.setZero();
-  filter_.setState(xk_, 0);
-  filter_.setStateCovariance(so::Matrix::Identity(stateSize_, stateSize_) * m_stateInitCov);
-
-  lastStateInitCovariance_ = m_stateInitCov;
-
   Kpt_ << -20, 0, 0, 0, -20, 0, 0, 0, -20;
   Kdt_ << -10, 0, 0, 0, -10, 0, 0, 0, -10;
   Kpo_ << -0.0, 0, 0, 0, -0.0, 0, 0, 0, -10;
@@ -37,14 +25,6 @@ AttitudeObserver::AttitudeObserver(const std::string & type, double dt)
 
 void AttitudeObserver::configure(const mc_control::MCController & ctl, const mc_rtc::Configuration & config)
 {
-  config("compensateMode", m_compensateMode);
-  config("offset", m_offset);
-  config("acc_cov", m_acceleroCovariance);
-  config("gyr_cov", m_gyroCovariance);
-  config("ori_acc_cov", m_orientationAccCov);
-  config("lin_acc_cov", m_linearAccCov);
-  config("state_cov", m_stateCov);
-  config("state_init_cov", m_stateInitCov);
   robot_ = config("robot", ctl.robot().name());
   imuSensor_ = config("imuSensor", ctl.robot().bodySensor().name());
   if(config.has("updateSensor"))
@@ -56,39 +36,60 @@ void AttitudeObserver::configure(const mc_control::MCController & ctl, const mc_
     updateSensor_ = imuSensor_;
   }
   datastoreName_ = config("datastoreName", name());
+  config("log_kf", log_kf_);
+  defaultConfig_ = config("KalmanFilter", KalmanFilterConfig{});
+  config_ = defaultConfig_;
 }
 
-void AttitudeObserver::reset(const mc_control::MCController & /*ctl*/) {}
+void AttitudeObserver::reset(const mc_control::MCController & /*ctl*/)
+{
+  const auto & c = config_;
+
+  q_.noalias() = so::Matrix::Identity(stateSize_, stateSize_) * c.stateCov;
+  r_.noalias() = so::Matrix::Identity(measurementSize_, measurementSize_) * c.acceleroCovariance;
+  q_(9, 9) = q_(10, 10) = q_(11, 11) = c.orientationAccCov;
+  q_(6, 6) = q_(7, 7) = q_(8, 8) = c.linearAccCov;
+  r_(3, 3) = r_(4, 4) = r_(5, 5) = c.gyroCovariance;
+
+  filter_.setQ(q_);
+  filter_.setR(r_);
+  xk_.setZero();
+  uk_.setZero();
+  filter_.setState(xk_, 0);
+  filter_.setStateCovariance(so::Matrix::Identity(stateSize_, stateSize_) * c.stateInitCov);
+
+  lastStateInitCovariance_ = c.stateInitCov;
+}
 
 bool AttitudeObserver::run(const mc_control::MCController & ctl)
 {
   using indexes = so::kine::indexes<so::kine::rotationVector>;
+  const auto & c = config_;
   bool ret = true;
 
-  imuFunctor_.setSamplingPeriod(dt_);
-
-  q_.noalias() = so::Matrix::Identity(stateSize_, stateSize_) * m_stateCov;
-  r_.noalias() = so::Matrix::Identity(measurementSize_, measurementSize_) * m_acceleroCovariance;
-  q_(9, 9) = q_(10, 10) = q_(11, 11) = m_orientationAccCov;
-  q_(6, 6) = q_(7, 7) = q_(8, 8) = m_linearAccCov;
-  r_(3, 3) = r_(4, 4) = r_(5, 5) = m_gyroCovariance;
+  q_.noalias() = so::Matrix::Identity(stateSize_, stateSize_) * c.stateCov;
+  r_.noalias() = so::Matrix::Identity(measurementSize_, measurementSize_) * c.acceleroCovariance;
+  q_(9, 9) = q_(10, 10) = q_(11, 11) = c.orientationAccCov;
+  q_(6, 6) = q_(7, 7) = q_(8, 8) = c.linearAccCov;
+  r_(3, 3) = r_(4, 4) = r_(5, 5) = c.gyroCovariance;
 
   filter_.setQ(q_);
   filter_.setR(r_);
 
-  if(lastStateInitCovariance_ != m_stateInitCov) /// if the value of the state Init Covariance has changed
+  if(lastStateInitCovariance_ != c.stateInitCov) /// if the value of the state Init Covariance has changed
   {
-    filter_.setStateCovariance(so::Matrix::Identity(stateSize_, stateSize_) * m_stateInitCov);
-    lastStateInitCovariance_ = m_stateInitCov;
+    filter_.setStateCovariance(so::Matrix::Identity(stateSize_, stateSize_) * c.stateInitCov);
+    lastStateInitCovariance_ = c.stateInitCov;
   }
 
+  // Get sensor values
   const mc_rbdyn::BodySensor & imu = ctl.robot(robot_).bodySensor(imuSensor_);
   const Eigen::Vector3d & accIn = imu.linearAcceleration();
   const Eigen::Vector3d & rateIn = imu.angularVelocity();
 
   // processing
   so::Vector6 measurement;
-  if(m_compensateMode)
+  if(c.compensateMode)
   {
     if(ctl.datastore().has(datastoreName_ + "::accRef"))
     {
@@ -114,23 +115,19 @@ bool AttitudeObserver::run(const mc_control::MCController & ctl)
   uk_.tail<3>() = Kpo_ * xk_.segment<3>(indexes::ori) + Kdo_ * xk_.segment<3>(indexes::angVel);
 
   filter_.setInput(uk_, time);
-
   filter_.setMeasurement(measurement, time + 1);
 
   /// set the derivation step for the finite difference method
-  so::Vector dx = filter_.stateVectorConstant(1) * 1e-8;
+  const so::Vector dx = filter_.stateVectorConstant(1) * 1e-8;
 
-  so::Matrix a = filter_.getAMatrixFD(dx);
-  so::Matrix c = filter_.getCMatrixFD(dx);
-
-  filter_.setA(a);
-  filter_.setC(c);
+  filter_.setA(filter_.getAMatrixFD(dx));
+  filter_.setC(filter_.getCMatrixFD(dx));
 
   /// get the estimation and give it to the array
   xk_ = filter_.getEstimatedState(time + 1);
 
-  so::Vector3 orientation(xk_.segment<3>(indexes::ori));
-  so::Matrix3 mat(m_offset * so::kine::rotationVectorToRotationMatrix(orientation));
+  const so::Vector3 orientation(xk_.segment<3>(indexes::ori));
+  so::Matrix3 mat(c.offset * so::kine::rotationVectorToRotationMatrix(orientation));
   so::Vector3 euler(so::kine::rotationMatrixToRollPitchYaw(mat));
 
   // result
@@ -150,14 +147,51 @@ void AttitudeObserver::addToLogger(const mc_control::MCController &,
                                    mc_rtc::Logger & logger,
                                    const std::string & category)
 {
-  logger.addLogEntry(category + "_orientation", [this]() -> sva::PTransformd { return sva::PTransformd{m_orientation.inverse(), Eigen::Vector3d::Zero()}; });
-  logger.addLogEntry(category + "_covariance_state", [this]() { return m_stateCov; });
-  logger.addLogEntry(category + "_covariance_ori_acc", [this]() { return m_orientationAccCov; });
-  logger.addLogEntry(category + "_covariance_acc", [this]() { return m_acceleroCovariance; });
-  logger.addLogEntry(category + "_covariance_gyr", [this]() { return m_gyroCovariance; });
+  logger.addLogEntry(category + "_orientation", [this]() -> sva::PTransformd {
+    return sva::PTransformd{m_orientation, Eigen::Vector3d::Zero()};
+  });
+  if(log_kf_)
+  {
+    config_.addToLogger(logger, category);
+  }
 }
 
 void AttitudeObserver::removeFromLogger(mc_rtc::Logger & logger, const std::string & category)
+{
+  logger.removeLogEntry(category + "_orientation");
+  if(log_kf_)
+  {
+    config_.removeFromLogger(logger, category);
+  }
+}
+
+void AttitudeObserver::addToGUI(const mc_control::MCController & ctl,
+                                mc_rtc::gui::StateBuilder & gui,
+                                const std::vector<std::string> & category)
+{
+  using namespace mc_rtc::gui;
+  auto kf_category = category;
+  kf_category.push_back("KalmanFilter");
+  config_.addToGUI(gui, kf_category);
+
+  gui.addElement(category, Button("Reset config to default", [this]() { config_ = defaultConfig_; }),
+                 Button("Reset",
+                        [this, &ctl]() {
+                          mc_rtc::log::info("[{}] Manual reset triggerred", name());
+                          reset(ctl);
+                        }),
+                 make_rpy_label("Result", m_orientation));
+}
+
+void AttitudeObserver::KalmanFilterConfig::addToLogger(mc_rtc::Logger & logger, const std::string & category)
+{
+  logger.addLogEntry(category + "_covariance_state", [this]() { return stateCov; });
+  logger.addLogEntry(category + "_covariance_ori_acc", [this]() { return orientationAccCov; });
+  logger.addLogEntry(category + "_covariance_acc", [this]() { return acceleroCovariance; });
+  logger.addLogEntry(category + "_covariance_gyr", [this]() { return gyroCovariance; });
+}
+
+void AttitudeObserver::KalmanFilterConfig::removeFromLogger(mc_rtc::Logger & logger, const std::string & category)
 {
   logger.removeLogEntry(category + "_covariance_state");
   logger.removeLogEntry(category + "_covariance_ori_acc");
@@ -165,11 +199,22 @@ void AttitudeObserver::removeFromLogger(mc_rtc::Logger & logger, const std::stri
   logger.removeLogEntry(category + "_covariance_gyr");
 }
 
-void AttitudeObserver::addToGUI(const mc_control::MCController & ctl,
-                                mc_rtc::gui::StateBuilder & gui,
-                                const std::vector<std::string> & category)
+void AttitudeObserver::KalmanFilterConfig::addToGUI(mc_rtc::gui::StateBuilder & gui,
+                                                    const std::vector<std::string> & category)
 {
-  Observer::addToGUI(ctl, gui, category);
+  using namespace mc_rtc::gui;
+  gui.addElement(category, make_checkbox("Compensate Mode", compensateMode),
+                 make_number_input("acceleroCovariance", acceleroCovariance),
+                 make_number_input("gyroCovariance", gyroCovariance),
+                 make_number_input("orientationAccCov", orientationAccCov),
+                 make_number_input("linearAccCov", linearAccCov), make_number_input("stateCov", stateCov),
+                 make_number_input("stateInitCov", stateInitCov), make_rpy_input("offset", offset));
+}
+
+void AttitudeObserver::KalmanFilterConfig::removeFromGUI(mc_rtc::gui::StateBuilder & gui,
+                                                         const std::vector<std::string> & category)
+{
+  gui.removeCategory(category);
 }
 
 } // namespace mc_state_observation

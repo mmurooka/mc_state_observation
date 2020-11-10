@@ -20,6 +20,23 @@ struct AttitudeObserver : public mc_observers::Observer
 
   void update(mc_control::MCController & ctl) override;
 
+ public:
+  struct KalmanFilterConfig
+  {
+    bool compensateMode = false;
+    double acceleroCovariance = 0.003;
+    double gyroCovariance = 1e-10;
+    double orientationAccCov = 0.003;
+    double linearAccCov = 1e-13;
+    double stateCov = 3e-14;
+    double stateInitCov = 1e-8;
+    Eigen::Matrix3d offset = Eigen::Matrix3d::Identity(); ///< Offset to apply to the estimation result
+    void addToLogger(mc_rtc::Logger & logger, const std::string & category);
+    void removeFromLogger(mc_rtc::Logger & logger, const std::string & category);
+    void addToGUI(mc_rtc::gui::StateBuilder & gui, const std::vector<std::string> & category);
+    void removeFromGUI(mc_rtc::gui::StateBuilder & gui, const std::vector<std::string> & category);
+  };
+
 protected:
   /*! \brief Add observer from logger
    *
@@ -47,20 +64,15 @@ protected:
   std::string imuSensor_ = ""; ///< Name of the sensor used for IMU readings
   std::string updateSensor_ = ""; ///< Name of the sensor to update with the results (default: imuSensor_)
   std::string datastoreName_ = ""; ///< Name on the datastore (default name())
-  bool m_compensateMode = false;
-  double m_acceleroCovariance = 0.003;
-  double m_gyroCovariance = 1e-10;
-  double m_orientationAccCov = 0.003;
-  double m_linearAccCov = 1e-13;
-  double m_stateCov = 3e-14;
-  double m_stateInitCov = 1e-8;
-  Eigen::Matrix3d m_offset = Eigen::Matrix3d::Identity();
+  KalmanFilterConfig defaultConfig_; ///< Default configuration for the KF (as set by configure())
+  KalmanFilterConfig config_; ///< Current configuration for the KF (GUI, etc...)
+  bool log_kf_ = false; ///< Whether to log the parameters of the kalman filter
   /// @}
 
   /// Sizes of the states for the state, the measurement, and the input vector
-  const unsigned stateSize_ = 18;
-  const unsigned measurementSize_ = 6;
-  const unsigned inputSize_ = 6;
+  static constexpr unsigned stateSize_ = 18;
+  static constexpr unsigned measurementSize_ = 6;
+  static constexpr unsigned inputSize_ = 6;
 
   double lastStateInitCovariance_;
 
@@ -83,4 +95,39 @@ protected:
   Eigen::Vector3d m_rpy = Eigen::Vector3d::Zero(); ///< Result
 };
 
+
 } // namespace mc_state_observation
+
+namespace mc_rtc
+{
+template<>
+struct ConfigurationLoader<mc_state_observation::AttitudeObserver::KalmanFilterConfig>
+{
+  static mc_state_observation::AttitudeObserver::KalmanFilterConfig load(const mc_rtc::Configuration & config)
+  {
+    mc_state_observation::AttitudeObserver::KalmanFilterConfig c;
+    config("compensateMode", c.compensateMode);
+    config("offset", c.offset);
+    config("acc_cov", c.acceleroCovariance);
+    config("gyr_cov", c.gyroCovariance);
+    config("ori_acc_cov", c.orientationAccCov);
+    config("lin_acc_cov", c.linearAccCov);
+    config("state_cov", c.stateCov);
+    config("state_init_cov", c.stateInitCov);
+    return c;
+  }
+  static mc_rtc::Configuration save(const mc_state_observation::AttitudeObserver::KalmanFilterConfig &c)
+  {
+    mc_rtc::Configuration config;
+    config.add("compensateMode", c.compensateMode);
+    config.add("offset", c.offset);
+    config.add("acc_cov", c.acceleroCovariance);
+    config.add("gyr_cov", c.gyroCovariance);
+    config.add("ori_acc_cov", c.orientationAccCov);
+    config.add("lin_acc_cov", c.linearAccCov);
+    config.add("state_cov", c.stateCov);
+    config.add("state_init_cov", c.stateInitCov);
+    return config;
+  }
+};
+} /* mc_rtc */

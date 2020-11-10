@@ -6,7 +6,7 @@ set(PROJECT_URL "https://github.com/isri-aist/mc_state_observation")
 set(PROJECT_VERSION 0.1)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(DOXYGEN_USE_MATHJAX "YES")
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 option(BUILD_TESTS "Build unit tests" ON)
 
