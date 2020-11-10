@@ -4,6 +4,7 @@ macro(add_so_observer observer_name)
 endmacro()
 
 add_so_observer(AttitudeObserver)
+add_so_observer(LegacyFlexibilityObserver)
 
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}
   DESTINATION include)

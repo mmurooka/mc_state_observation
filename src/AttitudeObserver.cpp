@@ -53,8 +53,7 @@ void AttitudeObserver::reset(const mc_control::MCController & ctl)
   q_(6, 6) = q_(7, 7) = q_(8, 8) = c.linearAccCov;
   r_(3, 3) = r_(4, 4) = r_(5, 5) = c.gyroCovariance;
 
-  filter_.clearInputs();
-  filter_.clearMeasurements();
+  filter_.reset();
   filter_.setQ(q_);
   filter_.setR(r_);
   xk_.setZero();
