@@ -30,8 +30,6 @@ namespace mc_state_observation
   {
     using SOFlexibilityObserver = stateObservation::flexibilityEstimation::ModelBaseEKFFlexEstimatorIMU;
 
-    // LegacyFlexibilityObserver(const mc_rbdyn::RobotModule & robotModule, const mc_rbdyn::Robot & robot, double timeStep, bool debug = false);
-
     LegacyFlexibilityObserver(const std::string & type, double dt);
 
     void configure(const mc_control::MCController & ctl, const mc_rtc::Configuration &) override;
@@ -47,13 +45,13 @@ protected:
    *
    * @param category Category in which to log this observer
    */
-  void addToLogger(const mc_control::MCController &, mc_rtc::Logger &, const std::string & category) override;
+  void addToLogger(const mc_control::MCController &, mc_rtc::Logger &, const std::string & category) override {}
 
   /*! \brief Remove observer from logger
    *
    * @param category Category in which this observer entries are logged
    */
-  void removeFromLogger(mc_rtc::Logger &, const std::string & category) override;
+  void removeFromLogger(mc_rtc::Logger &, const std::string & category) override {}
 
   /*! \brief Add observer information the GUI.
    *
@@ -61,16 +59,23 @@ protected:
    */
   void addToGUI(const mc_control::MCController &,
                 mc_rtc::gui::StateBuilder &,
-                const std::vector<std::string> & /* category */) override;
+                const std::vector<std::string> & /* category */) override {}
+  
+protected:
+  /**
+   * Find established contacts between the observed robot and the fixed robots
+   * 
+   * \param ctl Controller that defines the contacts 
+   * \return Name of surfaces in contact with the environment
+   */
+  std::vector<std::string> findContacts(const mc_control::MCController & solver);
+  void setContacts(const mc_rbdyn::Robot& robot, std::vector<std::string> contacts);
 
 protected:
   std::string robot_ = "";
   std::string imuSensor_ = "";
 
-
 public:
-    void setContacts(const mc_rbdyn::Robot& robot, const std::vector<mc_rbdyn::Contact>& contacts);
-
     /** Get robot mass.
      *
      */
@@ -208,14 +213,14 @@ public:
     Eigen::VectorXd inputs_;
     Eigen::VectorXd measurements_;
     Eigen::VectorXd res_;
-    bool debug_;
+    bool debug_ = false;
     double accelNoiseCovariance_ = 1e-4;
     double forceSensorNoiseCovariance_ = 5.; // from https://gite.lirmm.fr/caron/mc_observers/issues/1#note_10040
     double gyroNoiseCovariance_ = 1e-9;
-    double mass_; // [kg]
+    double mass_ = 42; // [kg]
     SOFlexibilityObserver observer_;
-    std::vector<mc_rbdyn::Contact> contacts_;
-    std::vector<sva::PTransformd> contactPositions_;
+    std::vector<std::string> contacts_; ///< Surfaces in contact
+    std::vector<sva::PTransformd> contactPositions_; ///< Position of the contact frames (force sensor frame when using force sensors)
     sva::AdmittanceVecd flexDamping_ = {17.0, 250.0}; // HRP-4, {25.0, 200} for HRP-2
     sva::AdmittanceVecd flexStiffness_ = {727.0, 9.15e5}; // HRP-4, {620, 3e5} for HRP-2
     sva::MotionVecd v_fb_0_ = sva::MotionVecd::Zero();
