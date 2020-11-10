@@ -205,6 +205,20 @@ void LegacyFlexibilityObserver::update(mc_control::MCController & ctl)
   robot.velW(v_fb_0_.vector());
 }
 
+void LegacyFlexibilityObserver::addToLogger(const mc_control::MCController &,
+                                            mc_rtc::Logger & logger,
+                                            const std::string & category)
+{
+  logger.addLogEntry(category + "_posW", [this]() -> const sva::PTransformd & { return X_0_fb_; });
+  logger.addLogEntry(category + "_velW", [this]() -> const sva::MotionVecd & { return v_fb_0_; });
+}
+
+void LegacyFlexibilityObserver::removeFromLogger(mc_rtc::Logger & logger, const std::string & category)
+{
+  logger.removeLogEntry(category + "_posW");
+  logger.removeLogEntry(category + "_velW");
+}
+
 void LegacyFlexibilityObserver::mass(double mass)
 {
   mass_ = mass;

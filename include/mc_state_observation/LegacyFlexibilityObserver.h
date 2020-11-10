@@ -45,13 +45,13 @@ protected:
    *
    * @param category Category in which to log this observer
    */
-  void addToLogger(const mc_control::MCController &, mc_rtc::Logger &, const std::string & category) override {}
+  void addToLogger(const mc_control::MCController &, mc_rtc::Logger &, const std::string & category) override;
 
   /*! \brief Remove observer from logger
    *
    * @param category Category in which this observer entries are logged
    */
-  void removeFromLogger(mc_rtc::Logger &, const std::string & category) override {}
+  void removeFromLogger(mc_rtc::Logger &, const std::string & category) override;
 
   /*! \brief Add observer information the GUI.
    *
@@ -222,7 +222,7 @@ public:
     std::vector<std::string> contacts_; ///< Surfaces in contact
     std::vector<sva::PTransformd> contactPositions_; ///< Position of the contact frames (force sensor frame when using force sensors)
     sva::AdmittanceVecd flexDamping_ = {17.0, 250.0}; // HRP-4, {25.0, 200} for HRP-2
-    sva::AdmittanceVecd flexStiffness_ = {727.0, 9.15e5}; // HRP-4, {620, 3e5} for HRP-2
+    sva::AdmittanceVecd flexStiffness_ = {727.0, 4e4}; // HRP-4, {620, 3e5} for HRP-2
     sva::MotionVecd v_fb_0_ = sva::MotionVecd::Zero();
     sva::PTransformd X_0_fb_ = sva::PTransformd::Identity();
     sva::PTransformd accPos_; /**< accelerometer pos in body */
