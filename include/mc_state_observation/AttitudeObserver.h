@@ -10,6 +10,9 @@ namespace mc_state_observation
 
 struct AttitudeObserver : public mc_observers::Observer
 {
+  using indexes = stateObservation::kine::indexes<stateObservation::kine::rotationVector>;
+
+ public:
   AttitudeObserver(const std::string & type, double dt);
 
   void configure(const mc_control::MCController & ctl, const mc_rtc::Configuration &) override;
@@ -67,12 +70,13 @@ protected:
   KalmanFilterConfig defaultConfig_; ///< Default configuration for the KF (as set by configure())
   KalmanFilterConfig config_; ///< Current configuration for the KF (GUI, etc...)
   bool log_kf_ = false; ///< Whether to log the parameters of the kalman filter
+  bool initFromControl_ = true; ///< Whether to initialize from the control state
   /// @}
 
   /// Sizes of the states for the state, the measurement, and the input vector
-  static constexpr unsigned stateSize_ = 18;
-  static constexpr unsigned measurementSize_ = 6;
-  static constexpr unsigned inputSize_ = 6;
+  static constexpr unsigned STATE_SIZE = 18;
+  static constexpr unsigned MEASUREMENT_SIZE = 6;
+  static constexpr unsigned INPUT_SIZE = 6;
 
   double lastStateInitCovariance_;
 
@@ -92,7 +96,6 @@ protected:
   stateObservation::Matrix3 Kpo_, Kdo_;
 
   Eigen::Matrix3d m_orientation = Eigen::Matrix3d::Identity(); ///< Result
-  Eigen::Vector3d m_rpy = Eigen::Vector3d::Zero(); ///< Result
 };
 
 
