@@ -2,14 +2,13 @@
 
 #include <mc_control/MCController.h>
 #include <mc_observers/ObserverMacros.h>
+#include <mc_rtc/logging.h>
+#include <mc_state_observation/LegacyFlexibilityObserver.h>
+
 #include <RBDyn/CoM.h>
 #include <RBDyn/FA.h>
 #include <RBDyn/FK.h>
 #include <RBDyn/FV.h>
-
-#include <mc_rtc/logging.h>
-
-#include <mc_state_observation/LegacyFlexibilityObserver.h>
 
 namespace mc_state_observation
 
@@ -65,6 +64,7 @@ void LegacyFlexibilityObserver::reset(const mc_control::MCController & ctl)
   }
 
   inertiaWaist_ = mergeMbg.nodeByName(robotModule.mb.body(0).name())->body.inertia();
+  mass(ctl.robot(robot_).mass());
   flexStiffness(flexStiffness_);
   flexDamping(flexDamping_);
   if(debug_)
@@ -80,6 +80,9 @@ bool LegacyFlexibilityObserver::run(const mc_control::MCController & ctl)
   using Input = stateObservation::flexibilityEstimation::IMUElasticLocalFrameDynamicalSystem::input;
   using State = stateObservation::flexibilityEstimation::IMUElasticLocalFrameDynamicalSystem::state;
   const auto & robot = ctl.robot(robot_);
+
+  setContacts(robot, findContacts(ctl));
+
   unsigned nbContacts = static_cast<unsigned>(contacts_.size());
 
   /* Measurements == sensor output */
@@ -92,7 +95,7 @@ bool LegacyFlexibilityObserver::run(const mc_control::MCController & ctl)
   measurements_.segment<3>(3) = robot.bodySensor().angularVelocity();
   for(unsigned i = 0; i < nbContacts; ++i)
   {
-    const mc_rbdyn::ForceSensor & fs = robot.bodyForceSensor(contacts_[i].r1Surface()->bodyName());
+    const mc_rbdyn::ForceSensor & fs = robot.surfaceForceSensor(contacts_[i]);
     measurements_.segment<3>(6 * (i + 1) + 0) = fs.force();
     measurements_.segment<3>(6 * (i + 1) + 3) = fs.couple();
   }
@@ -112,7 +115,7 @@ bool LegacyFlexibilityObserver::run(const mc_control::MCController & ctl)
   inputs_.segment<3>(Input::accCom) = robot.comAcceleration();
 
   /** Position of accelerometer **/
-  sva::PTransformd X_0_p = robot.mbc().bodyPosW[robot.bodyIndexByName(robot.bodySensor().parentBody())];
+  sva::PTransformd X_0_p = robot.bodyPosW(robot.bodySensor().parentBody());
   sva::PTransformd accPosW = accPos_ * X_0_p;
   inputs_.segment<3>(Input::posIMU) = accPosW.translation();
   /** Check if its the same as Mehdi **/
@@ -148,8 +151,7 @@ bool LegacyFlexibilityObserver::run(const mc_control::MCController & ctl)
   for(unsigned i = 0; i < contacts_.size(); ++i)
   {
     /** Position of contacts **/
-    sva::PTransformd X_0_c =
-        contactPositions_[i] * robot.mbc().bodyPosW[robot.bodyIndexByName(contacts_[i].r1Surface()->bodyName())];
+    const sva::PTransformd & X_0_c = contactPositions_[i];
     Eigen::Matrix3d tmp = X_0_c.rotation().transpose();
     inputs_.segment<3>(Input::contacts + 12 * i + 0) = X_0_c.translation();
     inputs_.segment<3>(Input::contacts + 12 * i + 3) = sva::rotationVelocity(tmp);
@@ -223,14 +225,38 @@ void LegacyFlexibilityObserver::flexDamping(const sva::AdmittanceVecd & damping)
   observer_.setKtv(flexDamping_.angular().asDiagonal());
 }
 
-void LegacyFlexibilityObserver::setContacts(const mc_rbdyn::Robot & robot,
-                                            const std::vector<mc_rbdyn::Contact> & contacts)
+std::vector<std::string> LegacyFlexibilityObserver::findContacts(const mc_control::MCController & ctl)
+{
+  const auto & robot = ctl.robot(robot_);
+  std::vector<std::string> contactsFound;
+  for(const auto & contact : ctl.solver().contacts())
+  {
+
+    if(ctl.robots().robot(contact.r1Index()).name() == robot.name())
+    {
+      if(ctl.robots().robot(contact.r2Index()).mb().joint(0).type() == rbd::Joint::Fixed)
+      {
+        contactsFound.push_back(contact.r1Surface()->name());
+      }
+    }
+    else if(ctl.robots().robot(contact.r2Index()).name() == robot.name())
+    {
+      if(ctl.robots().robot(contact.r1Index()).mb().joint(0).type() == rbd::Joint::Fixed)
+      {
+        contactsFound.push_back(contact.r2Surface()->name());
+      }
+    }
+  }
+  return contactsFound;
+}
+
+void LegacyFlexibilityObserver::setContacts(const mc_rbdyn::Robot & robot, std::vector<std::string> contacts)
 {
   contacts_ = contacts;
   contactPositions_.clear();
   for(const auto & contact : contacts)
   {
-    const auto & fs = robot.bodyForceSensor(contact.r1Surface()->bodyName());
+    const auto & fs = robot.indirectSurfaceForceSensor(contact);
     contactPositions_.push_back(fs.X_p_f());
   }
   unsigned nbContacts = static_cast<unsigned>(contacts.size());
