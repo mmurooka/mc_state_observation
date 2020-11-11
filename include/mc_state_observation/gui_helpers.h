@@ -1,6 +1,7 @@
 #include <mc_rtc/gui.h>
 #include <mc_rbdyn/rpy_utils.h>
 #include <mc_rtc/constants.h>
+#include <mc_rtc/type_name.h>
 
 namespace  mc_rtc
 {
@@ -93,6 +94,31 @@ auto make_label(std::string name, const std::string & label)
     {
       return label;
     });
+}
+
+template<typename T>
+auto make_input_element(std::string name, T & ref)
+{
+   if constexpr(std::is_same<T, sva::MotionVecd>::value)
+   {
+     return make_motionvecd_input(name, ref);
+   }
+   else if constexpr(std::is_same<T, sva::AdmittanceVecd>::value)
+   {
+     return make_motionvecd_input(name, ref);
+   }
+   else if constexpr(std::is_same<T, bool>::value)
+   {
+    return make_checkbox(name, ref);
+   }
+   else if constexpr(std::is_arithmetic<T>::value)
+   {
+     return make_number_input(name, ref);
+   }
+   else
+   {
+     static_assert(!std::is_same<T, T>::value, "make_ref_input does not support type");
+   }
 }
 
 } /* gui */

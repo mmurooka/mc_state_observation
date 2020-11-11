@@ -88,14 +88,14 @@ public:
      * \param stiffness Flexibility stiffness.
      *
      */
-    void flexStiffness(const sva::AdmittanceVecd & stiffness);
+    void flexStiffness(const sva::MotionVecd & stiffness);
 
     /** Set damping of the robot-environment flexibility.
      *
      * \param damping Flexibility damping.
      *
      */
-    void flexDamping(const sva::AdmittanceVecd & damping);
+    void flexDamping(const sva::MotionVecd & damping);
 
     /** Update measurement-noise covariance matrix.
      *
@@ -214,8 +214,8 @@ public:
     SOFlexibilityObserver observer_;
     std::set<std::string> contacts_; ///< Sorted list of contacts
     std::vector<sva::PTransformd> contactPositions_; ///< Position of the contact frames (force sensor frame when using force sensors)
-    sva::AdmittanceVecd flexDamping_ = {17.0, 250.0}; // HRP-4, {25.0, 200} for HRP-2
-    sva::AdmittanceVecd flexStiffness_ = {727.0, 4e4}; // HRP-4, {620, 3e5} for HRP-2
+    sva::MotionVecd flexDamping_{{17, 17, 17}, {250, 250, 250}}; // HRP-4, {25.0, 200} for HRP-2
+    sva::MotionVecd flexStiffness_{{727, 727, 727}, {4e4, 4e4, 4e4}}; // HRP-4, {620, 3e5} for HRP-2
     sva::MotionVecd v_fb_0_ = sva::MotionVecd::Zero();
     sva::PTransformd X_0_fb_ = sva::PTransformd::Identity();
     sva::PTransformd accPos_; /**< accelerometer pos in body */
