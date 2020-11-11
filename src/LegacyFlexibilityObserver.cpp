@@ -29,6 +29,13 @@ void LegacyFlexibilityObserver::configure(const mc_control::MCController & ctl, 
   robot_ = config("robot", ctl.robot().name());
   imuSensor_ = config("imuSensor", ctl.robot().bodySensor().name());
   config("debug", debug_);
+  config("verbose", verbose_);
+
+  config("accelNoiseCovariance", accelNoiseCovariance_);
+  config("forceSensorNoiseCovariance", forceSensorNoiseCovariance_);
+  config("gyroNoiseCovariance", gyroNoiseCovariance_);
+  config("flexStiffness", flexStiffness_);
+  config("flexDamping", flexDamping_);
 }
 
 void LegacyFlexibilityObserver::reset(const mc_control::MCController & ctl)
@@ -228,12 +235,14 @@ void LegacyFlexibilityObserver::addToGUI(const mc_control::MCController &,
                                          const std::vector<std::string> & category)
 {
   using namespace mc_rtc::gui;
-  gui.addElement(category, make_number_input("Accel Covariance", this->accelNoiseCovariance_),
-                 make_number_input("Force Covariance", this->forceSensorNoiseCovariance_),
-                 make_number_input("Gyro Covariance", this->gyroNoiseCovariance_),
-                 make_admittancevecd_input("Flex Stiffness", this->flexStiffness_),
-                 make_admittancevecd_input("Flex Damping", this->flexDamping_),
-                 Label("contacts", [this]() { return mc_rtc::io::to_string(contacts_, ", "); }));
+  // clang-format off
+  gui.addElement(category,
+    make_input_element("Accel Covariance", accelNoiseCovariance_),
+    make_input_element("Force Covariance", forceSensorNoiseCovariance_),
+    make_input_element("Gyro Covariance", gyroNoiseCovariance_),
+    make_input_element("Flex Stiffness", flexStiffness_), make_input_element("Flex Damping", flexDamping_),
+    Label("contacts", [this]() { return mc_rtc::io::to_string(contacts_); }));
+  // clang-format on
 }
 
 void LegacyFlexibilityObserver::mass(double mass)
@@ -242,14 +251,14 @@ void LegacyFlexibilityObserver::mass(double mass)
   observer_.setRobotMass(mass);
 }
 
-void LegacyFlexibilityObserver::flexStiffness(const sva::AdmittanceVecd & stiffness)
+void LegacyFlexibilityObserver::flexStiffness(const sva::MotionVecd & stiffness)
 {
   flexStiffness_ = stiffness;
   observer_.setKfe(flexStiffness_.linear().asDiagonal());
   observer_.setKte(flexStiffness_.angular().asDiagonal());
 }
 
-void LegacyFlexibilityObserver::flexDamping(const sva::AdmittanceVecd & damping)
+void LegacyFlexibilityObserver::flexDamping(const sva::MotionVecd & damping)
 {
   flexDamping_ = damping;
   observer_.setKfv(flexDamping_.linear().asDiagonal());
