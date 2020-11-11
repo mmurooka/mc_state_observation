@@ -2,8 +2,10 @@
 
 #include <mc_control/MCController.h>
 #include <mc_observers/ObserverMacros.h>
+#include <mc_rtc/io_utils.h>
 #include <mc_rtc/logging.h>
 #include <mc_state_observation/LegacyFlexibilityObserver.h>
+#include <mc_state_observation/gui_helpers.h>
 
 #include <RBDyn/CoM.h>
 #include <RBDyn/FA.h>
@@ -93,11 +95,13 @@ bool LegacyFlexibilityObserver::run(const mc_control::MCController & ctl)
   }
   measurements_.segment<3>(0) = robot.bodySensor().linearAcceleration();
   measurements_.segment<3>(3) = robot.bodySensor().angularVelocity();
-  for(unsigned i = 0; i < nbContacts; ++i)
+  unsigned i = 0;
+  for(const auto & contact : contacts_)
   {
-    const mc_rbdyn::ForceSensor & fs = robot.surfaceForceSensor(contacts_[i]);
+    const mc_rbdyn::ForceSensor & fs = robot.surfaceForceSensor(contact);
     measurements_.segment<3>(6 * (i + 1) + 0) = fs.force();
     measurements_.segment<3>(6 * (i + 1) + 3) = fs.couple();
+    ++i;
   }
   observer_.setMeasurement(measurements_);
 
@@ -219,6 +223,19 @@ void LegacyFlexibilityObserver::removeFromLogger(mc_rtc::Logger & logger, const 
   logger.removeLogEntry(category + "_velW");
 }
 
+void LegacyFlexibilityObserver::addToGUI(const mc_control::MCController &,
+                                         mc_rtc::gui::StateBuilder & gui,
+                                         const std::vector<std::string> & category)
+{
+  using namespace mc_rtc::gui;
+  gui.addElement(category, make_number_input("Accel Covariance", this->accelNoiseCovariance_),
+                 make_number_input("Force Covariance", this->forceSensorNoiseCovariance_),
+                 make_number_input("Gyro Covariance", this->gyroNoiseCovariance_),
+                 make_admittancevecd_input("Flex Stiffness", this->flexStiffness_),
+                 make_admittancevecd_input("Flex Damping", this->flexDamping_),
+                 Label("contacts", [this]() { return mc_rtc::io::to_string(contacts_, ", "); }));
+}
+
 void LegacyFlexibilityObserver::mass(double mass)
 {
   mass_ = mass;
@@ -239,10 +256,10 @@ void LegacyFlexibilityObserver::flexDamping(const sva::AdmittanceVecd & damping)
   observer_.setKtv(flexDamping_.angular().asDiagonal());
 }
 
-std::vector<std::string> LegacyFlexibilityObserver::findContacts(const mc_control::MCController & ctl)
+std::set<std::string> LegacyFlexibilityObserver::findContacts(const mc_control::MCController & ctl)
 {
   const auto & robot = ctl.robot(robot_);
-  std::vector<std::string> contactsFound;
+  std::set<std::string> contactsFound;
   for(const auto & contact : ctl.solver().contacts())
   {
 
@@ -250,23 +267,25 @@ std::vector<std::string> LegacyFlexibilityObserver::findContacts(const mc_contro
     {
       if(ctl.robots().robot(contact.r2Index()).mb().joint(0).type() == rbd::Joint::Fixed)
       {
-        contactsFound.push_back(contact.r1Surface()->name());
+        contactsFound.insert(contact.r1Surface()->name());
       }
     }
     else if(ctl.robots().robot(contact.r2Index()).name() == robot.name())
     {
       if(ctl.robots().robot(contact.r1Index()).mb().joint(0).type() == rbd::Joint::Fixed)
       {
-        contactsFound.push_back(contact.r2Surface()->name());
+        contactsFound.insert(contact.r2Surface()->name());
       }
     }
   }
   return contactsFound;
 }
 
-void LegacyFlexibilityObserver::setContacts(const mc_rbdyn::Robot & robot, std::vector<std::string> contacts)
+void LegacyFlexibilityObserver::setContacts(const mc_rbdyn::Robot & robot, std::set<std::string> contacts)
 {
+  if(contacts_ == contacts) return;
   contacts_ = contacts;
+  if(verbose_) mc_rtc::log::info("[{}] Contacts changed: {}", name(), mc_rtc::io::to_string(contacts_));
   contactPositions_.clear();
   for(const auto & contact : contacts)
   {

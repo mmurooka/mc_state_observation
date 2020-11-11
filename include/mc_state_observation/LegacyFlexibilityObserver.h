@@ -1,12 +1,4 @@
-/* Copyright 2017-2018 CNRS-AIST JRL, CNRS-UM LIRMM
- *
- * File imported from mc_state_estimator_test_controller on 2018-08-16.
- *
- * \author Hervé Audren
- * \author Pierre Gergondet
- * \author Stéphane Caron
- *
- */
+/* Copyright 2017-2020 CNRS-AIST JRL, CNRS-UM LIRMM */
 
 #pragma once
 
@@ -59,7 +51,7 @@ protected:
    */
   void addToGUI(const mc_control::MCController &,
                 mc_rtc::gui::StateBuilder &,
-                const std::vector<std::string> & /* category */) override {}
+                const std::vector<std::string> & /* category */) override;
   
 protected:
   /**
@@ -68,8 +60,8 @@ protected:
    * \param ctl Controller that defines the contacts 
    * \return Name of surfaces in contact with the environment
    */
-  std::vector<std::string> findContacts(const mc_control::MCController & solver);
-  void setContacts(const mc_rbdyn::Robot& robot, std::vector<std::string> contacts);
+  std::set<std::string> findContacts(const mc_control::MCController & solver);
+  void setContacts(const mc_rbdyn::Robot& robot, std::set<std::string> contacts);
 
 protected:
   std::string robot_ = "";
@@ -214,12 +206,13 @@ public:
     Eigen::VectorXd measurements_;
     Eigen::VectorXd res_;
     bool debug_ = false;
+    bool verbose_ = true;
     double accelNoiseCovariance_ = 1e-4;
     double forceSensorNoiseCovariance_ = 5.; // from https://gite.lirmm.fr/caron/mc_observers/issues/1#note_10040
     double gyroNoiseCovariance_ = 1e-9;
     double mass_ = 42; // [kg]
     SOFlexibilityObserver observer_;
-    std::vector<std::string> contacts_; ///< Surfaces in contact
+    std::set<std::string> contacts_; ///< Sorted list of contacts
     std::vector<sva::PTransformd> contactPositions_; ///< Position of the contact frames (force sensor frame when using force sensors)
     sva::AdmittanceVecd flexDamping_ = {17.0, 250.0}; // HRP-4, {25.0, 200} for HRP-2
     sva::AdmittanceVecd flexStiffness_ = {727.0, 4e4}; // HRP-4, {620, 3e5} for HRP-2

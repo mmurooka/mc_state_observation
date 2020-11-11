@@ -136,7 +136,6 @@ bool AttitudeObserver::run(const mc_control::MCController & ctl)
 
   const so::Vector3 orientation(xk_.segment<3>(indexes::ori));
   so::Matrix3 mat(c.offset * so::kine::rotationVectorToRotationMatrix(orientation));
-  so::Vector3 euler(so::kine::rotationMatrixToRollPitchYaw(mat));
 
   // result
   m_orientation = mat;
