@@ -48,6 +48,34 @@ auto make_rpy_input(std::string name, Eigen::Matrix3d & orientation)
                   });
 }
 
+auto make_motionvecd_input(std::string name, sva::MotionVecd & vel)
+{
+  return ArrayInputImpl(name,
+                    {"wx [rad/s]", "wy [rad/s]", "wz [rad/s]", "vx [m/s]", "vy [m/s]", "vz [m/s]"},
+                  [&vel]() -> const sva::MotionVecd &
+                  {
+                   return vel;
+                  },
+                  [&vel](const sva::MotionVecd & newVel)
+                  {
+                    vel = newVel;
+                  });
+}
+
+auto make_admittancevecd_input(std::string name, sva::AdmittanceVecd & vel)
+{
+  return ArrayInputImpl(name,
+                    {"wx", "wy", "wz", "vx", "vy", "vz"},
+                  [&vel]() -> Eigen::Vector6d
+                  {
+                   return vel.vector();
+                  },
+                  [&vel](const Eigen::Vector6d & newVel)
+                  {
+                    vel = newVel;
+                  });
+}
+
 auto make_rpy_label(std::string name, const Eigen::Matrix3d & orientation)
 {
   return ArrayLabel(name,
@@ -56,6 +84,15 @@ auto make_rpy_label(std::string name, const Eigen::Matrix3d & orientation)
                   {
                    return mc_rbdyn::rpyFromMat(orientation) * 180./mc_rtc::constants::PI;
                   });
+}
+
+auto make_label(std::string name, const std::string & label)
+{
+  return Label(name,
+    [label]()
+    {
+      return label;
+    });
 }
 
 } /* gui */

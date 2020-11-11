@@ -136,8 +136,8 @@ bool AttitudeObserver::run(const mc_control::MCController & ctl)
   /// get the estimation and give it to the array
   xk_ = filter_.getEstimatedState(time + 1);
 
-  const so::Vector3 orientation(xk_.segment<3>(indexes::ori));
   // result
+  const so::Vector3 orientation(xk_.segment<3>(indexes::ori));
   m_orientation = c.offset * so::kine::rotationVectorToRotationMatrix(orientation);
 
   return ret;
