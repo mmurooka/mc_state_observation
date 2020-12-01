@@ -235,13 +235,45 @@ void LegacyFlexibilityObserver::addToGUI(const mc_control::MCController &,
                                          const std::vector<std::string> & category)
 {
   using namespace mc_rtc::gui;
+  using state = stateObservation::flexibilityEstimation::IMUElasticLocalFrameDynamicalSystem::state;
   // clang-format off
   gui.addElement(category,
     make_input_element("Accel Covariance", accelNoiseCovariance_),
     make_input_element("Force Covariance", forceSensorNoiseCovariance_),
     make_input_element("Gyro Covariance", gyroNoiseCovariance_),
     make_input_element("Flex Stiffness", flexStiffness_), make_input_element("Flex Damping", flexDamping_),
-    Label("contacts", [this]() { return mc_rtc::io::to_string(contacts_); }));
+    Label("contacts", [this]() { return mc_rtc::io::to_string(contacts_); }),
+    ArrayInput("processNoiseCov",
+      [this]() -> Eigen::VectorXd
+      {
+        Eigen::VectorXd res(4);
+        auto diagCov = observer_.getProcessNoiseCovariance().diagonal();
+        res<< diagCov(state::fc), diagCov(state::fc+3), diagCov(state::fc+6), diagCov(state::fc+9);
+        return res;
+      },
+      [this](const Eigen::VectorXd & mat)
+      {
+        auto cov = observer_.getProcessNoiseCovariance();
+        cov.diagonal().segment<3>(state::fc).setConstant(mat(0));
+        cov.diagonal().segment<3>(state::fc+3).setConstant(mat(1));
+        cov.diagonal().segment<3>(state::fc+6).setConstant(mat(2));
+        cov.diagonal().segment<3>(state::fc+9).setConstant(mat(3));
+        observer_.setProcessNoiseCovariance(cov);
+      }),
+      Checkbox("Estimate External Force",
+      [this]()
+      {
+        return observer_.getWithUnmodeledForces();
+      },
+      [this]()
+      {
+        observer_.setWithUnmodeledForces(!observer_.getWithUnmodeledForces());
+      })
+    );
+  //Q.block(state::fc, state::fc, 3, 3) = Matrix3::Identity() * 1.e-4;
+  //Q.block(state::fc + 3, state::fc + 3, 3, 3) = Matrix3::Identity() * 1.e-4;
+  //Q.block(state::fc + 6, state::fc + 6, 3, 3) = Matrix3::Identity() * 1.e-4;
+  //Q.block(state::fc + 6 + 3, state::fc + 6 + 3, 3, 3) = Matrix3::Identity() * 1.e-4;
   // clang-format on
 }
 

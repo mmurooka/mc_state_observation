@@ -52,12 +52,12 @@ protected:
   void addToGUI(const mc_control::MCController &,
                 mc_rtc::gui::StateBuilder &,
                 const std::vector<std::string> & /* category */) override;
-  
+
 protected:
   /**
    * Find established contacts between the observed robot and the fixed robots
-   * 
-   * \param ctl Controller that defines the contacts 
+   *
+   * \param ctl Controller that defines the contacts
    * \return Name of surfaces in contact with the environment
    */
   std::set<std::string> findContacts(const mc_control::MCController & solver);
@@ -209,7 +209,7 @@ public:
     bool verbose_ = true;
     double accelNoiseCovariance_ = 1e-4;
     double forceSensorNoiseCovariance_ = 5.; // from https://gite.lirmm.fr/caron/mc_observers/issues/1#note_10040
-    double gyroNoiseCovariance_ = 1e-9;
+    double gyroNoiseCovariance_ = 1e-13;
     double mass_ = 42; // [kg]
     SOFlexibilityObserver observer_;
     std::set<std::string> contacts_; ///< Sorted list of contacts
