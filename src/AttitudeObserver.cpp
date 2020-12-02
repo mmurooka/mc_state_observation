@@ -59,7 +59,8 @@ void AttitudeObserver::reset(const mc_control::MCController & ctl)
   xk_.setZero();
   if(initFromControl_)
   {
-    const Eigen::Matrix3d & cOri = ctl.robot(robot_).bodyPosW(imuSensor_).rotation();
+    const auto & imuSensor = ctl.robot(robot_).bodySensor(imuSensor_);
+    const Eigen::Matrix3d cOri = (imuSensor.X_b_s() * ctl.robot(robot_).bodyPosW(imuSensor.parentBody())).rotation();
     xk_.segment<3>(indexes::ori) = so::kine::rotationMatrixToRotationVector(cOri.transpose());
   }
 
@@ -136,11 +137,8 @@ bool AttitudeObserver::run(const mc_control::MCController & ctl)
   xk_ = filter_.getEstimatedState(time + 1);
 
   const so::Vector3 orientation(xk_.segment<3>(indexes::ori));
-  so::Matrix3 mat(c.offset * so::kine::rotationVectorToRotationMatrix(orientation));
-  so::Vector3 euler(so::kine::rotationMatrixToRollPitchYaw(mat));
-
   // result
-  m_orientation = mat;
+  m_orientation = c.offset * so::kine::rotationVectorToRotationMatrix(orientation);
 
   return ret;
 }
