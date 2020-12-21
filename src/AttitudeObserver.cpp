@@ -40,6 +40,7 @@ void AttitudeObserver::configure(const mc_control::MCController & ctl, const mc_
   config("init_from_control", initFromControl_);
   defaultConfig_ = config("KalmanFilter", KalmanFilterConfig{});
   config_ = defaultConfig_;
+  desc_ = fmt::format("{} (sensor={})", name_, imuSensor_);
 }
 
 void AttitudeObserver::reset(const mc_control::MCController & ctl)
