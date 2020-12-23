@@ -242,7 +242,7 @@ void LegacyFlexibilityObserver::addToGUI(const mc_control::MCController &,
     make_input_element("Force Covariance", forceSensorNoiseCovariance_),
     make_input_element("Gyro Covariance", gyroNoiseCovariance_),
     make_input_element("Flex Stiffness", flexStiffness_), make_input_element("Flex Damping", flexDamping_),
-    Label("contacts", [this]() { return mc_rtc::io::to_string(contacts_); }),
+    make_label("contacts", mc_rtc::io::to_string(contacts_)),
     ArrayInput("processNoiseCov",
       [this]() -> Eigen::VectorXd
       {
