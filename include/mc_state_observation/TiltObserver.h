@@ -62,6 +62,9 @@ protected:
   
   // values used for computation
   sva::PTransformd X_fb_imu = sva::PTransformd::Identity();
+  sva::MotionVecd imuVelC_ = sva::MotionVecd::Zero();
+  sva::PTransformd X_C_IMU_ = sva::PTransformd::Identity();
+  sva::PTransformd X_0_C_ = sva::PTransformd::Identity(); // control anchor frame
 
   // result
   // The observed tilt of the sensor
