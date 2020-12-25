@@ -18,6 +18,9 @@ project(${PROJECT_NAME} LANGUAGES CXX)
 find_package(mc_rtc 1.6 REQUIRED)
 find_package(state-observation 1.3 REQUIRED)
 
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
+find_package(mc_state_observation_ROS COMPONENTS roscpp tf2 tf2_eigen)
+
 add_subdirectory(src)
 
 if(BUILD_TESTS)
