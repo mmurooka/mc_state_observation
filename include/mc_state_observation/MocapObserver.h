@@ -86,7 +86,8 @@ protected:
   // {@
   sva::PTransformd X_m_marker_ = sva::PTransformd::Identity();
   bool gotMarker_ = false;
-  sva::PTransformd X_0_marker_ = sva::PTransformd::Identity();
+  sva::PTransformd X_0_marker_ = sva::PTransformd::Identity(); // Estimated pose of the marker frame
+  sva::PTransformd X_0_fb_ = sva::PTransformd::Identity(); // Estimated pose of the floating base
   // @}
 };
 } // namespace mc_state_observation

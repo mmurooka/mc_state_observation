@@ -51,15 +51,27 @@ void MocapObserver::update(mc_control::MCController & ctl)
     rot.normalize();
     X_body_fb.rotation() = rot.toRotationMatrix();
   }
-  auto posW = X_body_fb * X_marker_body_ * X_0_marker_;
-  updateRobot.posW(posW);
+  X_0_fb_ = X_body_fb * X_marker_body_ * X_0_marker_;
+  updateRobot.posW(X_0_fb_);
 }
 
 void MocapObserver::addToLogger(const mc_control::MCController &, mc_rtc::Logger & logger, const std::string & category)
 {
+  logger.addLogEntry(category + "_MocapToMarker", [this]() -> const sva::PTransformd & { return X_m_marker_; });
+  logger.addLogEntry(category + "_markerPosW", [this]() -> const sva::PTransformd & { return X_0_marker_; });
+  logger.addLogEntry(category + "_posW", [this]() -> const sva::PTransformd & { return X_0_fb_; });
+  logger.addLogEntry(category + "_MocapOrigin", [this]() -> const sva::PTransformd & { return X_0_mocap_; });
+  logger.addLogEntry(category + "_marker_to_body", [this]() -> const sva::PTransformd & { return X_marker_body_; });
 }
 
-void MocapObserver::removeFromLogger(mc_rtc::Logger & logger, const std::string & category) {}
+void MocapObserver::removeFromLogger(mc_rtc::Logger & logger, const std::string & category)
+{
+  logger.removeLogEntry(category + "_MocapToMarker");
+  logger.removeLogEntry(category + "_markerPosW");
+  logger.removeLogEntry(category + "_posW");
+  logger.removeLogEntry(category + "_MocapOrigin");
+  logger.removeLogEntry(category + "_marker_to_body");
+}
 
 void MocapObserver::addToGUI(const mc_control::MCController & ctl,
                              mc_rtc::gui::StateBuilder & gui,
