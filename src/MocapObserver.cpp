@@ -95,6 +95,8 @@ void MocapObserver::addToGUI(const mc_control::MCController & ctl,
                           mc_rtc::log::info("[{}] Manual reset triggerred", name());
                           reset(ctl);
                         }),
+                 Transform("Mocap Origin", [this]() -> const sva::PTransformd & { return X_0_mocap_; },
+                           [this](const sva::PTransformd & pose) { X_0_mocap_ = pose; }),
                  Transform("Mocap Marker World", [this]() -> const sva::PTransformd & { return X_0_marker_; }),
                  Transform("Mocap Marker Frame", [this, &ctl]() -> const sva::PTransformd {
                    auto & realRobot = ctl.realRobot(updateRobot_);
@@ -130,7 +132,10 @@ bool MocapObserver::calibrateMarkerToBody(const mc_control::MCController & ctl)
   }
 
   auto X_0_body = robot(ctl).bodyPosW(body_);
-  X_marker_body_ = X_0_body * X_m_marker_.inv();
+  // In general, the robot should be placed at the origin of the mocap system
+  // before this operation.
+  // If this is not the case, set X_0_mocap_ appropriately manually
+  X_marker_body_ = X_0_body * X_0_mocap_.inv() * X_m_marker_.inv();
   mc_rtc::log::success("[{}] calibrated.", name());
   mc_rtc::log::info("[{}] Transformation between mocap marker and body {} \ntranslation: {}\nrotation: {}", name(),
                     body_, X_marker_body_.translation().transpose(),
