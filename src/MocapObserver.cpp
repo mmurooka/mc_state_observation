@@ -11,8 +11,9 @@ void MocapObserver::configure(const mc_control::MCController & ctl, const mc_rtc
 {
   robot_ = config("robot", ctl.robot().name());
   updateRobot_ = robot_;
+  config("useReal", useReal_);
   config("updateRobot", updateRobot_);
-  body_ = config("body", ctl.realRobot(robot_).mb().body(0).name());
+  body_ = config("body", robot(ctl).mb().body(0).name());
   desc_ = name_ + " (Marker TF: {} -> {})";
 }
 
@@ -34,10 +35,10 @@ bool MocapObserver::run(const mc_control::MCController & ctl)
 
 void MocapObserver::update(mc_control::MCController & ctl)
 {
-  auto & realRobot = ctl.realRobot(updateRobot_);
+  auto & updateRobot = ctl.realRobot(updateRobot_);
 
-  auto X_0_body = realRobot.bodyPosW(body_);
-  auto X_body_fb = realRobot.posW() * X_0_body.inv();
+  auto X_0_body = updateRobot.bodyPosW(body_);
+  auto X_body_fb = updateRobot.posW() * X_0_body.inv();
   // Note 1: This renormalizes and reorthogonalizes the rotation matrix to
   // avoid numerical errors slowly adding up over the course of many
   // iterations. It would however be better to compute the relative pose
@@ -51,7 +52,7 @@ void MocapObserver::update(mc_control::MCController & ctl)
     X_body_fb.rotation() = rot.toRotationMatrix();
   }
   auto posW = X_body_fb * X_marker_body_ * X_0_marker_;
-  realRobot.posW(posW);
+  updateRobot.posW(posW);
 }
 
 void MocapObserver::addToLogger(const mc_control::MCController &, mc_rtc::Logger & logger, const std::string & category)
@@ -116,8 +117,7 @@ bool MocapObserver::calibrateMarkerToBody(const mc_control::MCController & ctl)
     return false;
   }
 
-  auto & realRobot = ctl.realRobot(robot_);
-  auto X_0_body = realRobot.bodyPosW(body_);
+  auto X_0_body = robot(ctl).bodyPosW(body_);
   X_marker_body_ = X_0_body * X_m_marker_.inv();
   mc_rtc::log::success("[{}] calibrated.", name());
   mc_rtc::log::info("[{}] Transformation between mocap marker and body {} \ntranslation: {}\nrotation: {}", name(),
@@ -131,8 +131,7 @@ bool MocapObserver::initializeOrigin(const mc_control::MCController & ctl)
   if(!checkPipelines(ctl)) return false;
   if(!gotMarker_) return false;
 
-  auto & realRobot = ctl.realRobot(robot_);
-  auto X_0_body = realRobot.bodyPosW(body_);
+  auto X_0_body = robot(ctl).bodyPosW(body_);
   X_0_mocap_ = X_m_marker_.inv() * X_marker_body_.inv() * X_0_body;
   mc_rtc::log::success("[{}] World to mocap transformation.\ntranslation: {}\nrotation: {}", name(),
                        X_0_mocap_.translation().transpose(), mc_rbdyn::rpyFromMat(X_0_mocap_.rotation()).transpose());

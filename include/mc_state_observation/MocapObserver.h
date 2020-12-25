@@ -1,6 +1,8 @@
 #pragma once
 
 #include <mc_observers/Observer.h>
+#include <mc_rbdyn/Robot.h>
+#include <mc_control/MCController.h>
 
 namespace mc_state_observation
 {
@@ -23,7 +25,6 @@ struct MocapObserver : public mc_observers::Observer
   void markerPose(const sva::PTransformd & pose)
   {
     X_m_marker_ = pose;
-    mc_rtc::log::info("marker: {}", X_m_marker_.translation().transpose());
     gotMarker_ = true;
   }
 
@@ -31,6 +32,16 @@ struct MocapObserver : public mc_observers::Observer
   const sva::PTransformd & markerPose() const noexcept
   {
     return X_m_marker_;
+  }
+
+  mc_rbdyn::Robot & robot(mc_control::MCController & ctl)
+  {
+    return useReal_ ? ctl.realRobot(robot_) : ctl.robot(robot_);
+  }
+
+  const mc_rbdyn::Robot & robot(const mc_control::MCController & ctl) const
+  {
+    return useReal_ ? ctl.realRobot(robot_) : ctl.robot(robot_);
   }
 
 protected:
@@ -60,6 +71,7 @@ protected:
 protected:
   /// @{
   std::string robot_ = ""; ///< Name of robot to which the MOCAP marker is attached
+  bool useReal_ = false;
   std::string updateRobot_ = ""; ///< Name of the robot to update
   std::string body_ = ""; ///< Body to which the marker is attached
   /// @}
