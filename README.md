@@ -30,6 +30,28 @@ KamanFilter:                # configuration of the kalman filter (default values
   state_init_cov: 1e-8
 ```
 
+
+### MocapObserverROS (estimation of the floating base from MOCAP data)
+
+Example configuration (updates main real robot instance from MOCAP data). Note that this requires calibration of the mocap marker wrt to the robot body:
+- `Calibrate`: Measures the marker frame to robot body transformation (calibration of the MOCAP markers). This assumes that the initial robot position is very well known in the controller
+- `Initialize`: Establishes the link between robot map and mocap origin.
+
+```
+ObserverPipelines:
+- name: MocapPipeline
+  gui: true
+  observers:
+    - type: Encoder
+    - type: MocapObserverROS
+      update: true
+      config:
+        updateRobot: hrp5_p
+        marker_tf: HRP5P 
+        marker_origin_tf: mocap 
+        body: Chest_Link2
+```
+
 ## Dependencies
 
 - [state-observation](https://github.com/jrl-umi3218/state-observation) > 1.3.3
