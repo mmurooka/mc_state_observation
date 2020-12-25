@@ -13,8 +13,8 @@ add_so_observer(TiltObserver)
 
 if(${ROSCPP_FOUND})
   add_simple_observer(MocapObserver)
+  target_link_libraries(MocapObserver PUBLIC mc_rtc::mc_control) # XXX why needed?
   add_simple_observer(MocapObserverROS)
-  target_link_libraries(MocapObserverROS PUBLIC mc_rtc::mc_control) # XXX why needed?
   target_link_libraries(MocapObserverROS PUBLIC MocapObserver)
   target_link_libraries(MocapObserverROS PUBLIC mc_state_observation::ROS mc_rtc::mc_rtc_ros)
   set_target_properties(MocapObserverROS PROPERTIES INSTALL_RPATH ${MC_OBSERVERS_RUNTIME_INSTALL_PREFIX})
