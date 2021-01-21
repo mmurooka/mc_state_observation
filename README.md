@@ -30,7 +30,6 @@ KamanFilter:                # configuration of the kalman filter (default values
   state_init_cov: 1e-8
 ```
 
-
 ### MocapObserverROS (estimation of the floating base from MOCAP data)
 
 Example configuration (updates main real robot instance from MOCAP data). Note that this requires calibration of the mocap marker wrt to the robot body:
@@ -47,13 +46,64 @@ ObserverPipelines:
       update: true
       config:
         updateRobot: hrp5_p
-        marker_tf: HRP5P 
-        marker_origin_tf: mocap 
+        marker_tf: HRP5P
+        marker_origin_tf: mocap
         body: Chest_Link2
+```
+
+### SLAMObserver (Experimental)
+
+Estimation of the robot thanks to the estimated camera from a SLAM.
+Configuration options (default value for `Filter`, `Publish` and `Simulation`):
+
+```yaml
+Robot:
+  robot: robot                      # Robot name
+  camera: camera_link               # Body name of the camera of the robot
+SLAM:
+  map: map                          # ROS TF name of SLAM map
+  estimated: camera_link            # ROS TF name of estimated camera
+Filter:
+  use: true
+  m: 100                            # savitzky-golay parameters
+  d: 2                              # savitzky-golay parameters
+Publish:
+  use: true                         # publish estimated robot in ROS
+Simulation:
+  use: false
+  noise:
+    use: false
+    translation:
+      min: [-0.05, -0.05, -0.05]    # [m]
+      max: [0.05, 0.05, 0.05]       # [m]
+    orientation:
+      min: [-0.01, -0.01, -0.01]    # [degree]
+      max: [0.01, 0.01, 0.01]       # [degree]
+```
+
+In your controller's configuration file in .yaml:
+```yaml
+ObserverPipelines:
+- name: SLAMPipeline
+  gui: true
+  observers:
+    - type: Encoder
+    - type: SLAM
+      update: true
+      config:
+        Robot:
+          robot: HRP2DRC
+          camera: xtion_link
+        SLAM:
+          map: map
+          estimated: camera_link
+        Simulation:
+          use: false
 ```
 
 ## Dependencies
 
+- [gram_savitzky_golay] https://github.com/arntanguy/gram_savitzky_golay
 - [state-observation](https://github.com/jrl-umi3218/state-observation) > 1.3.3
 - [mc_rtc](https://github.com/jrl-umi3218/mc_rtc)
 - Eigen3
