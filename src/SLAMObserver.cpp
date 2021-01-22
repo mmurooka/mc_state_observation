@@ -165,13 +165,14 @@ bool SLAMObserver::run(const mc_control::MCController & ctl)
   {
     // Connect SLAM and Robot map
     auto transform = tf2::eigenToTransform(sva::conversions::toAffine(X_0_Slam_));
+    transform.header.stamp = ros::Time::now();
     transform.header.frame_id = "robot_map";
     transform.child_frame_id = map_;
     tfBroadcaster_.sendTransform(transform);
 
     if(!getTransformStamped("robot_map", transformStamped))
     {
-      error_ = fmt::format("[{}] Could not get transform from \"robot_map\" to {}", name(), estimated_);
+      error_ = fmt::format("[{}] Could not get transform from \"robot_map\" to \"{}\"", name(), estimated_);
       return false;
     }
     X_0_Estimated_camera_ = sva::conversions::fromHomogeneous(tf2::transformToEigen(transformStamped).matrix());
