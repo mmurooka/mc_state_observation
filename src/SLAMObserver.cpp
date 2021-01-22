@@ -5,7 +5,6 @@
 #include <mc_rtc/ros.h>
 #include <mc_rtc/version.h>
 #include <SpaceVecAlg/Conversions.h>
-#include <SpaceVecAlg/SpaceVecAlg>
 #include <tf2_eigen/tf2_eigen.h>
 #include <random>
 
@@ -67,7 +66,7 @@ void SLAMObserver::configure(const mc_control::MCController & ctl, const mc_rtc:
     camera_ = static_cast<std::string>(config("Robot")("camera"));
     if(!ctl.robot(robot_).hasBody(camera_))
     {
-      mc_rtc::log::error_and_throw<std::runtime_error>("No {} body found in {}", camera_, body_);
+      mc_rtc::log::error_and_throw<std::runtime_error>("No {} body found in {}", camera_, robot_);
     }
     body_ = ctl.robot(robot_).mb().bodies()[0].name();
     robots_.load({ctl.robot(robot_).module()});
@@ -187,6 +186,15 @@ bool SLAMObserver::run(const mc_control::MCController & ctl)
 
 void SLAMObserver::update(mc_control::MCController & ctl)
 {
+  if(!isInitialized_)
+  {
+    if(ctl.datastore().has("SLAM::Robot"))
+    {
+      ctl.datastore().remove("SLAM::Robot");
+    }
+    return;
+  }
+
   if(!ctl.datastore().has("SLAM::Robot"))
   {
     ctl.datastore().make_call("SLAM::Robot",
@@ -207,10 +215,6 @@ void SLAMObserver::update(mc_control::MCController & ctl)
     );
   }
 
-  if(!isInitialized_)
-  {
-    return;
-  }
   isSLAMAlive_ = true;
 
   const auto & real_robot = ctl.realRobot();

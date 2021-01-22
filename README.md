@@ -101,6 +101,55 @@ ObserverPipelines:
           use: false
 ```
 
+Then from your controller you can access to the estimated robot with:
+```cpp
+const auto & estimatedRobot = datastore().call<const mc_rbdyn::Robot &>("SLAM::Robot");
+
+bool isAlive = datastore().call<bool>("SLAM::isAlive");
+```
+
+### ObjectObserver (Experimental)
+
+Estimation of the object thanks to the estimated object from a vision process.
+Configuration options (default value for `Filter`, `Publish` and `Simulation`):
+
+```yaml
+Robot:
+  robot: robot                      # Robot name
+  camera: camera_link               # Body name of the camera of the robot
+Object:
+  robot: object                     # Robot name
+  topic: /topic/poseStamped         # ROS topic to receive estimated object pose stamped
+Publish:
+  use: true                         # publish estimated robot in ROS
+```
+
+In your controller's configuration file in .yaml:
+```yaml
+ObserverPipelines:
+- name: ObjectPipeline
+  gui: true
+  observers:
+    - type: Object
+      update: true
+      config:
+        Robot:
+          robot: HRP2DRC
+          camera: xtion_link
+        Object:
+          robot: cube
+          topic: /process/cube/pose
+```
+
+Then from your controller you can access to the estimated robot with:
+```cpp
+const auto & estimatedRobot = datastore().call<const mc_rbdyn::Robot &>(name_+"::Robot");
+
+const auto & X_0_Object = datastore().call<const sva::PTransformd &>(name_+"::X_0_Object");
+
+const auto & X_Camera_Object = datastore().call<const sva::PTransformd &>(name_+"::X_Camera_Object");
+```
+
 ## Dependencies
 
 - [gram_savitzky_golay] https://github.com/arntanguy/gram_savitzky_golay
