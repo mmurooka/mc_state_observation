@@ -120,6 +120,7 @@ Robot:
 Object:
   robot: object                     # Robot name
   topic: /topic/poseStamped         # ROS topic to receive estimated object pose stamped
+  inRobotMap: false                 # If the update is compute from robot camera or from robot_map (in case of choreonoid by example)
 Publish:
   use: true                         # publish estimated robot in ROS
 ```
@@ -145,7 +146,11 @@ Then from your controller you can access to the estimated robot with:
 ```cpp
 const auto & estimatedRobot = datastore().call<const mc_rbdyn::Robot &>(name_+"::Robot");
 
+const auto & estimatedRobot = realRobot(name_);
+
 const auto & X_0_Object = datastore().call<const sva::PTransformd &>(name_+"::X_0_Object");
+
+const auto & X_0_Object = realRobot(name_).posW();
 
 const auto & X_Camera_Object = datastore().call<const sva::PTransformd &>(name_+"::X_Camera_Object");
 ```
