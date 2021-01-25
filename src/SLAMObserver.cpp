@@ -243,6 +243,8 @@ void SLAMObserver::update(mc_control::MCController & ctl)
   {
     mc_rtc::ROSBridge::update_robot_publisher("SLAM", ctl.timeStep, SLAM_robot);
   }
+
+  thread_ = std::thread(std::bind(&SLAMObserver::rosSpinner, this));
 }
 
 void SLAMObserver::addToLogger(const mc_control::MCController &, mc_rtc::Logger & logger, const std::string & category)
@@ -433,6 +435,18 @@ void SLAMObserver::addToGUI(const mc_control::MCController & ctl,
         return rpy.z();
       }, mc_rtc::gui::Color::Red, mc_rtc::gui::plot::Style::Dotted)
   );
+}
+
+void SLAMObserver::rosSpinner()
+{
+  mc_rtc::log::info("[SLAMObserver] rosSpinner started");
+  ros::Rate rate(30);
+  while (ros::ok())
+  {
+    ros::spinOnce();
+    rate.sleep();
+  }
+  mc_rtc::log::info("[SLAMObserver] rosSpinner finished");
 }
 
 } // namespace mc_state_observation

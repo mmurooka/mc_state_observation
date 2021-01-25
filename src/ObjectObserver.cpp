@@ -52,6 +52,7 @@ void ObjectObserver::configure(const mc_control::MCController & ctl, const mc_rt
 
   desc_ = fmt::format("{} (Object: {} Topic: {}, inRobotMap: {})", name_, object_, topic_, isInRobotMap_);
 
+  thread_ = std::thread(std::bind(&ObjectObserver::rosSpinner, this));
 }
 
 void ObjectObserver::reset(const mc_control::MCController &)
@@ -173,6 +174,17 @@ void ObjectObserver::callback(const geometry_msgs::PoseStamped & msg)
   isNewEstimatedPose_ = true;
 }
 
+void ObjectObserver::rosSpinner()
+{
+  mc_rtc::log::info("[ObjectObserver] rosSpinner started");
+  ros::Rate rate(30);
+  while (ros::ok())
+  {
+    ros::spinOnce();
+    rate.sleep();
+  }
+  mc_rtc::log::info("[ObjectObserver] rosSpinner finished");
+}
 
 } // namespace mc_state_observation
 

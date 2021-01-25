@@ -8,7 +8,7 @@
 #include <ros/ros.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/transform_broadcaster.h>
-
+#include <thread>
 namespace mc_state_observation
 {
 
@@ -64,6 +64,8 @@ protected:
   bool isSLAMAlive_ = false; ///< Check if slam is alive or not
   /// @}
   std::shared_ptr<ros::NodeHandle> nh_ = nullptr;
+  void rosSpinner();
+  std::thread thread_;
   tf2_ros::Buffer tfBuffer_;
   tf2_ros::TransformListener tfListener_{tfBuffer_};
   tf2_ros::TransformBroadcaster tfBroadcaster_;

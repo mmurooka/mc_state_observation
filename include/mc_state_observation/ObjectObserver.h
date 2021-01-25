@@ -8,6 +8,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <mutex>
+#include <thread>
 
 namespace mc_state_observation
 {
@@ -73,5 +74,7 @@ protected:
   /// @}
 
   std::shared_ptr<ros::NodeHandle> nh_ = nullptr;
+  void rosSpinner();
+  std::thread thread_;
 };
 } // namespace mc_state_observation
