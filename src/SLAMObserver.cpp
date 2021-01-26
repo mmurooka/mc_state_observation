@@ -121,6 +121,8 @@ void SLAMObserver::configure(const mc_control::MCController & ctl, const mc_rtc:
   }
 
   desc_ = name_;
+
+  thread_ = std::thread(std::bind(&SLAMObserver::rosSpinner, this));
 }
 
 void SLAMObserver::reset(const mc_control::MCController &)
@@ -243,8 +245,6 @@ void SLAMObserver::update(mc_control::MCController & ctl)
   {
     mc_rtc::ROSBridge::update_robot_publisher("SLAM", ctl.timeStep, SLAM_robot);
   }
-
-  thread_ = std::thread(std::bind(&SLAMObserver::rosSpinner, this));
 }
 
 void SLAMObserver::addToLogger(const mc_control::MCController &, mc_rtc::Logger & logger, const std::string & category)
