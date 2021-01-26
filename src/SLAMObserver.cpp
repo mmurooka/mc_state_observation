@@ -4,22 +4,13 @@
 #include <mc_state_observation/gui_helpers.h>
 #include <mc_rtc/ros.h>
 #include <mc_rtc/version.h>
+#include <mc_rtc/constants.h>
 #include <SpaceVecAlg/Conversions.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <random>
 
 namespace
 {
-
-double radToDegree(double rad)
-{
-  return rad * 180. / M_PI;
-}
-
-double degreeToRad(double degree)
-{
-  return degree * M_PI / 180.;
-}
 
 template <typename Derived>
 Derived generate(const Derived& lower, const Derived& upper)
@@ -113,10 +104,10 @@ void SLAMObserver::configure(const mc_control::MCController & ctl, const mc_rtc:
       isUsingNoise_ =  noise("use", false);
       minTranslationNoise_ = noise("translation")("min", Eigen::Vector3d(-0.05, -0.05, -0.05));
       maxTranslationNoise_ = noise("translation")("max", Eigen::Vector3d(0.05, 0.05, 0.05));
-      minOrientationNoise_.unaryExpr(&degreeToRad);
+      minOrientationNoise_.unaryExpr(&mc_rtc::constants::toRad);
       minOrientationNoise_ = noise("orientation")("min", Eigen::Vector3d(-0.01, -0.01, -0.01));
       maxOrientationNoise_ = noise("orientation")("max", Eigen::Vector3d(0.01, 0.01, 0.01));
-      maxOrientationNoise_.unaryExpr(&degreeToRad);
+      maxOrientationNoise_.unaryExpr(&mc_rtc::constants::toRad);
     }
   }
 
@@ -352,12 +343,12 @@ void SLAMObserver::addToGUI(const mc_control::MCController & ctl,
         [this]()
         {
           Eigen::Vector3d inDegree = minOrientationNoise_;
-          inDegree.unaryExpr(&radToDegree);
+          inDegree.unaryExpr(&mc_rtc::constants::toDeg);
           return inDegree;
         },
         [this](const Eigen::Vector3d & v)
         {
-          v.unaryExpr(&degreeToRad);
+          v.unaryExpr(&mc_rtc::constants::toRad);
           minOrientationNoise_ = v;
         }
         ),
@@ -365,12 +356,12 @@ void SLAMObserver::addToGUI(const mc_control::MCController & ctl,
         [this]()
         {
           Eigen::Vector3d inDegree = maxOrientationNoise_;
-          inDegree.unaryExpr(&radToDegree);
+          inDegree.unaryExpr(&mc_rtc::constants::toDeg);
           return inDegree;
         },
         [this](const Eigen::Vector3d & v)
         {
-          v.unaryExpr(&degreeToRad);
+          v.unaryExpr(&mc_rtc::constants::toRad);
           maxOrientationNoise_ = v;
         }
       )
