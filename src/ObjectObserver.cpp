@@ -29,7 +29,7 @@ void ObjectObserver::configure(const mc_control::MCController & ctl, const mc_rt
   }
   else
   {
-    mc_rtc::log::error_and_throw<std::runtime_error>("[ObjectObserver] Robot configuration is mandatory.");
+    mc_rtc::log::error_and_throw<std::runtime_error>("[{}] Robot configuration is mandatory.", name());
   }
 
   if(config.has("Object"))
@@ -40,7 +40,7 @@ void ObjectObserver::configure(const mc_control::MCController & ctl, const mc_rt
   }
   else
   {
-    mc_rtc::log::error_and_throw<std::runtime_error>("[ObjectObserver] Object configuration is mandatory.");
+    mc_rtc::log::error_and_throw<std::runtime_error>("[{}] Object configuration is mandatory.", name());
   }
 
   if(config.has("Publish"))
@@ -50,7 +50,7 @@ void ObjectObserver::configure(const mc_control::MCController & ctl, const mc_rt
 
   subscriber_ = nh_->subscribe(topic_, 1, &ObjectObserver::callback, this);
 
-  desc_ = fmt::format("{} (Object: {} Topic: {}, inRobotMap: {})", name_, object_, topic_, isInRobotMap_);
+  desc_ = fmt::format("{} (Object: {} Topic: {}, inRobotMap: {})", name(), name_, object_, topic_, isInRobotMap_);
 
   thread_ = std::thread(std::bind(&ObjectObserver::rosSpinner, this));
 }
@@ -176,14 +176,14 @@ void ObjectObserver::callback(const geometry_msgs::PoseStamped & msg)
 
 void ObjectObserver::rosSpinner()
 {
-  mc_rtc::log::info("[ObjectObserver] rosSpinner started");
+  mc_rtc::log::info("[{}] rosSpinner started", name());
   ros::Rate rate(30);
   while (ros::ok())
   {
     ros::spinOnce();
     rate.sleep();
   }
-  mc_rtc::log::info("[ObjectObserver] rosSpinner finished");
+  mc_rtc::log::info("[{}] rosSpinner finished", name());
 }
 
 } // namespace mc_state_observation

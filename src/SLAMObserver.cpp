@@ -74,7 +74,7 @@ void SLAMObserver::configure(const mc_control::MCController & ctl, const mc_rtc:
   }
   else
   {
-    mc_rtc::log::error_and_throw<std::runtime_error>("[SLAMObserver] SLAM configuration is mandatory.");
+    mc_rtc::log::error_and_throw<std::runtime_error>("[{}}] SLAM configuration is mandatory.", name());
   }
 
   int m = 100;
@@ -111,11 +111,11 @@ void SLAMObserver::configure(const mc_control::MCController & ctl, const mc_rtc:
     if(isSimulated_)
     {
       estimated_ = "real/"+camera_;
-      mc_rtc::log::info("[SLAMObserver] Simulation mode is active so SLAM estimated link is set to {}", estimated_);
+      mc_rtc::log::info("[{}] Simulation mode is active so SLAM estimated link is set to {}", name(), estimated_);
     }
   }
 
-  desc_ = name_;
+  desc_ = fmt::format("{} (Camera: {} Estimated: {}, inSimulation: {})", name(), camera_, estimated_, isSimulated_);
 
   thread_ = std::thread(std::bind(&SLAMObserver::rosSpinner, this));
 }
@@ -434,14 +434,14 @@ void SLAMObserver::addToGUI(const mc_control::MCController & ctl,
 
 void SLAMObserver::rosSpinner()
 {
-  mc_rtc::log::info("[SLAMObserver] rosSpinner started");
+  mc_rtc::log::info("[{}] rosSpinner started", name());
   ros::Rate rate(30);
   while (ros::ok())
   {
     ros::spinOnce();
     rate.sleep();
   }
-  mc_rtc::log::info("[SLAMObserver] rosSpinner finished");
+  mc_rtc::log::info("[{}] rosSpinner finished", name());
 }
 
 } // namespace mc_state_observation
