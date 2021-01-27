@@ -109,6 +109,11 @@ void SLAMObserver::configure(const mc_control::MCController & ctl, const mc_rtc:
       maxOrientationNoise_ = noise("orientation")("max", Eigen::Vector3d(0.01, 0.01, 0.01));
       maxOrientationNoise_.unaryExpr(&mc_rtc::constants::toRad);
     }
+    if(isSimulated_)
+    {
+      estimated_ = "real/"+camera_;
+      mc_rtc::log::info("[SLAMObserver] Simulation mode is active so SLAM estimated link is set to {}", estimated_);
+    }
   }
 
   desc_ = name_;
