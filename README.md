@@ -58,8 +58,11 @@ Configuration options (default value for `Filter`, `Publish` and `Simulation`):
 
 ```yaml
 Robot:
-  robot: robot                      # Robot name
-  camera: camera_link               # Body name of the camera of the robot
+  robot: robot                      # Robot name (Optionnal, by default it will be the main robot name)
+  robot_name_0:                     # Must be a name of a valid robot
+    camera: camera_link             # Body name of the camera of the robot name 0
+  robot_name_n:                     # Must be a name of a valid robot
+    camera: camera_link             # Body name of the camera of the robot name 1
 SLAM:
   map: map                          # ROS TF name of SLAM map
   estimated: camera_link            # ROS TF name of estimated camera
@@ -70,7 +73,7 @@ Filter:
 Publish:
   use: true                         # publish estimated robot in ROS
 Simulation:
-  use: false
+  use: false                        # If true, set estimated to rea/camera of robot
   noise:
     use: false
     translation:
@@ -92,8 +95,9 @@ ObserverPipelines:
       update: true
       config:
         Robot:
-          robot: HRP2DRC
-          camera: xtion_link
+          robot: hrp2_drc
+          hrp2_drc:
+            camera: xtion_link
         SLAM:
           map: map
           estimated: camera_link
@@ -115,8 +119,11 @@ Configuration options (default value for `Filter`, `Publish` and `Simulation`):
 
 ```yaml
 Robot:
-  robot: robot                      # Robot name
-  camera: camera_link               # Body name of the camera of the robot
+  robot: robot                      # Robot name (Optionnal, by default it will be the main robot name)
+  robot_name_0:                     # Must be a name of a valid robot
+    camera: camera_link             # Body name of the camera of the robot name 0
+  robot_name_n:                     # Must be a name of a valid robot
+    camera: camera_link             # Body name of the camera of the robot name 1
 Object:
   robot: object                     # Robot name
   topic: /topic/poseStamped         # ROS topic to receive estimated object pose stamped
@@ -135,8 +142,9 @@ ObserverPipelines:
       update: true
       config:
         Robot:
-          robot: HRP2DRC
-          camera: xtion_link
+          robot: hrp2_drc
+          hrp2_drc:
+            camera: xtion_link
         Object:
           robot: cube
           topic: /process/cube/pose
