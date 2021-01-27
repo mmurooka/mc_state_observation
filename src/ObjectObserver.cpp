@@ -21,7 +21,7 @@ void ObjectObserver::configure(const mc_control::MCController & ctl, const mc_rt
   if(config.has("Robot"))
   {
     robot_ = config("Robot")("robot", ctl.robot().name());
-    camera_ = static_cast<std::string>(config("Robot")("camera"));
+    camera_ = static_cast<std::string>(config("Robot")(robot_)("camera"));
     if(!ctl.robot(robot_).hasBody(camera_))
     {
       mc_rtc::log::error_and_throw<std::runtime_error>("No {} body found in {}", camera_, robot_);

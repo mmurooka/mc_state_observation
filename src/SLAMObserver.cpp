@@ -54,18 +54,17 @@ void SLAMObserver::configure(const mc_control::MCController & ctl, const mc_rtc:
   if(config.has("Robot"))
   {
     robot_ = config("Robot")("robot", ctl.robot().name());
-    camera_ = static_cast<std::string>(config("Robot")("camera"));
+    camera_ = static_cast<std::string>(config("Robot")(robot_)("camera"));
     if(!ctl.robot(robot_).hasBody(camera_))
     {
       mc_rtc::log::error_and_throw<std::runtime_error>("No {} body found in {}", camera_, robot_);
     }
     body_ = ctl.robot(robot_).mb().bodies()[0].name();
     robots_.load({ctl.robot(robot_).module()});
-    mc_rtc::log::info("[SLAMObserver] {} is used for {}.", body_, robot_);
   }
   else
   {
-    mc_rtc::log::error_and_throw<std::runtime_error>("[SLAMObserver] Robot configuration is mandatory.");
+    mc_rtc::log::error_and_throw<std::runtime_error>("[{}}] Robot configuration is mandatory.", name());
   }
 
   if(config.has("SLAM"))
