@@ -1,5 +1,6 @@
 macro(add_so_observer observer_name)
   add_observer(${observer_name} "${observer_name}.cpp" "${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/${observer_name}.h")
+  target_link_libraries(${observer_name} PUBLIC mc_rtc::mc_control) # XXX why needed?
   target_link_libraries(${observer_name} PUBLIC state-observation::state-observation)
 endmacro()
 
@@ -17,7 +18,6 @@ add_so_observer(TiltObserver)
 
 if(${ROSCPP_FOUND})
   add_simple_observer(MocapObserver)
-  target_link_libraries(MocapObserver PUBLIC mc_rtc::mc_control) # XXX why needed?
   add_simple_observer(MocapObserverROS)
   target_link_libraries(MocapObserverROS PUBLIC MocapObserver)
   target_link_libraries(MocapObserverROS PUBLIC mc_state_observation::ROS mc_rtc::mc_rtc_ros)
