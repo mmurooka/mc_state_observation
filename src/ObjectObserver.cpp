@@ -37,6 +37,8 @@ void ObjectObserver::configure(const mc_control::MCController & ctl, const mc_rt
     object_ = static_cast<std::string>(config("Object")("robot"));
     topic_ = static_cast<std::string>(config("Object")("topic"));
     isInRobotMap_ = config("Object")("inRobotMap", false);
+
+    robots_.load(object_, ctl.robot(object_).module());
   }
   else
   {
@@ -83,12 +85,32 @@ void ObjectObserver::update(mc_control::MCController & ctl)
     );
   }
 
+  if(!ctl.datastore().has(object_+"::SLAM::Robot"))
+  {
+    ctl.datastore().make_call(object_+"::SLAM::Robot",
+      [this]() -> const mc_rbdyn::Robot &
+      {
+        return robots_.robot(object_);
+      }
+    );
+  }
+
   if(!ctl.datastore().has(object_+"::X_0_Object"))
   {
     ctl.datastore().make_call(object_+"::X_0_Object",
       [this, &ctl]() -> const sva::PTransformd &
       {
         return ctl.realRobot(object_).posW();
+      }
+    );
+  }
+
+  if(!ctl.datastore().has(object_+"::X_0_Object_inSLAM"))
+  {
+    ctl.datastore().make_call(object_+"::X_0_Object_inSLAM",
+      [this]() -> const sva::PTransformd &
+      {
+        return robots_.robot(object_).posW();
       }
     );
   }
@@ -125,9 +147,21 @@ void ObjectObserver::update(mc_control::MCController & ctl)
   isNewEstimatedPose_ = false;
   object.forwardKinematics();
 
+  if(ctl.datastore().has("SLAM::Robot"))
+  {
+    const sva::PTransformd & X_0_Camera = ctl.datastore().call<const mc_rbdyn::Robot &>("SLAM::Robot").bodyPosW(camera_);
+    auto & object = robots_.robot(object_);
+    object.posW(X_Camera_EstimatedObject_ * X_0_Camera);
+    object.forwardKinematics();
+  }
+
   if(isPublished_)
   {
     mc_rtc::ROSBridge::update_robot_publisher(object_+"_estimated", ctl.timeStep, object);
+    if(ctl.datastore().has("SLAM::Robot"))
+    {
+      mc_rtc::ROSBridge::update_robot_publisher(object_+"_estimated_in_SLAM", ctl.timeStep, robots_.robot(object_));
+    }
   }
 }
 
