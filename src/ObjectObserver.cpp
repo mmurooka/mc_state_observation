@@ -168,12 +168,14 @@ void ObjectObserver::update(mc_control::MCController & ctl)
 void ObjectObserver::addToLogger(const mc_control::MCController & ctl, mc_rtc::Logger & logger, const std::string & category)
 {
   logger.addLogEntry(category+"_posW", [this, &ctl]() { return ctl.realRobot(object_).posW(); });
-  logger.addLogEntry(category+"_X_Camera_Object", [this, &ctl]() { return X_Camera_EstimatedObject_; });
+  logger.addLogEntry(category+"_posW_in_SLAM", [this]() { return robots_.robot(object_).posW(); });
+  logger.addLogEntry(category+"_X_Camera_Object", [this]() { return X_Camera_EstimatedObject_; });
 }
 
 void ObjectObserver::removeFromLogger(mc_rtc::Logger & logger, const std::string & category)
 {
   logger.removeLogEntry(category+"_posW");
+  logger.removeLogEntry(category+"_posW_in_SLAM");
   logger.removeLogEntry(category+"_X_Camera_Object");
 }
 
