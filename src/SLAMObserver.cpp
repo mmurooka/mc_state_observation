@@ -1,5 +1,6 @@
 #include <mc_observers/ObserverMacros.h>
 #include <mc_control/MCController.h>
+#include <Eigen/src/Geometry/Quaternion.h>
 #include <mc_state_observation/SLAMObserver.h>
 #include <mc_state_observation/gui_helpers.h>
 #include <mc_rtc/ros.h>

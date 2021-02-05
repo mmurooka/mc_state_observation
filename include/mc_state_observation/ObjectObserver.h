@@ -57,6 +57,7 @@ protected:
   /// @{
   std::string robot_ = ""; ///< Name of robot to estimate thanks to SLAM
   std::string camera_ = ""; ///< Name of robot's camera body
+  mc_rbdyn::Robots robots_; ///< Store robot estimated state if SLAM Observer is used
   /// @}
 
   /// @{

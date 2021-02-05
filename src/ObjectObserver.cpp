@@ -37,6 +37,8 @@ void ObjectObserver::configure(const mc_control::MCController & ctl, const mc_rt
     object_ = static_cast<std::string>(config("Object")("robot"));
     topic_ = static_cast<std::string>(config("Object")("topic"));
     isInRobotMap_ = config("Object")("inRobotMap", false);
+
+    robots_.load(object_, ctl.robot(object_).module());
   }
   else
   {
@@ -83,12 +85,32 @@ void ObjectObserver::update(mc_control::MCController & ctl)
     );
   }
 
+  if(!ctl.datastore().has(object_+"::SLAM::Robot"))
+  {
+    ctl.datastore().make_call(object_+"::SLAM::Robot",
+      [this]() -> const mc_rbdyn::Robot &
+      {
+        return robots_.robot(object_);
+      }
+    );
+  }
+
   if(!ctl.datastore().has(object_+"::X_0_Object"))
   {
     ctl.datastore().make_call(object_+"::X_0_Object",
       [this, &ctl]() -> const sva::PTransformd &
       {
         return ctl.realRobot(object_).posW();
+      }
+    );
+  }
+
+  if(!ctl.datastore().has(object_+"::X_0_Object_inSLAM"))
+  {
+    ctl.datastore().make_call(object_+"::X_0_Object_inSLAM",
+      [this]() -> const sva::PTransformd &
+      {
+        return robots_.robot(object_).posW();
       }
     );
   }
@@ -149,15 +171,28 @@ void ObjectObserver::update(mc_control::MCController & ctl)
   isNewEstimatedPose_ = false;
   object.forwardKinematics();
 
+  if(ctl.datastore().has("SLAM::Robot"))
+  {
+    const sva::PTransformd & X_0_Camera = ctl.datastore().call<const mc_rbdyn::Robot &>("SLAM::Robot").bodyPosW(camera_);
+    auto & object = robots_.robot(object_);
+    object.posW(X_Camera_EstimatedObject_ * X_0_Camera);
+    object.forwardKinematics();
+  }
+
   if(isPublished_)
   {
     mc_rtc::ROSBridge::update_robot_publisher(object_+"_estimated", ctl.timeStep, object);
+    if(ctl.datastore().has("SLAM::Robot"))
+    {
+      mc_rtc::ROSBridge::update_robot_publisher(object_+"_estimated_in_SLAM", ctl.timeStep, robots_.robot(object_));
+    }
   }
 }
 
 void ObjectObserver::addToLogger(const mc_control::MCController & ctl, mc_rtc::Logger & logger, const std::string & category)
 {
   logger.addLogEntry(category+"_posW", [this, &ctl]() { return ctl.realRobot(object_).posW(); });
+<<<<<<< HEAD
   logger.addLogEntry(category+"_X_Camera_Object_Estimated", [this, &ctl]() { return X_Camera_EstimatedObject_; });
   logger.addLogEntry(category+"_X_Camera_Object_Real",
     [this, &ctl]()
@@ -175,14 +210,23 @@ void ObjectObserver::addToLogger(const mc_control::MCController & ctl, mc_rtc::L
       return X_0_object * X_0_camera.inv();
     }
   );
+=======
+  logger.addLogEntry(category+"_posW_in_SLAM", [this]() { return robots_.robot(object_).posW(); });
+  logger.addLogEntry(category+"_X_Camera_Object", [this]() { return X_Camera_EstimatedObject_; });
+>>>>>>> 87fe25b272f35d1e70684a33eab37f373b94cff9
 }
 
 void ObjectObserver::removeFromLogger(mc_rtc::Logger & logger, const std::string & category)
 {
   logger.removeLogEntry(category+"_posW");
+<<<<<<< HEAD
   logger.removeLogEntry(category+"_X_Camera_Object_Estimated");
   logger.removeLogEntry(category+"_X_Camera_Object_Real");
   logger.removeLogEntry(category+"_X_Camera_Object_Control");
+=======
+  logger.removeLogEntry(category+"_posW_in_SLAM");
+  logger.removeLogEntry(category+"_X_Camera_Object");
+>>>>>>> 87fe25b272f35d1e70684a33eab37f373b94cff9
 }
 
 void ObjectObserver::addToGUI(const mc_control::MCController & ctl,
