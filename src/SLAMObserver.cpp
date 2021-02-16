@@ -104,12 +104,18 @@ void SLAMObserver::configure(const mc_control::MCController & ctl, const mc_rtc:
     {
       auto noise = config("Simulation")("noise");
       isUsingNoise_ =  noise("use", false);
-      minTranslationNoise_ = noise("translation")("min", Eigen::Vector3d(-0.05, -0.05, -0.05));
-      maxTranslationNoise_ = noise("translation")("max", Eigen::Vector3d(0.05, 0.05, 0.05));
-      minOrientationNoise_.unaryExpr(&mc_rtc::constants::toRad);
-      minOrientationNoise_ = noise("orientation")("min", Eigen::Vector3d(-0.01, -0.01, -0.01));
-      maxOrientationNoise_ = noise("orientation")("max", Eigen::Vector3d(0.01, 0.01, 0.01));
-      maxOrientationNoise_.unaryExpr(&mc_rtc::constants::toRad);
+      if(noise.has("translation"))
+      {
+        minTranslationNoise_ = noise("translation")("min", Eigen::Vector3d(-0.05, -0.05, -0.05));
+        maxTranslationNoise_ = noise("translation")("max", Eigen::Vector3d(0.05, 0.05, 0.05));
+      }
+      if(noise.has("orientation"))
+      {
+        minOrientationNoise_ = noise("orientation")("min", Eigen::Vector3d(-1, -1, -1));
+        minOrientationNoise_.unaryExpr(&mc_rtc::constants::toRad);
+        maxOrientationNoise_ = noise("orientation")("max", Eigen::Vector3d(1, 1, 1));
+        maxOrientationNoise_.unaryExpr(&mc_rtc::constants::toRad);
+      }
     }
     if(isSimulated_)
     {

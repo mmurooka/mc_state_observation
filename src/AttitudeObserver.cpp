@@ -6,6 +6,11 @@
 namespace mc_state_observation
 {
 
+/// Sizes of the states for the state, the measurement, and the input vector
+constexpr unsigned AttitudeObserver::STATE_SIZE;
+constexpr unsigned AttitudeObserver::MEASUREMENT_SIZE;
+constexpr unsigned AttitudeObserver::INPUT_SIZE;
+
 namespace so = stateObservation;
 
 AttitudeObserver::AttitudeObserver(const std::string & type, double dt)

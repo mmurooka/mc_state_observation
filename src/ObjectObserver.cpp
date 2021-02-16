@@ -129,7 +129,7 @@ void ObjectObserver::update(mc_control::MCController & ctl)
   if(!ctl.datastore().has(object_+"::X_Camera_Object_Control"))
   {
     ctl.datastore().make_call(object_+"::X_Camera_Object_Control",
-      [this, &ctl]() -> const sva::PTransformd &
+      [this, &ctl]() -> const sva::PTransformd
       {
         sva::PTransformd X_0_camera = ctl.robot(robot_).bodyPosW(camera_);
         sva::PTransformd X_0_object = ctl.robot(object_).posW();
@@ -141,7 +141,7 @@ void ObjectObserver::update(mc_control::MCController & ctl)
   if(!ctl.datastore().has(object_+"::X_Camera_Object_Real"))
   {
     ctl.datastore().make_call(object_+"::X_Camera_Object_Real",
-      [this, &ctl]() -> const sva::PTransformd &
+      [this, &ctl]() -> const sva::PTransformd
       {
         sva::PTransformd X_0_camera = ctl.realRobot(robot_).bodyPosW(camera_);
         sva::PTransformd X_0_object = ctl.robot(object_).posW();
@@ -195,7 +195,7 @@ void ObjectObserver::addToLogger(const mc_control::MCController & ctl, mc_rtc::L
   logger.addLogEntry(category+"_posW_in_SLAM", [this]() { return robots_.robot(object_).posW(); });
   logger.addLogEntry(category+"_X_Camera_Object_Estimated", [this, &ctl]() { return X_Camera_EstimatedObject_; });
   logger.addLogEntry(category+"_X_Camera_Object_Real",
-    [this, &ctl]()
+    [this, &ctl]() -> const sva::PTransformd
     {
       sva::PTransformd X_0_camera = ctl.realRobot(robot_).bodyPosW(camera_);
       sva::PTransformd X_0_object = ctl.robot(object_).posW();
@@ -203,7 +203,7 @@ void ObjectObserver::addToLogger(const mc_control::MCController & ctl, mc_rtc::L
     }
   );
   logger.addLogEntry(category+"_X_Camera_Object_Control",
-    [this, &ctl]()
+    [this, &ctl]() -> const sva::PTransformd
     {
       sva::PTransformd X_0_camera = ctl.robot(robot_).bodyPosW(camera_);
       sva::PTransformd X_0_object = ctl.robot(object_).posW();
