@@ -78,16 +78,18 @@ void SLAMObserver::configure(const mc_control::MCController & ctl, const mc_rtc:
     mc_rtc::log::error_and_throw<std::runtime_error>("[{}}] SLAM configuration is mandatory.", name());
   }
 
-  int m = 100;
-  int d = 2;
+  int m = 150;
+  int d = 0;
+  int n = 5;
   if(config.has("Filter"))
   {
     isFiltered_ = config("Filter")("use", true);
-    m = config("Filter")("m", 100);
-    d = config("Filter")("d", 2);
+    m = config("Filter")("m", 150);
+    d = config("Filter")("d", 0);
+    n = config("Filter")("n", 5);
   }
 
-  auto sg_conf = gram_sg::SavitzkyGolayFilterConfig(m, m, d, 0);
+  auto sg_conf = gram_sg::SavitzkyGolayFilterConfig(m, m, n, d);
   filter_.reset(new filter::Transform(sg_conf));
 
   if(config.has("Publish"))
