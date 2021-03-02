@@ -8,6 +8,40 @@
 #include <SpaceVecAlg/Conversions.h>
 #include <SpaceVecAlg/SpaceVecAlg>
 #include <tf2_eigen/tf2_eigen.h>
+#include <random>
+
+namespace
+{
+
+template <typename Derived>
+Derived generate(const Derived& lower, const Derived& upper)
+{
+  assert(lower.size() == upper.size());
+
+  std::random_device rd;  //Will be used to obtain a seed for the random number engine
+  std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+
+  Derived noise = Derived::Zero();
+  for(int i=0; i<lower.size(); i++)
+  {
+    std::uniform_real_distribution<> dis(lower[i], upper[i]);
+    noise(i) = dis(gen);
+  }
+  return noise;
+}
+
+sva::PTransformd apply(const sva::PTransformd& X, const Eigen::Vector3d& min_ori, const Eigen::Vector3d &max_ori, const Eigen::Vector3d& min_t, const Eigen::Vector3d& max_t)
+{
+  const Eigen::Vector3d& noise_t = generate(min_t, max_t);
+  const Eigen::Vector3d& noise_ori = generate(min_ori, max_ori);
+  const Eigen::Matrix3d& noise_R = mc_rbdyn::rpyToMat(noise_ori.x(), noise_ori.y(), noise_ori.z());
+
+  Eigen::Vector3d t_noisy = X.translation() + noise_t;
+  Eigen::Matrix3d R_noisy = (X.rotation() * noise_R).eval();
+  return sva::PTransformd(R_noisy, t_noisy);
+}
+
+}
 
 namespace mc_state_observation
 {
@@ -160,14 +194,21 @@ void ObjectObserver::update(mc_control::MCController & ctl)
   }
   if(isInRobotMap_)
   {
-    object.posW(X_Camera_EstimatedObject);
-    X_Camera_EstimatedObject_ = X_Camera_EstimatedObject * X_0_Camera.inv();
+    const sva::PTransformd & X_0_EstimatedObject = X_Camera_EstimatedObject;
+    const auto & real_robot = ctl.realRobot();
+    const sva::PTransformd & X_0_FF = real_robot.posW();
+    const sva::PTransformd & X_0_Camera = real_robot.bodyPosW(camera_);
+    const sva::PTransformd X_Camera_FF = X_0_FF * X_0_Camera.inv();
+    const sva::PTransformd X_0_FF_sensor(ctl.robot().bodySensor().orientation(), ctl.robot().bodySensor().position());
+    const sva::PTransformd X_0_Camera_sensor = X_Camera_FF.inv() * X_0_FF_sensor;
+    X_Camera_EstimatedObject = X_0_EstimatedObject * X_0_Camera_sensor.inv();
+    {
+      const std::lock_guard<std::mutex> lock(mutex_);
+      X_Camera_EstimatedObject_ = X_Camera_EstimatedObject;
+    }
   }
-  else
-  {
-    const sva::PTransformd X_0_EstimatedObject =  X_Camera_EstimatedObject * X_0_Camera;
-    object.posW(X_0_EstimatedObject);
-  }
+  const sva::PTransformd X_0_EstimatedObject =  X_Camera_EstimatedObject * X_0_Camera;
+  object.posW(X_0_EstimatedObject);
   isNewEstimatedPose_ = false;
   object.forwardKinematics();
 

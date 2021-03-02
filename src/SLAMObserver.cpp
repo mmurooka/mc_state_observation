@@ -7,6 +7,7 @@
 #include <mc_rtc/version.h>
 #include <mc_rtc/constants.h>
 #include <SpaceVecAlg/Conversions.h>
+#include <SpaceVecAlg/SpaceVecAlg>
 #include <tf2_eigen/tf2_eigen.h>
 #include <random>
 
@@ -174,15 +175,27 @@ bool SLAMObserver::run(const mc_control::MCController & ctl)
     transform.child_frame_id = map_;
     tfBroadcaster_.sendTransform(transform);
 
-    if(!getTransformStamped("robot_map", transformStamped))
+    if(isSimulated_)
     {
-      error_ = fmt::format("[{}] Could not get transform from \"robot_map\" to \"{}\"", name(), estimated_);
-      return false;
+      const sva::PTransformd X_0_FFsensor(ctl.robot().bodySensor().orientation(), ctl.robot().bodySensor().position());
+      const auto & real_robot = ctl.realRobot();
+      const sva::PTransformd X_0_FF = real_robot.bodyPosW(body_);
+      const sva::PTransformd X_0_Camera = real_robot.bodyPosW(camera_);
+      const sva::PTransformd X_Camera_Freeflyer =  X_0_FF * X_0_Camera.inv();
+      X_0_Estimated_camera_ = X_Camera_Freeflyer.inv() * X_0_FFsensor;
+      if(isUsingNoise_)
+      {
+        X_0_Estimated_camera_ = apply(X_0_Estimated_camera_, minOrientationNoise_, maxOrientationNoise_, minTranslationNoise_, maxTranslationNoise_);
+      }
     }
-    X_0_Estimated_camera_ = sva::conversions::fromHomogeneous(tf2::transformToEigen(transformStamped).matrix());
-    if(isSimulated_ && isUsingNoise_)
+    else
     {
-      X_0_Estimated_camera_ = apply(X_0_Estimated_camera_, minOrientationNoise_, maxOrientationNoise_, minTranslationNoise_, maxTranslationNoise_);
+      if(!getTransformStamped("robot_map", transformStamped))
+      {
+        error_ = fmt::format("[{}] Could not get transform from \"robot_map\" to \"{}\"", name(), estimated_);
+        return false;
+      }
+      X_0_Estimated_camera_ = sva::conversions::fromHomogeneous(tf2::transformToEigen(transformStamped).matrix());
     }
     return true;
   }
@@ -379,64 +392,64 @@ void SLAMObserver::addToGUI(const mc_control::MCController & ctl,
     );
   }
 
-  gui.addPlot("SLAM::Translation::X",
-    mc_rtc::gui::plot::X("t", [this]() { return t_; }),
-    mc_rtc::gui::plot::Y("x_f", [this]() { return X_0_Filtered_estimated_camera_.translation().x(); }, mc_rtc::gui::Color::Red),
-    mc_rtc::gui::plot::Y("x", [this]() { return X_0_Estimated_camera_.translation().x(); }, mc_rtc::gui::Color::Red, mc_rtc::gui::plot::Style::Dotted)
-  );
-  gui.addPlot("SLAM::Translation::Y",
-    mc_rtc::gui::plot::X("t", [this]() { return t_; }),
-    mc_rtc::gui::plot::Y("y_f", [this]() { return X_0_Filtered_estimated_camera_.translation().y(); }, mc_rtc::gui::Color::Green),
-    mc_rtc::gui::plot::Y("y", [this]() { return X_0_Estimated_camera_.translation().y(); }, mc_rtc::gui::Color::Green, mc_rtc::gui::plot::Style::Dotted)
-  );
-  gui.addPlot("SLAM::Translation::Z",
-    mc_rtc::gui::plot::X("t", [this]() { return t_; }),
-    mc_rtc::gui::plot::Y("z_f", [this]() { return X_0_Filtered_estimated_camera_.translation().z(); }, mc_rtc::gui::Color::Blue),
-    mc_rtc::gui::plot::Y("z", [this]() { return X_0_Estimated_camera_.translation().z(); }, mc_rtc::gui::Color::Blue, mc_rtc::gui::plot::Style::Dotted)
-  );
+  // gui.addPlot("SLAM::Translation::X",
+  //   mc_rtc::gui::plot::X("t", [this]() { return t_; }),
+  //   mc_rtc::gui::plot::Y("x_f", [this]() { return X_0_Filtered_estimated_camera_.translation().x(); }, mc_rtc::gui::Color::Red),
+  //   mc_rtc::gui::plot::Y("x", [this]() { return X_0_Estimated_camera_.translation().x(); }, mc_rtc::gui::Color::Red, mc_rtc::gui::plot::Style::Dotted)
+  // );
+  // gui.addPlot("SLAM::Translation::Y",
+  //   mc_rtc::gui::plot::X("t", [this]() { return t_; }),
+  //   mc_rtc::gui::plot::Y("y_f", [this]() { return X_0_Filtered_estimated_camera_.translation().y(); }, mc_rtc::gui::Color::Green),
+  //   mc_rtc::gui::plot::Y("y", [this]() { return X_0_Estimated_camera_.translation().y(); }, mc_rtc::gui::Color::Green, mc_rtc::gui::plot::Style::Dotted)
+  // );
+  // gui.addPlot("SLAM::Translation::Z",
+  //   mc_rtc::gui::plot::X("t", [this]() { return t_; }),
+  //   mc_rtc::gui::plot::Y("z_f", [this]() { return X_0_Filtered_estimated_camera_.translation().z(); }, mc_rtc::gui::Color::Blue),
+  //   mc_rtc::gui::plot::Y("z", [this]() { return X_0_Estimated_camera_.translation().z(); }, mc_rtc::gui::Color::Blue, mc_rtc::gui::plot::Style::Dotted)
+  // );
 
-  gui.addPlot("SLAM::Rotation::R",
-    mc_rtc::gui::plot::X("t", [this]() { return t_; }),
-    mc_rtc::gui::plot::Y("r_f",
-      [this]()
-      {
-        Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Filtered_estimated_camera_.rotation());
-        return rpy.x();
-      }, mc_rtc::gui::Color::Red),
-    mc_rtc::gui::plot::Y("r",
-      [this]()
-      { Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Estimated_camera_.rotation());
-        return rpy.x();
-      }, mc_rtc::gui::Color::Red, mc_rtc::gui::plot::Style::Dotted)
-  );
-  gui.addPlot("SLAM::Rotation::P",
-    mc_rtc::gui::plot::X("t", [this]() { return t_; }),
-    mc_rtc::gui::plot::Y("p_f",
-      [this]()
-      {
-        Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Filtered_estimated_camera_.rotation());
-        return rpy.y();
-      }, mc_rtc::gui::Color::Red),
-    mc_rtc::gui::plot::Y("p",
-      [this]()
-      { Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Estimated_camera_.rotation());
-        return rpy.y();
-      }, mc_rtc::gui::Color::Red, mc_rtc::gui::plot::Style::Dotted)
-  );
-  gui.addPlot("SLAM::Rotation::Y",
-    mc_rtc::gui::plot::X("t", [this]() { return t_; }),
-    mc_rtc::gui::plot::Y("y_f",
-      [this]()
-      {
-        Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Filtered_estimated_camera_.rotation());
-        return rpy.z();
-      }, mc_rtc::gui::Color::Red),
-    mc_rtc::gui::plot::Y("y",
-      [this]()
-      { Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Estimated_camera_.rotation());
-        return rpy.z();
-      }, mc_rtc::gui::Color::Red, mc_rtc::gui::plot::Style::Dotted)
-  );
+  // gui.addPlot("SLAM::Rotation::R",
+  //   mc_rtc::gui::plot::X("t", [this]() { return t_; }),
+  //   mc_rtc::gui::plot::Y("r_f",
+  //     [this]()
+  //     {
+  //       Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Filtered_estimated_camera_.rotation());
+  //       return rpy.x();
+  //     }, mc_rtc::gui::Color::Red),
+  //   mc_rtc::gui::plot::Y("r",
+  //     [this]()
+  //     { Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Estimated_camera_.rotation());
+  //       return rpy.x();
+  //     }, mc_rtc::gui::Color::Red, mc_rtc::gui::plot::Style::Dotted)
+  // );
+  // gui.addPlot("SLAM::Rotation::P",
+  //   mc_rtc::gui::plot::X("t", [this]() { return t_; }),
+  //   mc_rtc::gui::plot::Y("p_f",
+  //     [this]()
+  //     {
+  //       Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Filtered_estimated_camera_.rotation());
+  //       return rpy.y();
+  //     }, mc_rtc::gui::Color::Red),
+  //   mc_rtc::gui::plot::Y("p",
+  //     [this]()
+  //     { Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Estimated_camera_.rotation());
+  //       return rpy.y();
+  //     }, mc_rtc::gui::Color::Red, mc_rtc::gui::plot::Style::Dotted)
+  // );
+  // gui.addPlot("SLAM::Rotation::Y",
+  //   mc_rtc::gui::plot::X("t", [this]() { return t_; }),
+  //   mc_rtc::gui::plot::Y("y_f",
+  //     [this]()
+  //     {
+  //       Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Filtered_estimated_camera_.rotation());
+  //       return rpy.z();
+  //     }, mc_rtc::gui::Color::Red),
+  //   mc_rtc::gui::plot::Y("y",
+  //     [this]()
+  //     { Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Estimated_camera_.rotation());
+  //       return rpy.z();
+  //     }, mc_rtc::gui::Color::Red, mc_rtc::gui::plot::Style::Dotted)
+  // );
 }
 
 void SLAMObserver::rosSpinner()
