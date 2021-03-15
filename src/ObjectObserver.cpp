@@ -86,7 +86,7 @@ void ObjectObserver::configure(const mc_control::MCController & ctl, const mc_rt
 
   subscriber_ = nh_->subscribe(topic_, 1, &ObjectObserver::callback, this);
 
-  desc_ = fmt::format("{} (Object: {} Topic: {}, inRobotMap: {})", name(), name_, object_, topic_, isInRobotMap_);
+  desc_ = fmt::format("{} (Object: {} Topic: {}, inRobotMap: {})", name(), object_, topic_, isInRobotMap_);
 
   thread_ = std::thread(std::bind(&ObjectObserver::rosSpinner, this));
 }
@@ -139,9 +139,9 @@ void ObjectObserver::update(mc_control::MCController & ctl)
     );
   }
 
-  if(!ctl.datastore().has(object_+"::X_0_Object_inSLAM"))
+  if(!ctl.datastore().has(object_+"::X_S_Object"))
   {
-    ctl.datastore().make_call(object_+"::X_0_Object_inSLAM",
+    ctl.datastore().make_call(object_+"::X_S_Object",
       [this]() -> const sva::PTransformd &
       {
         return robots_.robot(object_).posW();
@@ -181,6 +181,78 @@ void ObjectObserver::update(mc_control::MCController & ctl)
         sva::PTransformd X_0_object = ctl.robot(object_).posW();
         return X_0_object * X_0_camera.inv();
       }
+    );
+  }
+
+  if(!ctl.datastore().has("Object::"+object_+"::Tracking::Initialization"))
+  {
+    ctl.datastore().make_call("Object::"+object_+"::Tracking::Initialization",
+      [&ctl, this]() -> void
+      {
+        isInitialized_ = true;
+        ctl.gui()->addElement({"Object", object_},
+          mc_rtc::gui::Transform("Pose",
+            [&ctl, this] () -> sva::PTransformd
+            {
+              auto & object = ctl.robot(object_);
+              const sva::PTransformd & X_0_Object = object.posW();
+              auto & robot = ctl.robot();
+              const sva::PTransformd & X_0_Camera = robot.bodyPosW(camera_);
+              return X_0_Object * X_0_Camera.inv();
+            }
+          )
+        );
+      }
+    );
+    ctl.datastore().make_call("Object::"+object_+"::Tracking::Initialization::Start",
+      [&ctl, this]() -> void
+      {
+        isContinuousInitialized_ = true;
+        isInitialized_ = true;
+        ctl.gui()->addElement({"Object", object_},
+          mc_rtc::gui::Transform("Pose",
+            [&ctl, this] () -> sva::PTransformd
+            {
+              auto & object = ctl.robot(object_);
+              const sva::PTransformd & X_0_Object = object.posW();
+              auto & robot = ctl.robot();
+              const sva::PTransformd & X_0_Camera = robot.bodyPosW(camera_);
+              return X_0_Object * X_0_Camera.inv();
+            }
+          )
+        );
+      }
+    );
+    ctl.datastore().make_call("Object::"+object_+"::Tracking::Initialization::Stop",
+      [&ctl, this]() -> void
+      {
+        isContinuousInitialized_ = false;
+        isInitialized_ = false;
+        ctl.gui()->removeElement({"Object", object_}, "Pose");
+      }
+    );
+  }
+
+  if(isInitialized_)
+  {
+    ctl.gui()->removeElement({"Object", object_}, "Pose");
+    isInitialized_ = false;
+  }
+
+  if(isContinuousInitialized_)
+  {
+    isInitialized_ = true;
+    ctl.gui()->addElement({"Object", object_},
+      mc_rtc::gui::Transform("Pose",
+        [&ctl, this] () -> sva::PTransformd
+        {
+          auto & object = ctl.robot(object_);
+          const sva::PTransformd & X_0_Object = object.posW();
+          auto & robot = ctl.robot();
+          const sva::PTransformd & X_0_Camera = robot.bodyPosW(camera_);
+          return X_0_Object * X_0_Camera.inv();
+        }
+      )
     );
   }
 
@@ -234,7 +306,7 @@ void ObjectObserver::addToLogger(const mc_control::MCController & ctl, mc_rtc::L
 {
   logger.addLogEntry(category+"_posW", [this, &ctl]() { return ctl.realRobot(object_).posW(); });
   logger.addLogEntry(category+"_posW_in_SLAM", [this]() { return robots_.robot(object_).posW(); });
-  logger.addLogEntry(category+"_X_Camera_Object_Estimated", [this, &ctl]() { return X_Camera_EstimatedObject_; });
+  logger.addLogEntry(category+"_X_Camera_Object_Estimated", [this]() { return X_Camera_EstimatedObject_; });
   logger.addLogEntry(category+"_X_Camera_Object_Real",
     [this, &ctl]() -> const sva::PTransformd
     {
@@ -282,6 +354,14 @@ void ObjectObserver::addToGUI(const mc_control::MCController & ctl,
       }
     )
   );
+  std::vector<std::string> categoryPose = category;
+  categoryPose.push_back("Tracking System Communication");
+  gui.addElement(categoryPose,
+      mc_rtc::gui::Label("Status", [this] () -> std::string { return ( isInitialized_ ? "Enable" : "Disable"); }),
+      mc_rtc::gui::Button("Initialization", [&ctl, this] () -> void { ctl.datastore().call("Object::"+object_+"::Tracking::Initialization"); }),
+      mc_rtc::gui::Button("Start", [&ctl, this] () -> void { ctl.datastore().call("Object::"+object_+"::Tracking::Initialization::Start"); }),
+      mc_rtc::gui::Button("Stop", [&ctl, this] () -> void { ctl.datastore().call("Object::"+object_+"::Tracking::Initialization::Stop"); })
+    );
 }
 
 void ObjectObserver::callback(const geometry_msgs::PoseStamped & msg)

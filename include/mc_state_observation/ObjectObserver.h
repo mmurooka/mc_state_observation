@@ -77,5 +77,8 @@ protected:
   std::shared_ptr<ros::NodeHandle> nh_ = nullptr;
   void rosSpinner();
   std::thread thread_;
+
+  bool isContinuousInitialized_ = false;
+  bool isInitialized_ = false;
 };
 } // namespace mc_state_observation
