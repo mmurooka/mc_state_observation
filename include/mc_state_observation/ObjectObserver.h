@@ -79,6 +79,12 @@ protected:
   std::thread thread_;
 
   bool isContinuousInitialized_ = false;
+
   bool isInitialized_ = false;
+
+  bool isObjectTracked_ = false;
+
+  bool isComputation_ = false;
+
 };
 } // namespace mc_state_observation

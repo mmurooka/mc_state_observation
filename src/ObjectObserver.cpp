@@ -231,6 +231,30 @@ void ObjectObserver::update(mc_control::MCController & ctl)
         ctl.gui()->removeElement({"Object", object_}, "Pose");
       }
     );
+    ctl.datastore().make_call("Object::"+object_+"::Tracking::Yes",
+      [this]() -> void
+      {
+        isObjectTracked_ = true;
+      }
+    );
+    ctl.datastore().make_call("Object::"+object_+"::Tracking::No",
+      [this]() -> void
+      {
+        isObjectTracked_ = false;
+      }
+    );
+    ctl.datastore().make_call("Object::"+object_+"::Computation::Yes",
+      [this]() -> void
+      {
+        isComputation_ = true;
+      }
+    );
+    ctl.datastore().make_call("Object::"+object_+"::Computation::No",
+      [this]() -> void
+      {
+        isComputation_ = false;
+      }
+    );
   }
 
   if(isInitialized_)
@@ -355,12 +379,17 @@ void ObjectObserver::addToGUI(const mc_control::MCController & ctl,
     )
   );
   std::vector<std::string> categoryPose = category;
-  categoryPose.push_back("Tracking System Communication");
+  categoryPose.push_back("Tracking System Communication ("+object_+")");
   gui.addElement(categoryPose,
       mc_rtc::gui::Label("Status", [this] () -> std::string { return ( isInitialized_ ? "Enable" : "Disable"); }),
       mc_rtc::gui::Button("Initialization", [&ctl, this] () -> void { ctl.datastore().call("Object::"+object_+"::Tracking::Initialization"); }),
       mc_rtc::gui::Button("Start", [&ctl, this] () -> void { ctl.datastore().call("Object::"+object_+"::Tracking::Initialization::Start"); }),
       mc_rtc::gui::Button("Stop", [&ctl, this] () -> void { ctl.datastore().call("Object::"+object_+"::Tracking::Initialization::Stop"); })
+    );
+    gui.addElement(categoryPose,
+      mc_rtc::gui::ElementsStacking::Horizontal,
+      mc_rtc::gui::Checkbox("isTracking", [this]() { return isObjectTracked_; }, [this]() { isObjectTracked_ = !isObjectTracked_; }),
+      mc_rtc::gui::Checkbox("isComputing", [this]() { return isComputation_; }, [this]() { isComputation_ = !isComputation_; })
     );
 }
 
