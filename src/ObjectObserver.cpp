@@ -50,8 +50,9 @@ ObjectObserver::ObjectObserver(const std::string & type, double dt)
 : mc_observers::Observer(type, dt), nh_(mc_rtc::ROSBridge::get_node_handle())
 {}
 
-void ObjectObserver::configure(const mc_control::MCController & ctl, const mc_rtc::Configuration & config)
+void ObjectObserver::configure(const mc_control::MCController & controller, const mc_rtc::Configuration & config)
 {
+  mc_control::MCController & ctl = const_cast<mc_control::MCController &>(controller);
   if(config.has("Robot"))
   {
     robot_ = config("Robot")("robot", ctl.robot().name());
@@ -84,6 +85,130 @@ void ObjectObserver::configure(const mc_control::MCController & ctl, const mc_rt
     isPublished_ = config("Publish")("use", true);
   }
 
+  ctl.datastore().make_call(object_+"::Robot",
+    [this, &ctl]() -> const mc_rbdyn::Robot &
+    {
+      return ctl.realRobot(object_);
+    }
+  );
+
+  ctl.datastore().make_call(object_+"::SLAM::Robot",
+    [this]() -> const mc_rbdyn::Robot &
+    {
+      return robots_.robot(object_);
+    }
+  );
+
+  ctl.datastore().make_call(object_+"::X_0_Object",
+    [this, &ctl]() -> const sva::PTransformd &
+    {
+      return ctl.realRobot(object_).posW();
+    }
+  );
+
+  ctl.datastore().make_call(object_+"::X_S_Object",
+    [this]() -> const sva::PTransformd &
+    {
+      return robots_.robot(object_).posW();
+    }
+  );
+
+  ctl.datastore().make_call(object_+"::X_Camera_Object_Estimated",
+    [this]() -> const sva::PTransformd &
+    {
+      const std::lock_guard<std::mutex> lock(mutex_);
+      return X_Camera_EstimatedObject_;
+    }
+  );
+
+  ctl.datastore().make_call(object_+"::X_Camera_Object_Control",
+    [this, &ctl]() -> const sva::PTransformd
+    {
+      sva::PTransformd X_0_camera = ctl.robot(robot_).bodyPosW(camera_);
+      sva::PTransformd X_0_object = ctl.robot(object_).posW();
+      return X_0_object * X_0_camera.inv();
+    }
+  );
+
+  ctl.datastore().make_call(object_+"::X_Camera_Object_Real",
+    [this, &ctl]() -> const sva::PTransformd
+    {
+      sva::PTransformd X_0_camera = ctl.realRobot(robot_).bodyPosW(camera_);
+      sva::PTransformd X_0_object = ctl.robot(object_).posW();
+      return X_0_object * X_0_camera.inv();
+    }
+  );
+
+  ctl.datastore().make_call("Object::"+object_+"::Tracking::Initialization",
+    [&ctl, this]() -> void
+    {
+      isInitialized_ = true;
+      ctl.gui()->addElement({"Object", object_},
+        mc_rtc::gui::Transform("Pose",
+          [&ctl, this] () -> sva::PTransformd
+          {
+            auto & object = ctl.robot(object_);
+            const sva::PTransformd & X_0_Object = object.posW();
+            auto & robot = ctl.robot();
+            const sva::PTransformd & X_0_Camera = robot.bodyPosW(camera_);
+            return X_0_Object * X_0_Camera.inv();
+          }
+        )
+      );
+    }
+  );
+  ctl.datastore().make_call("Object::"+object_+"::Tracking::Initialization::Start",
+    [&ctl, this]() -> void
+    {
+      isContinuousInitialized_ = true;
+      isInitialized_ = true;
+      ctl.gui()->addElement({"Object", object_},
+        mc_rtc::gui::Transform("Pose",
+          [&ctl, this] () -> sva::PTransformd
+          {
+            auto & object = ctl.robot(object_);
+            const sva::PTransformd & X_0_Object = object.posW();
+            auto & robot = ctl.robot();
+            const sva::PTransformd & X_0_Camera = robot.bodyPosW(camera_);
+            return X_0_Object * X_0_Camera.inv();
+          }
+        )
+      );
+    }
+  );
+  ctl.datastore().make_call("Object::"+object_+"::Tracking::Initialization::Stop",
+    [&ctl, this]() -> void
+    {
+      isContinuousInitialized_ = false;
+      isInitialized_ = false;
+      ctl.gui()->removeElement({"Object", object_}, "Pose");
+    }
+  );
+  ctl.datastore().make_call("Object::"+object_+"::Tracking::Yes",
+    [this]() -> void
+    {
+      isObjectTracked_ = true;
+    }
+  );
+  ctl.datastore().make_call("Object::"+object_+"::Tracking::No",
+    [this]() -> void
+    {
+      isObjectTracked_ = false;
+    }
+  );
+  ctl.datastore().make_call("Object::"+object_+"::Computation::Yes",
+    [this]() -> void
+    {
+      isComputation_ = true;
+    }
+  );
+  ctl.datastore().make_call("Object::"+object_+"::Computation::No",
+    [this]() -> void
+    {
+      isComputation_ = false;
+    }
+  );
+
   subscriber_ = nh_->subscribe(topic_, 1, &ObjectObserver::callback, this);
 
   desc_ = fmt::format("{} (Object: {} Topic: {}, inRobotMap: {})", name(), object_, topic_, isInRobotMap_);
@@ -107,154 +232,6 @@ void ObjectObserver::update(mc_control::MCController & ctl)
     {
       return;
     }
-  }
-
-  if(!ctl.datastore().has(object_+"::Robot"))
-  {
-    ctl.datastore().make_call(object_+"::Robot",
-      [this, &ctl]() -> const mc_rbdyn::Robot &
-      {
-        return ctl.realRobot(object_);
-      }
-    );
-  }
-
-  if(!ctl.datastore().has(object_+"::SLAM::Robot"))
-  {
-    ctl.datastore().make_call(object_+"::SLAM::Robot",
-      [this]() -> const mc_rbdyn::Robot &
-      {
-        return robots_.robot(object_);
-      }
-    );
-  }
-
-  if(!ctl.datastore().has(object_+"::X_0_Object"))
-  {
-    ctl.datastore().make_call(object_+"::X_0_Object",
-      [this, &ctl]() -> const sva::PTransformd &
-      {
-        return ctl.realRobot(object_).posW();
-      }
-    );
-  }
-
-  if(!ctl.datastore().has(object_+"::X_S_Object"))
-  {
-    ctl.datastore().make_call(object_+"::X_S_Object",
-      [this]() -> const sva::PTransformd &
-      {
-        return robots_.robot(object_).posW();
-      }
-    );
-  }
-
-  if(!ctl.datastore().has(object_+"::X_Camera_Object_Estimated"))
-  {
-    ctl.datastore().make_call(object_+"::X_Camera_Object_Estimated",
-      [this]() -> const sva::PTransformd &
-      {
-        const std::lock_guard<std::mutex> lock(mutex_);
-        return X_Camera_EstimatedObject_;
-      }
-    );
-  }
-
-  if(!ctl.datastore().has(object_+"::X_Camera_Object_Control"))
-  {
-    ctl.datastore().make_call(object_+"::X_Camera_Object_Control",
-      [this, &ctl]() -> const sva::PTransformd
-      {
-        sva::PTransformd X_0_camera = ctl.robot(robot_).bodyPosW(camera_);
-        sva::PTransformd X_0_object = ctl.robot(object_).posW();
-        return X_0_object * X_0_camera.inv();
-      }
-    );
-  }
-
-  if(!ctl.datastore().has(object_+"::X_Camera_Object_Real"))
-  {
-    ctl.datastore().make_call(object_+"::X_Camera_Object_Real",
-      [this, &ctl]() -> const sva::PTransformd
-      {
-        sva::PTransformd X_0_camera = ctl.realRobot(robot_).bodyPosW(camera_);
-        sva::PTransformd X_0_object = ctl.robot(object_).posW();
-        return X_0_object * X_0_camera.inv();
-      }
-    );
-  }
-
-  if(!ctl.datastore().has("Object::"+object_+"::Tracking::Initialization"))
-  {
-    ctl.datastore().make_call("Object::"+object_+"::Tracking::Initialization",
-      [&ctl, this]() -> void
-      {
-        isInitialized_ = true;
-        ctl.gui()->addElement({"Object", object_},
-          mc_rtc::gui::Transform("Pose",
-            [&ctl, this] () -> sva::PTransformd
-            {
-              auto & object = ctl.robot(object_);
-              const sva::PTransformd & X_0_Object = object.posW();
-              auto & robot = ctl.robot();
-              const sva::PTransformd & X_0_Camera = robot.bodyPosW(camera_);
-              return X_0_Object * X_0_Camera.inv();
-            }
-          )
-        );
-      }
-    );
-    ctl.datastore().make_call("Object::"+object_+"::Tracking::Initialization::Start",
-      [&ctl, this]() -> void
-      {
-        isContinuousInitialized_ = true;
-        isInitialized_ = true;
-        ctl.gui()->addElement({"Object", object_},
-          mc_rtc::gui::Transform("Pose",
-            [&ctl, this] () -> sva::PTransformd
-            {
-              auto & object = ctl.robot(object_);
-              const sva::PTransformd & X_0_Object = object.posW();
-              auto & robot = ctl.robot();
-              const sva::PTransformd & X_0_Camera = robot.bodyPosW(camera_);
-              return X_0_Object * X_0_Camera.inv();
-            }
-          )
-        );
-      }
-    );
-    ctl.datastore().make_call("Object::"+object_+"::Tracking::Initialization::Stop",
-      [&ctl, this]() -> void
-      {
-        isContinuousInitialized_ = false;
-        isInitialized_ = false;
-        ctl.gui()->removeElement({"Object", object_}, "Pose");
-      }
-    );
-    ctl.datastore().make_call("Object::"+object_+"::Tracking::Yes",
-      [this]() -> void
-      {
-        isObjectTracked_ = true;
-      }
-    );
-    ctl.datastore().make_call("Object::"+object_+"::Tracking::No",
-      [this]() -> void
-      {
-        isObjectTracked_ = false;
-      }
-    );
-    ctl.datastore().make_call("Object::"+object_+"::Computation::Yes",
-      [this]() -> void
-      {
-        isComputation_ = true;
-      }
-    );
-    ctl.datastore().make_call("Object::"+object_+"::Computation::No",
-      [this]() -> void
-      {
-        isComputation_ = false;
-      }
-    );
   }
 
   if(isInitialized_)
