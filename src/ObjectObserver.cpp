@@ -8,40 +8,6 @@
 #include <SpaceVecAlg/Conversions.h>
 #include <SpaceVecAlg/SpaceVecAlg>
 #include <tf2_eigen/tf2_eigen.h>
-#include <random>
-
-namespace
-{
-
-template <typename Derived>
-Derived generate(const Derived& lower, const Derived& upper)
-{
-  assert(lower.size() == upper.size());
-
-  std::random_device rd;  //Will be used to obtain a seed for the random number engine
-  std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-
-  Derived noise = Derived::Zero();
-  for(int i=0; i<lower.size(); i++)
-  {
-    std::uniform_real_distribution<> dis(lower[i], upper[i]);
-    noise(i) = dis(gen);
-  }
-  return noise;
-}
-
-sva::PTransformd apply(const sva::PTransformd& X, const Eigen::Vector3d& min_ori, const Eigen::Vector3d &max_ori, const Eigen::Vector3d& min_t, const Eigen::Vector3d& max_t)
-{
-  const Eigen::Vector3d& noise_t = generate(min_t, max_t);
-  const Eigen::Vector3d& noise_ori = generate(min_ori, max_ori);
-  const Eigen::Matrix3d& noise_R = mc_rbdyn::rpyToMat(noise_ori.x(), noise_ori.y(), noise_ori.z());
-
-  Eigen::Vector3d t_noisy = X.translation() + noise_t;
-  Eigen::Matrix3d R_noisy = (X.rotation() * noise_R).eval();
-  return sva::PTransformd(R_noisy, t_noisy);
-}
-
-}
 
 namespace mc_state_observation
 {
@@ -139,75 +105,7 @@ void ObjectObserver::configure(const mc_control::MCController & controller, cons
     }
   );
 
-  ctl.datastore().make_call("Object::"+object_+"::Tracking::Initialization",
-    [&ctl, this]() -> void
-    {
-      isInitialized_ = true;
-      ctl.gui()->addElement({"Object", object_},
-        mc_rtc::gui::Transform("Pose",
-          [&ctl, this] () -> sva::PTransformd
-          {
-            auto & object = ctl.robot(object_);
-            const sva::PTransformd & X_0_Object = object.posW();
-            auto & robot = ctl.robot();
-            const sva::PTransformd & X_0_Camera = robot.bodyPosW(camera_);
-            return X_0_Object * X_0_Camera.inv();
-          }
-        )
-      );
-    }
-  );
-  ctl.datastore().make_call("Object::"+object_+"::Tracking::Initialization::Start",
-    [&ctl, this]() -> void
-    {
-      isContinuousInitialized_ = true;
-      isInitialized_ = true;
-      ctl.gui()->addElement({"Object", object_},
-        mc_rtc::gui::Transform("Pose",
-          [&ctl, this] () -> sva::PTransformd
-          {
-            auto & object = ctl.robot(object_);
-            const sva::PTransformd & X_0_Object = object.posW();
-            auto & robot = ctl.robot();
-            const sva::PTransformd & X_0_Camera = robot.bodyPosW(camera_);
-            return X_0_Object * X_0_Camera.inv();
-          }
-        )
-      );
-    }
-  );
-  ctl.datastore().make_call("Object::"+object_+"::Tracking::Initialization::Stop",
-    [&ctl, this]() -> void
-    {
-      isContinuousInitialized_ = false;
-      isInitialized_ = false;
-      ctl.gui()->removeElement({"Object", object_}, "Pose");
-    }
-  );
-  ctl.datastore().make_call("Object::"+object_+"::Tracking::Yes",
-    [this]() -> void
-    {
-      isObjectTracked_ = true;
-    }
-  );
-  ctl.datastore().make_call("Object::"+object_+"::Tracking::No",
-    [this]() -> void
-    {
-      isObjectTracked_ = false;
-    }
-  );
-  ctl.datastore().make_call("Object::"+object_+"::Computation::Yes",
-    [this]() -> void
-    {
-      isComputation_ = true;
-    }
-  );
-  ctl.datastore().make_call("Object::"+object_+"::Computation::No",
-    [this]() -> void
-    {
-      isComputation_ = false;
-    }
-  );
+  ctl.datastore().make<bool>("Object::"+object_+"::IsValid", false);
 
   subscriber_ = nh_->subscribe(topic_, 1, &ObjectObserver::callback, this);
 
@@ -228,34 +126,13 @@ void ObjectObserver::update(mc_control::MCController & ctl)
 {
   {
     const std::lock_guard<std::mutex> lock(mutex_);
+    ctl.datastore().assign<bool>("Object::"+object_+"::IsValid", isEstimatedPoseValid_);
     if(!isNewEstimatedPose_)
     {
       return;
     }
   }
 
-  if(isInitialized_)
-  {
-    ctl.gui()->removeElement({"Object", object_}, "Pose");
-    isInitialized_ = false;
-  }
-
-  if(isContinuousInitialized_)
-  {
-    isInitialized_ = true;
-    ctl.gui()->addElement({"Object", object_},
-      mc_rtc::gui::Transform("Pose",
-        [&ctl, this] () -> sva::PTransformd
-        {
-          auto & object = ctl.robot(object_);
-          const sva::PTransformd & X_0_Object = object.posW();
-          auto & robot = ctl.robot();
-          const sva::PTransformd & X_0_Camera = robot.bodyPosW(camera_);
-          return X_0_Object * X_0_Camera.inv();
-        }
-      )
-    );
-  }
 
   const auto & real_robot = ctl.realRobot(robot_);
   const sva::PTransformd X_0_Camera = real_robot.bodyPosW(camera_);
@@ -355,34 +232,33 @@ void ObjectObserver::addToGUI(const mc_control::MCController & ctl,
       }
     )
   );
-  std::vector<std::string> categoryPose = category;
-  categoryPose.push_back("Tracking System Communication ("+object_+")");
-  gui.addElement(categoryPose,
-      mc_rtc::gui::Label("Status", [this] () -> std::string { return ( isInitialized_ ? "Enable" : "Disable"); }),
-      mc_rtc::gui::Button("Initialization", [&ctl, this] () -> void { ctl.datastore().call("Object::"+object_+"::Tracking::Initialization"); }),
-      mc_rtc::gui::Button("Start", [&ctl, this] () -> void { ctl.datastore().call("Object::"+object_+"::Tracking::Initialization::Start"); }),
-      mc_rtc::gui::Button("Stop", [&ctl, this] () -> void { ctl.datastore().call("Object::"+object_+"::Tracking::Initialization::Stop"); })
-    );
-    gui.addElement(categoryPose,
-      mc_rtc::gui::ElementsStacking::Horizontal,
-      mc_rtc::gui::Checkbox("isTracking", [this]() { return isObjectTracked_; }, [this]() { isObjectTracked_ = !isObjectTracked_; }),
-      mc_rtc::gui::Checkbox("isComputing", [this]() { return isComputation_; }, [this]() { isComputation_ = !isComputation_; })
-    );
 }
 
 void ObjectObserver::callback(const geometry_msgs::PoseStamped & msg)
 {
   Eigen::Affine3d affine;
   tf2::fromMsg(msg.pose, affine);
+  const sva::PTransformd newX_Camera_EstimatedObject = sva::conversions::fromHomogeneous(affine.matrix());
+  const sva::MotionVecd error = sva::transformError(newX_Camera_EstimatedObject, X_Camera_EstimatedObject_);
   const std::lock_guard<std::mutex> lock(mutex_);
-  X_Camera_EstimatedObject_ = sva::conversions::fromHomogeneous(affine.matrix());
-  isNewEstimatedPose_ = true;
+  if(isNotFirstTimeInCallback_ || error.vector().norm() < 0.5)
+  {
+    X_Camera_EstimatedObject_ = newX_Camera_EstimatedObject;
+    isNewEstimatedPose_ = true;
+    isEstimatedPoseValid_ = true;
+  }
+  else
+  {
+    isEstimatedPoseValid_ = false;
+  }
+
+  isNotFirstTimeInCallback_ = true;
 }
 
 void ObjectObserver::rosSpinner()
 {
   mc_rtc::log::info("[{}] rosSpinner started", name());
-  ros::Rate rate(30);
+  ros::Rate rate(200);
   while (ros::ok())
   {
     ros::spinOnce();

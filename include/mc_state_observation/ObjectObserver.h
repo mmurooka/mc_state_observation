@@ -78,13 +78,8 @@ protected:
   void rosSpinner();
   std::thread thread_;
 
-  bool isContinuousInitialized_ = false;
+  bool isEstimatedPoseValid_ = false;
 
-  bool isInitialized_ = false;
-
-  bool isObjectTracked_ = false;
-
-  bool isComputation_ = false;
-
+  bool isNotFirstTimeInCallback_ = false;
 };
 } // namespace mc_state_observation
