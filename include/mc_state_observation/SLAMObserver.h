@@ -59,9 +59,9 @@ protected:
   std::string map_ = ""; ///< Name of map TF in ROS
   std::string estimated_ = ""; ///< Name of estimated camera TF in ROS
   bool isInitialized_ = false; ///< Check if the observer is initialized or not
-  sva::PTransformd X_Slam_Estimated_Camera_; ///< Transformation to go from SLAM world to estimated camera
-  sva::PTransformd X_0_Slam_; ///< Transformation to go from  Robot world to SLAM world
-  sva::PTransformd X_0_Estimated_camera_; ///< Camera pose in Robot world estimated by SLAM
+  sva::PTransformd X_Slam_Estimated_Camera_ = sva::PTransformd::Identity(); ///< Transformation to go from SLAM world to estimated camera
+  sva::PTransformd X_0_Slam_ = sva::PTransformd::Identity(); ///< Transformation to go from  Robot world to SLAM world
+  sva::PTransformd X_0_Estimated_camera_ = sva::PTransformd::Identity(); ///< Camera pose in Robot world estimated by SLAM
   bool isSLAMAlive_ = false; ///< Check if slam is alive or not
   /// @}
   std::shared_ptr<ros::NodeHandle> nh_ = nullptr;
