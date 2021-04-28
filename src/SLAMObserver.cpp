@@ -73,6 +73,10 @@ void SLAMObserver::configure(const mc_control::MCController & ctl, const mc_rtc:
   {
     map_ = static_cast<std::string>(config("SLAM")("map"));
     estimated_ = static_cast<std::string>(config("SLAM")("estimated"));
+    if(config("SLAM").has("ground"))
+    {
+      ground_ = static_cast<std::string>(config("SLAM")("ground"));
+    }
   }
   else
   {
@@ -139,11 +143,11 @@ bool SLAMObserver::run(const mc_control::MCController & ctl)
 
   t_ += ctl.solver().dt();
 
-  auto getTransformStamped = [this](const std::string & origin, geometry_msgs::TransformStamped & transformStamped) -> bool
+  auto getTransformStamped = [this](const std::string & origin, const std::string & to, geometry_msgs::TransformStamped & transformStamped) -> bool
   {
     try
     {
-      transformStamped = tfBuffer_.lookupTransform(origin, estimated_, ros::Time(0));
+      transformStamped = tfBuffer_.lookupTransform(origin, to, ros::Time(0));
     }
     catch(tf2::TransformException & ex)
     {
@@ -161,7 +165,7 @@ bool SLAMObserver::run(const mc_control::MCController & ctl)
     {
       origin = "robot_map";
     }
-    if(!getTransformStamped(origin, transformStamped))
+    if(!getTransformStamped(origin, estimated_, transformStamped))
     {
       error_ = fmt::format("[{}] Could not get transform from {} to {}", name(), origin, estimated_);
       isSLAMAlive_ = false;
@@ -194,12 +198,20 @@ bool SLAMObserver::run(const mc_control::MCController & ctl)
     }
     else
     {
-      if(!getTransformStamped("robot_map", transformStamped))
+      if(!getTransformStamped("robot_map", estimated_, transformStamped))
       {
-        error_ = fmt::format("[{}] Could not get transform from \"robot_map\" to \"{}\"", name(), estimated_);
+        error_ = fmt::format("[{}] Could not get transform from \"{}\" to \"{}\"", name(), "robot_map", estimated_);
         return false;
       }
       X_0_Estimated_camera_ = sva::conversions::fromHomogeneous(tf2::transformToEigen(transformStamped).matrix());
+      if(!getTransformStamped("robot_map", ground_, transformStamped))
+      {
+        error_ = fmt::format("[{}] Could not get transform from \"{}\" to \"{}\"", name(), "robot_map", ground_);
+      }
+      else
+      {
+        X_Slam_Ground_ = sva::conversions::fromHomogeneous(tf2::transformToEigen(transformStamped).matrix());
+      }
     }
     return true;
   }
@@ -233,6 +245,16 @@ void SLAMObserver::update(mc_control::MCController & ctl)
       [this]() -> bool
       {
         return isSLAMAlive_;
+      }
+    );
+  }
+
+  if(!ctl.datastore().has("SLAM::X_S_Ground"))
+  {
+     ctl.datastore().make_call("SLAM::X_S_Ground",
+      [this]() -> const sva::PTransformd &
+      {
+        return X_Slam_Ground_;
       }
     );
   }
@@ -299,6 +321,7 @@ void SLAMObserver::addToGUI(const mc_control::MCController & ctl,
   using namespace mc_rtc::gui;
 
   gui.addElement(category,
+    Transform("X_S_Ground", [this](){ return X_Slam_Ground_; }),
     Button("Initialize",
       [this, &ctl]()
       {
