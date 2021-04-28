@@ -63,6 +63,7 @@ Robot:
     camera: camera_link             # Body name of the camera of the robot name 0
   robot_name_n:                     # Must be a name of a valid robot
     camera: camera_link             # Body name of the camera of the robot name 1
+  ground: ground                    # Ground frame to have a ground pose in SLAM map
 SLAM:
   map: map                          # ROS TF name of SLAM map
   estimated: camera_link            # ROS TF name of estimated camera

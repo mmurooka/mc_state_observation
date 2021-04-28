@@ -64,6 +64,12 @@ protected:
   sva::PTransformd X_0_Estimated_camera_ = sva::PTransformd::Identity(); ///< Camera pose in Robot world estimated by SLAM
   bool isSLAMAlive_ = false; ///< Check if slam is alive or not
   /// @}
+
+  /// @{
+  std::string ground_ = "";
+  sva::PTransformd X_Slam_Ground_ = sva::PTransformd::Identity(); ///< Ground frame in map frame
+  /// @}
+
   std::shared_ptr<ros::NodeHandle> nh_ = nullptr;
   void rosSpinner();
   std::thread thread_;
