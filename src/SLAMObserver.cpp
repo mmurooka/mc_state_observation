@@ -360,7 +360,7 @@ void SLAMObserver::addToGUI(const mc_control::MCController & ctl,
         }
       }),
     Label("Apply filter:", [this](){ return (isFiltered_ ? "yes" : "no"); }),
-    ArrayInput("Filter config", {"m", "n", "d"},
+    ArrayInput("Filter config", {"m", "d", "n"},
       [this]()
       {
         return Eigen::Vector3d(filter_->config().m, filter_->config().s, filter_->config().n);
