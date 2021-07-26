@@ -215,7 +215,6 @@ bool SLAMObserver::run(const mc_control::MCController & ctl)
     }
     return true;
   }
-  t_ += ctl.solver().dt();
 }
 
 void SLAMObserver::update(mc_control::MCController & ctl)
