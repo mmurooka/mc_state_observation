@@ -133,7 +133,6 @@ void ObjectObserver::update(mc_control::MCController & ctl)
     }
   }
 
-
   const auto & real_robot = ctl.realRobot(robot_);
   const sva::PTransformd X_0_Camera = real_robot.bodyPosW(camera_);
   sva::PTransformd X_Camera_EstimatedObject;

@@ -39,6 +39,7 @@ protected:
    * @param category Category in which this observer entries are logged
    */
   void removeFromLogger(mc_rtc::Logger &, const std::string & category) override;
+
   /*! \brief Add observer information the GUI.
    *
    * @param category Category in which to add this observer
@@ -60,7 +61,7 @@ protected:
   std::string estimated_ = ""; ///< Name of estimated camera TF in ROS
   bool isInitialized_ = false; ///< Check if the observer is initialized or not
   sva::PTransformd X_Slam_Estimated_Camera_ = sva::PTransformd::Identity(); ///< Transformation to go from SLAM world to estimated camera
-  sva::PTransformd X_0_Slam_ = sva::PTransformd::Identity(); ///< Transformation to go from  Robot world to SLAM world
+  sva::PTransformd X_0_Slam_ = sva::PTransformd::Identity(); ///< Transformation to go from Robot world to SLAM world
   sva::PTransformd X_0_Estimated_camera_ = sva::PTransformd::Identity(); ///< Camera pose in Robot world estimated by SLAM
   bool isSLAMAlive_ = false; ///< Check if slam is alive or not
   /// @}
@@ -76,7 +77,6 @@ protected:
   tf2_ros::Buffer tfBuffer_;
   tf2_ros::TransformListener tfListener_{tfBuffer_};
   tf2_ros::TransformBroadcaster tfBroadcaster_;
-
 
   /// @{
   bool isFiltered_ = false; ///< Check if a filter is apply or not

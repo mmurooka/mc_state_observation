@@ -39,6 +39,7 @@ protected:
    * @param category Category in which this observer entries are logged
    */
   void removeFromLogger(mc_rtc::Logger &, const std::string & category) override;
+
   /*! \brief Add observer information the GUI.
    *
    * @param category Category in which to add this observer

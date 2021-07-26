@@ -54,6 +54,7 @@ ObserverPipelines:
 ### SLAMObserver (Experimental)
 
 Estimation of the robot thanks to the estimated camera from a SLAM.
+
 Configuration options (default value for `Filter`, `Publish` and `Simulation`):
 
 ```yaml
@@ -166,7 +167,7 @@ const auto & X_Camera_Object = datastore().call<const sva::PTransformd &>(name_+
 
 ## Dependencies
 
-- [gram_savitzky_golay] https://github.com/arntanguy/gram_savitzky_golay
+- [gram_savitzky_golay](https://github.com/arntanguy/gram_savitzky_golay)
 - [state-observation](https://github.com/jrl-umi3218/state-observation) > 1.3.3
 - [mc_rtc](https://github.com/jrl-umi3218/mc_rtc)
 - Eigen3
