@@ -89,9 +89,9 @@ void SLAMObserver::configure(const mc_control::MCController & ctl, const mc_rtc:
   if(config.has("Filter"))
   {
     isFiltered_ = config("Filter")("use", true);
-    m = config("Filter")("m", 150);
-    d = config("Filter")("d", 0);
-    n = config("Filter")("n", 5);
+    m = config("Filter")("m", static_cast<int>(m));
+    d = config("Filter")("d", static_cast<int>(d));
+    n = config("Filter")("n", static_cast<int>(n));
   }
 
   auto sg_conf = gram_sg::SavitzkyGolayFilterConfig(m, m, n, d);
