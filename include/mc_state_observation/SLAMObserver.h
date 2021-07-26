@@ -81,7 +81,7 @@ protected:
   /// @{
   bool isFiltered_ = false; ///< Check if a filter is apply or not
   std::unique_ptr<filter::Transform> filter_; ///< Filter based on savitzky-golay
-  sva::PTransformd X_0_Filtered_estimated_camera_; ///< Estimated camera pose in robot_map
+  sva::PTransformd X_0_Filtered_estimated_camera_ = sva::PTransformd::Identity(); ///< Estimated camera pose in robot_map
   /// @}
 
   /// @{
