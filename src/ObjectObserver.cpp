@@ -109,7 +109,7 @@ void ObjectObserver::configure(const mc_control::MCController & controller, cons
 
   subscriber_ = nh_->subscribe(topic_, 1, &ObjectObserver::callback, this);
 
-  desc_ = fmt::format("{} (Object: {} Topic: {}, inRobotMap: {})", name(), object_, topic_, isInRobotMap_);
+  desc_ = fmt::format("{} (Object: {}, Topic: {}, inRobotMap: {})", name(), object_, topic_, isInRobotMap_);
 
   thread_ = std::thread(std::bind(&ObjectObserver::rosSpinner, this));
 }

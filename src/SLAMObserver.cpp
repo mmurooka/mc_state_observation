@@ -129,7 +129,7 @@ void SLAMObserver::configure(const mc_control::MCController & ctl, const mc_rtc:
     }
   }
 
-  desc_ = fmt::format("{} (Camera: {} Estimated: {}, inSimulation: {})", name(), camera_, estimated_, isSimulated_);
+  desc_ = fmt::format("{} (Camera: {}, Estimated: {}, inSimulation: {})", name(), camera_, estimated_, isSimulated_);
 
   thread_ = std::thread(std::bind(&SLAMObserver::rosSpinner, this));
 }
