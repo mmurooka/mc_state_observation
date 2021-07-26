@@ -188,7 +188,7 @@ void ObjectObserver::addToLogger(const mc_control::MCController & ctl, mc_rtc::L
     [this, &ctl]() -> const sva::PTransformd
     {
       sva::PTransformd X_0_camera = ctl.realRobot(robot_).bodyPosW(camera_);
-      sva::PTransformd X_0_object = ctl.robot(object_).posW();
+      sva::PTransformd X_0_object = ctl.realRobot(object_).posW();
       return X_0_object * X_0_camera.inv();
     }
   );
