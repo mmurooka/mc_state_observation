@@ -1,29 +1,29 @@
-#include <mc_observers/ObserverMacros.h>
 #include <mc_control/MCController.h>
-#include <Eigen/src/Geometry/Quaternion.h>
-#include <mc_state_observation/SLAMObserver.h>
-#include <mc_state_observation/gui_helpers.h>
+#include <mc_observers/ObserverMacros.h>
+#include <mc_rtc/constants.h>
 #include <mc_rtc/ros.h>
 #include <mc_rtc/version.h>
-#include <mc_rtc/constants.h>
 #include <SpaceVecAlg/Conversions.h>
 #include <SpaceVecAlg/SpaceVecAlg>
 #include <tf2_eigen/tf2_eigen.h>
+#include <Eigen/src/Geometry/Quaternion.h>
+#include <mc_state_observation/SLAMObserver.h>
+#include <mc_state_observation/gui_helpers.h>
 #include <random>
 
 namespace
 {
 
-template <typename Derived>
-Derived generate(const Derived& lower, const Derived& upper)
+template<typename Derived>
+Derived generate(const Derived & lower, const Derived & upper)
 {
   assert(lower.size() == upper.size());
 
-  std::random_device rd;  //Will be used to obtain a seed for the random number engine
-  std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+  std::random_device rd; // Will be used to obtain a seed for the random number engine
+  std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
 
   Derived noise = Derived::Zero();
-  for(int i=0; i<lower.size(); i++)
+  for(int i = 0; i < lower.size(); i++)
   {
     std::uniform_real_distribution<> dis(lower[i], upper[i]);
     noise(i) = dis(gen);
@@ -31,25 +31,30 @@ Derived generate(const Derived& lower, const Derived& upper)
   return noise;
 }
 
-sva::PTransformd apply(const sva::PTransformd& X, const Eigen::Vector3d& min_ori, const Eigen::Vector3d &max_ori, const Eigen::Vector3d& min_t, const Eigen::Vector3d& max_t)
+sva::PTransformd apply(const sva::PTransformd & X,
+                       const Eigen::Vector3d & min_ori,
+                       const Eigen::Vector3d & max_ori,
+                       const Eigen::Vector3d & min_t,
+                       const Eigen::Vector3d & max_t)
 {
-  const Eigen::Vector3d& noise_t = generate(min_t, max_t);
-  const Eigen::Vector3d& noise_ori = generate(min_ori, max_ori);
-  const Eigen::Matrix3d& noise_R = mc_rbdyn::rpyToMat(noise_ori.x(), noise_ori.y(), noise_ori.z());
+  const Eigen::Vector3d & noise_t = generate(min_t, max_t);
+  const Eigen::Vector3d & noise_ori = generate(min_ori, max_ori);
+  const Eigen::Matrix3d & noise_R = mc_rbdyn::rpyToMat(noise_ori.x(), noise_ori.y(), noise_ori.z());
 
   Eigen::Vector3d t_noisy = X.translation() + noise_t;
   Eigen::Matrix3d R_noisy = (X.rotation() * noise_R).eval();
   return sva::PTransformd(R_noisy, t_noisy);
 }
 
-}
+} // namespace
 
 namespace mc_state_observation
 {
 
 SLAMObserver::SLAMObserver(const std::string & type, double dt)
 : mc_observers::Observer(type, dt), nh_(mc_rtc::ROSBridge::get_node_handle())
-{}
+{
+}
 
 void SLAMObserver::configure(const mc_control::MCController & ctl, const mc_rtc::Configuration & config)
 {
@@ -108,7 +113,7 @@ void SLAMObserver::configure(const mc_control::MCController & ctl, const mc_rtc:
     if(isSimulated_ && config("Simulation").has("noise"))
     {
       auto noise = config("Simulation")("noise");
-      isUsingNoise_ =  noise("use", false);
+      isUsingNoise_ = noise("use", false);
       if(noise.has("translation"))
       {
         minTranslationNoise_ = noise("translation")("min", Eigen::Vector3d(-0.05, -0.05, -0.05));
@@ -124,7 +129,7 @@ void SLAMObserver::configure(const mc_control::MCController & ctl, const mc_rtc:
     }
     if(isSimulated_)
     {
-      estimated_ = "real/"+camera_;
+      estimated_ = "real/" + camera_;
       mc_rtc::log::info("[{}] Simulation mode is active so SLAM estimated link is set to {}", name(), estimated_);
     }
   }
@@ -134,8 +139,7 @@ void SLAMObserver::configure(const mc_control::MCController & ctl, const mc_rtc:
   thread_ = std::thread(std::bind(&SLAMObserver::rosSpinner, this));
 }
 
-void SLAMObserver::reset(const mc_control::MCController &)
-{}
+void SLAMObserver::reset(const mc_control::MCController &) {}
 
 bool SLAMObserver::run(const mc_control::MCController & ctl)
 {
@@ -143,8 +147,8 @@ bool SLAMObserver::run(const mc_control::MCController & ctl)
 
   t_ += ctl.solver().dt();
 
-  auto getTransformStamped = [this](const std::string & origin, const std::string & to, geometry_msgs::TransformStamped & transformStamped) -> bool
-  {
+  auto getTransformStamped = [this](const std::string & origin, const std::string & to,
+                                    geometry_msgs::TransformStamped & transformStamped) -> bool {
     try
     {
       transformStamped = tfBuffer_.lookupTransform(origin, to, ros::Time(0));
@@ -189,11 +193,12 @@ bool SLAMObserver::run(const mc_control::MCController & ctl)
       const auto & real_robot = ctl.realRobot();
       const sva::PTransformd X_0_FF = real_robot.bodyPosW(body_);
       const sva::PTransformd X_0_Camera = real_robot.bodyPosW(camera_);
-      const sva::PTransformd X_Camera_Freeflyer =  X_0_FF * X_0_Camera.inv();
+      const sva::PTransformd X_Camera_Freeflyer = X_0_FF * X_0_Camera.inv();
       X_0_Estimated_camera_ = X_Camera_Freeflyer.inv() * X_0_FFsensor;
       if(isUsingNoise_)
       {
-        X_0_Estimated_camera_ = apply(X_0_Estimated_camera_, minOrientationNoise_, maxOrientationNoise_, minTranslationNoise_, maxTranslationNoise_);
+        X_0_Estimated_camera_ = apply(X_0_Estimated_camera_, minOrientationNoise_, maxOrientationNoise_,
+                                      minTranslationNoise_, maxTranslationNoise_);
       }
     }
     else
@@ -230,32 +235,17 @@ void SLAMObserver::update(mc_control::MCController & ctl)
 
   if(!ctl.datastore().has("SLAM::Robot"))
   {
-    ctl.datastore().make_call("SLAM::Robot",
-      [this]() -> const mc_rbdyn::Robot &
-      {
-        return robots_.robot();
-      }
-    );
+    ctl.datastore().make_call("SLAM::Robot", [this]() -> const mc_rbdyn::Robot & { return robots_.robot(); });
   }
 
   if(!ctl.datastore().has("SLAM::isAlive"))
   {
-     ctl.datastore().make_call("SLAM::isAlive",
-      [this]() -> bool
-      {
-        return isSLAMAlive_;
-      }
-    );
+    ctl.datastore().make_call("SLAM::isAlive", [this]() -> bool { return isSLAMAlive_; });
   }
 
   if(!ctl.datastore().has("SLAM::X_S_Ground"))
   {
-     ctl.datastore().make_call("SLAM::X_S_Ground",
-      [this]() -> const sva::PTransformd &
-      {
-        return X_Slam_Ground_;
-      }
-    );
+    ctl.datastore().make_call("SLAM::X_S_Ground", [this]() -> const sva::PTransformd & { return X_Slam_Ground_; });
   }
 
   isSLAMAlive_ = true;
@@ -265,7 +255,7 @@ void SLAMObserver::update(mc_control::MCController & ctl)
   SLAM_robot.mbc().q = real_robot.mbc().q;
   const sva::PTransformd X_0_FF = real_robot.bodyPosW(body_);
   const sva::PTransformd X_0_Camera = real_robot.bodyPosW(camera_);
-  const sva::PTransformd X_Camera_Freeflyer =  X_0_FF * X_0_Camera.inv();
+  const sva::PTransformd X_Camera_Freeflyer = X_0_FF * X_0_Camera.inv();
 
   sva::PTransformd X_0_Estimated_Freeflyer = X_Camera_Freeflyer * X_0_Estimated_camera_;
   if(isFiltered_)
@@ -289,189 +279,187 @@ void SLAMObserver::update(mc_control::MCController & ctl)
 
 void SLAMObserver::addToLogger(const mc_control::MCController &, mc_rtc::Logger & logger, const std::string & category)
 {
-  logger.addLogEntry(category+"_LeftFoot", [this]() { return (robots_.size() == 1 ? robots_.robot().surfacePose("LeftFoot") : sva::PTransformd::Identity()); });
-  logger.addLogEntry(category+"_LeftFootCenter", [this]() { return (robots_.size() == 1 ? robots_.robot().surfacePose("LeftFootCenter") : sva::PTransformd::Identity()); });
-  logger.addLogEntry(category+"_RightFoot", [this]() { return (robots_.size() == 1 ? robots_.robot().surfacePose("RightFoot") : sva::PTransformd::Identity()); });
-  logger.addLogEntry(category+"_RightFootCenter", [this]() { return (robots_.size() == 1 ? robots_.robot().surfacePose("RightFootCenter") : sva::PTransformd::Identity()); });
-  logger.addLogEntry(category+"_com", [this]() { return (robots_.size() == 1 ? robots_.robot().com() : sva::PTransformd::Identity()); });
-  logger.addLogEntry(category+"_comd", [this]() { return (robots_.size() == 1 ? robots_.robot().comVelocity() : sva::PTransformd::Identity()); });
-  logger.addLogEntry(category+"_posW", [this]() { return (robots_.size() == 1 ? robots_.robot().posW() : sva::PTransformd::Identity()); });
-  logger.addLogEntry(category+"_camera", [this]() { return X_0_Estimated_camera_; });
-  logger.addLogEntry(category+"_cameraFiltered", [this]() { return X_0_Filtered_estimated_camera_; });
+  logger.addLogEntry(category + "_LeftFoot", [this]() {
+    return (robots_.size() == 1 ? robots_.robot().surfacePose("LeftFoot") : sva::PTransformd::Identity());
+  });
+  logger.addLogEntry(category + "_LeftFootCenter", [this]() {
+    return (robots_.size() == 1 ? robots_.robot().surfacePose("LeftFootCenter") : sva::PTransformd::Identity());
+  });
+  logger.addLogEntry(category + "_RightFoot", [this]() {
+    return (robots_.size() == 1 ? robots_.robot().surfacePose("RightFoot") : sva::PTransformd::Identity());
+  });
+  logger.addLogEntry(category + "_RightFootCenter", [this]() {
+    return (robots_.size() == 1 ? robots_.robot().surfacePose("RightFootCenter") : sva::PTransformd::Identity());
+  });
+  logger.addLogEntry(category + "_com",
+                     [this]() { return (robots_.size() == 1 ? robots_.robot().com() : sva::PTransformd::Identity()); });
+  logger.addLogEntry(category + "_comd", [this]() {
+    return (robots_.size() == 1 ? robots_.robot().comVelocity() : sva::PTransformd::Identity());
+  });
+  logger.addLogEntry(category + "_posW", [this]() {
+    return (robots_.size() == 1 ? robots_.robot().posW() : sva::PTransformd::Identity());
+  });
+  logger.addLogEntry(category + "_camera", [this]() { return X_0_Estimated_camera_; });
+  logger.addLogEntry(category + "_cameraFiltered", [this]() { return X_0_Filtered_estimated_camera_; });
 }
 
 void SLAMObserver::removeFromLogger(mc_rtc::Logger & logger, const std::string & category)
 {
-  logger.removeLogEntry(category+"_LeftFoot");
-  logger.removeLogEntry(category+"_LeftFootCenter");
-  logger.removeLogEntry(category+"_RightFoot");
-  logger.removeLogEntry(category+"_RightFootCenter");
-  logger.removeLogEntry(category+"_com");
-  logger.removeLogEntry(category+"_comd");
-  logger.removeLogEntry(category+"_posW");
-  logger.removeLogEntry(category+"_camera");
-  logger.removeLogEntry(category+"_cameraFiltered");
+  logger.removeLogEntry(category + "_LeftFoot");
+  logger.removeLogEntry(category + "_LeftFootCenter");
+  logger.removeLogEntry(category + "_RightFoot");
+  logger.removeLogEntry(category + "_RightFootCenter");
+  logger.removeLogEntry(category + "_com");
+  logger.removeLogEntry(category + "_comd");
+  logger.removeLogEntry(category + "_posW");
+  logger.removeLogEntry(category + "_camera");
+  logger.removeLogEntry(category + "_cameraFiltered");
 }
 
 void SLAMObserver::addToGUI(const mc_control::MCController & ctl,
-                             mc_rtc::gui::StateBuilder & gui,
-                             const std::vector<std::string> & category)
+                            mc_rtc::gui::StateBuilder & gui,
+                            const std::vector<std::string> & category)
 {
   using namespace mc_rtc::gui;
 
-  gui.addElement(category,
-    Transform("X_S_Ground", [this](){ return X_Slam_Ground_; }),
-    Button("Initialize",
-      [this, &ctl]()
-      {
-        if(!isInitialized_)
-        {
-          isInitialized_ = true;
-          const auto & real_robot = ctl.realRobot(robot_);
-          const auto & X_0_Camera = real_robot.bodyPosW(camera_);
-          X_0_Slam_ = X_Slam_Estimated_Camera_.inv() * X_0_Camera;
-          filter_->reset();
-        }
-      }),
-    Transform("X_0_Slam", [this](){ return X_0_Slam_; }),
-    ArrayLabel("X_Slam_Camera", {"r", "p", "y", "x", "y", "z"},
-      [this]()
-      {
-        Eigen::VectorXd ret(6);
-        sva::PTransformd X_Slam_Camera = X_0_Estimated_camera_ * X_0_Slam_.inv();
-        ret << mc_rbdyn::rpyFromMat(X_Slam_Camera.rotation()), X_Slam_Camera.translation();
-        return ret;
-      }
-    ),
-    Label("Is Observer initialized?", [this](){ return (isInitialized_ ? "Yes" : "No"); }),
-    Button("Delete initialization", [this](){ isInitialized_ = false; })
-  );
+  gui.addElement(category, Transform("X_S_Ground", [this]() { return X_Slam_Ground_; }),
+                 Button("Initialize",
+                        [this, &ctl]() {
+                          if(!isInitialized_)
+                          {
+                            isInitialized_ = true;
+                            const auto & real_robot = ctl.realRobot(robot_);
+                            const auto & X_0_Camera = real_robot.bodyPosW(camera_);
+                            X_0_Slam_ = X_Slam_Estimated_Camera_.inv() * X_0_Camera;
+                            filter_->reset();
+                          }
+                        }),
+                 Transform("X_0_Slam", [this]() { return X_0_Slam_; }),
+                 ArrayLabel("X_Slam_Camera", {"r", "p", "y", "x", "y", "z"},
+                            [this]() {
+                              Eigen::VectorXd ret(6);
+                              sva::PTransformd X_Slam_Camera = X_0_Estimated_camera_ * X_0_Slam_.inv();
+                              ret << mc_rbdyn::rpyFromMat(X_Slam_Camera.rotation()), X_Slam_Camera.translation();
+                              return ret;
+                            }),
+                 Label("Is Observer initialized?", [this]() { return (isInitialized_ ? "Yes" : "No"); }),
+                 Button("Delete initialization", [this]() { isInitialized_ = false; }));
 
   std::vector<std::string> categoryFilter = category;
   categoryFilter.push_back("Filter");
-  gui.addElement(categoryFilter,
-    Button("Toggle filter",
-      [this]()
-      {
-        isFiltered_ = ! isFiltered_;
-        if(isFiltered_)
-        {
-          filter_->reset();
-        }
-      }),
-    Label("Apply filter:", [this](){ return (isFiltered_ ? "yes" : "no"); }),
-    ArrayInput("Filter config", {"m", "d", "n"},
-      [this]()
-      {
-        return Eigen::Vector3d(filter_->config().m, filter_->config().s, filter_->config().n);
-      },
-      [this](const Eigen::Vector3d & v)
-      {
-        int m = static_cast<int>(v.x());
-        int d = static_cast<int>(v.y());
-        int n = static_cast<int>(v.z());
-        auto sg_conf = gram_sg::SavitzkyGolayFilterConfig(m, m, n, d);
-        filter_.reset(new filter::Transform(sg_conf));
-        filter_->reset();
-      }
-    )
-  );
+  gui.addElement(
+      categoryFilter,
+      Button("Toggle filter",
+             [this]() {
+               isFiltered_ = !isFiltered_;
+               if(isFiltered_)
+               {
+                 filter_->reset();
+               }
+             }),
+      Label("Apply filter:", [this]() { return (isFiltered_ ? "yes" : "no"); }),
+      ArrayInput("Filter config", {"m", "d", "n"},
+                 [this]() { return Eigen::Vector3d(filter_->config().m, filter_->config().s, filter_->config().n); },
+                 [this](const Eigen::Vector3d & v) {
+                   int m = static_cast<int>(v.x());
+                   int d = static_cast<int>(v.y());
+                   int n = static_cast<int>(v.z());
+                   auto sg_conf = gram_sg::SavitzkyGolayFilterConfig(m, m, n, d);
+                   filter_.reset(new filter::Transform(sg_conf));
+                   filter_->reset();
+                 }));
 
   if(isSimulated_)
   {
     std::vector<std::string> categoryNoise = category;
     categoryNoise.push_back("Noise");
-    gui.addElement(categoryNoise,
-      Button("Toggle noise", [this](){ isUsingNoise_ = ! isUsingNoise_; }),
-      Label("Apply noise:", [this](){ return (isUsingNoise_ ? "Yes" : "No"); }),
-      ArrayInput("Translation::Min", {"x", "y", "z"},
-        [this]() { return minTranslationNoise_; },
-        [this](const Eigen::Vector3d & v) { minTranslationNoise_ = v; }),
-      ArrayInput("Translation::Max", {"x", "y", "z"},
-        [this]() { return maxTranslationNoise_; },
-        [this](const Eigen::Vector3d & v) { maxTranslationNoise_ = v; }),
-      ArrayInput("Orientation::Min", {"r", "p", "y"},
-        [this]()
-        {
-          Eigen::Vector3d inDegree = minOrientationNoise_;
-          inDegree.unaryExpr(&mc_rtc::constants::toDeg);
-          return inDegree;
-        },
-        [this](const Eigen::Vector3d & v)
-        {
-          v.unaryExpr(&mc_rtc::constants::toRad);
-          minOrientationNoise_ = v;
-        }
-        ),
-      ArrayInput("Orientation::Max", {"r", "p", "y"},
-        [this]()
-        {
-          Eigen::Vector3d inDegree = maxOrientationNoise_;
-          inDegree.unaryExpr(&mc_rtc::constants::toDeg);
-          return inDegree;
-        },
-        [this](const Eigen::Vector3d & v)
-        {
-          v.unaryExpr(&mc_rtc::constants::toRad);
-          maxOrientationNoise_ = v;
-        }
-      )
-    );
+    gui.addElement(categoryNoise, Button("Toggle noise", [this]() { isUsingNoise_ = !isUsingNoise_; }),
+                   Label("Apply noise:", [this]() { return (isUsingNoise_ ? "Yes" : "No"); }),
+                   ArrayInput("Translation::Min", {"x", "y", "z"}, [this]() { return minTranslationNoise_; },
+                              [this](const Eigen::Vector3d & v) { minTranslationNoise_ = v; }),
+                   ArrayInput("Translation::Max", {"x", "y", "z"}, [this]() { return maxTranslationNoise_; },
+                              [this](const Eigen::Vector3d & v) { maxTranslationNoise_ = v; }),
+                   ArrayInput("Orientation::Min", {"r", "p", "y"},
+                              [this]() {
+                                Eigen::Vector3d inDegree = minOrientationNoise_;
+                                inDegree.unaryExpr(&mc_rtc::constants::toDeg);
+                                return inDegree;
+                              },
+                              [this](const Eigen::Vector3d & v) {
+                                v.unaryExpr(&mc_rtc::constants::toRad);
+                                minOrientationNoise_ = v;
+                              }),
+                   ArrayInput("Orientation::Max", {"r", "p", "y"},
+                              [this]() {
+                                Eigen::Vector3d inDegree = maxOrientationNoise_;
+                                inDegree.unaryExpr(&mc_rtc::constants::toDeg);
+                                return inDegree;
+                              },
+                              [this](const Eigen::Vector3d & v) {
+                                v.unaryExpr(&mc_rtc::constants::toRad);
+                                maxOrientationNoise_ = v;
+                              }));
   }
 
-  gui.addPlot("SLAM::Translation",
-    mc_rtc::gui::plot::X("t", [this]() { return t_; }),
-    mc_rtc::gui::plot::Y("x_f", [this]() { return X_0_Filtered_estimated_camera_.translation().x(); }, mc_rtc::gui::Color::Red),
-    mc_rtc::gui::plot::Y("x", [this]() { return X_0_Estimated_camera_.translation().x(); }, mc_rtc::gui::Color::Red, mc_rtc::gui::plot::Style::Dotted),
-    mc_rtc::gui::plot::Y("y_f", [this]() { return X_0_Filtered_estimated_camera_.translation().y(); }, mc_rtc::gui::Color::Green),
-    mc_rtc::gui::plot::Y("y", [this]() { return X_0_Estimated_camera_.translation().y(); }, mc_rtc::gui::Color::Green, mc_rtc::gui::plot::Style::Dotted),
-    mc_rtc::gui::plot::Y("z_f", [this]() { return X_0_Filtered_estimated_camera_.translation().z(); }, mc_rtc::gui::Color::Blue),
-    mc_rtc::gui::plot::Y("z", [this]() { return X_0_Estimated_camera_.translation().z(); }, mc_rtc::gui::Color::Blue, mc_rtc::gui::plot::Style::Dotted)
-  );
+  gui.addPlot("SLAM::Translation", mc_rtc::gui::plot::X("t", [this]() { return t_; }),
+              mc_rtc::gui::plot::Y("x_f", [this]() { return X_0_Filtered_estimated_camera_.translation().x(); },
+                                   mc_rtc::gui::Color::Red),
+              mc_rtc::gui::plot::Y("x", [this]() { return X_0_Estimated_camera_.translation().x(); },
+                                   mc_rtc::gui::Color::Red, mc_rtc::gui::plot::Style::Dotted),
+              mc_rtc::gui::plot::Y("y_f", [this]() { return X_0_Filtered_estimated_camera_.translation().y(); },
+                                   mc_rtc::gui::Color::Green),
+              mc_rtc::gui::plot::Y("y", [this]() { return X_0_Estimated_camera_.translation().y(); },
+                                   mc_rtc::gui::Color::Green, mc_rtc::gui::plot::Style::Dotted),
+              mc_rtc::gui::plot::Y("z_f", [this]() { return X_0_Filtered_estimated_camera_.translation().z(); },
+                                   mc_rtc::gui::Color::Blue),
+              mc_rtc::gui::plot::Y("z", [this]() { return X_0_Estimated_camera_.translation().z(); },
+                                   mc_rtc::gui::Color::Blue, mc_rtc::gui::plot::Style::Dotted));
 
-  gui.addPlot("SLAM::Rotation",
-    mc_rtc::gui::plot::X("t", [this]() { return t_; }),
-    mc_rtc::gui::plot::Y("r_f",
-      [this]()
-      {
-        Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Filtered_estimated_camera_.rotation());
-        return rpy.x();
-      }, mc_rtc::gui::Color::Red),
-    mc_rtc::gui::plot::Y("r",
-      [this]()
-      { Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Estimated_camera_.rotation());
-        return rpy.x();
-      }, mc_rtc::gui::Color::Red, mc_rtc::gui::plot::Style::Dotted),
-    mc_rtc::gui::plot::Y("p_f",
-      [this]()
-      {
-        Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Filtered_estimated_camera_.rotation());
-        return rpy.y();
-      }, mc_rtc::gui::Color::Blue),
-    mc_rtc::gui::plot::Y("p",
-      [this]()
-      { Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Estimated_camera_.rotation());
-        return rpy.y();
-      }, mc_rtc::gui::Color::Blue, mc_rtc::gui::plot::Style::Dotted),
-    mc_rtc::gui::plot::Y("y_f",
-      [this]()
-      {
-        Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Filtered_estimated_camera_.rotation());
-        return rpy.z();
-      }, mc_rtc::gui::Color::Green),
-    mc_rtc::gui::plot::Y("y",
-      [this]()
-      { Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Estimated_camera_.rotation());
-        return rpy.z();
-      }, mc_rtc::gui::Color::Green, mc_rtc::gui::plot::Style::Dotted)
-  );
+  gui.addPlot(
+      "SLAM::Rotation", mc_rtc::gui::plot::X("t", [this]() { return t_; }),
+      mc_rtc::gui::plot::Y("r_f",
+                           [this]() {
+                             Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Filtered_estimated_camera_.rotation());
+                             return rpy.x();
+                           },
+                           mc_rtc::gui::Color::Red),
+      mc_rtc::gui::plot::Y("r",
+                           [this]() {
+                             Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Estimated_camera_.rotation());
+                             return rpy.x();
+                           },
+                           mc_rtc::gui::Color::Red, mc_rtc::gui::plot::Style::Dotted),
+      mc_rtc::gui::plot::Y("p_f",
+                           [this]() {
+                             Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Filtered_estimated_camera_.rotation());
+                             return rpy.y();
+                           },
+                           mc_rtc::gui::Color::Blue),
+      mc_rtc::gui::plot::Y("p",
+                           [this]() {
+                             Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Estimated_camera_.rotation());
+                             return rpy.y();
+                           },
+                           mc_rtc::gui::Color::Blue, mc_rtc::gui::plot::Style::Dotted),
+      mc_rtc::gui::plot::Y("y_f",
+                           [this]() {
+                             Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Filtered_estimated_camera_.rotation());
+                             return rpy.z();
+                           },
+                           mc_rtc::gui::Color::Green),
+      mc_rtc::gui::plot::Y("y",
+                           [this]() {
+                             Eigen::Vector3d rpy = mc_rbdyn::rpyFromMat(X_0_Estimated_camera_.rotation());
+                             return rpy.z();
+                           },
+                           mc_rtc::gui::Color::Green, mc_rtc::gui::plot::Style::Dotted));
 }
 
 void SLAMObserver::rosSpinner()
 {
   mc_rtc::log::info("[{}] rosSpinner started", name());
   ros::Rate rate(30);
-  while (ros::ok())
+  while(ros::ok())
   {
     ros::spinOnce();
     rate.sleep();
