@@ -77,7 +77,7 @@ void ObjectObserver::configure(const mc_control::MCController & controller, cons
 
   ctl.datastore().make_call(object_ + "::X_Camera_Object_Real", [this, &ctl]() -> const sva::PTransformd {
     sva::PTransformd X_0_camera = ctl.realRobot(robot_).bodyPosW(camera_);
-    sva::PTransformd X_0_object = ctl.robot(object_).posW();
+    sva::PTransformd X_0_object = ctl.realRobot(object_).posW();
     return X_0_object * X_0_camera.inv();
   });
 
