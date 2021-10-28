@@ -33,7 +33,6 @@ if(${ROSCPP_FOUND})
   set_target_properties(SLAMObserver PROPERTIES INSTALL_RPATH ${MC_OBSERVERS_RUNTIME_INSTALL_PREFIX})
 endif()
 
-
 if(${ROSCPP_FOUND})
   add_simple_observer(ObjectObserver)
   target_link_libraries(ObjectObserver PUBLIC mc_rtc::mc_control mc_state_observation::ROS mc_rtc::mc_rtc_ros)

@@ -1,20 +1,21 @@
-#include <mc_observers/ObserverMacros.h>
 #include <mc_control/MCController.h>
-#include <Eigen/src/Geometry/Transform.h>
-#include <mc_state_observation/ObjectObserver.h>
-#include <mc_state_observation/gui_helpers.h>
+#include <mc_observers/ObserverMacros.h>
 #include <mc_rtc/ros.h>
 #include <mc_rtc/version.h>
 #include <SpaceVecAlg/Conversions.h>
 #include <SpaceVecAlg/SpaceVecAlg>
 #include <tf2_eigen/tf2_eigen.h>
+#include <Eigen/src/Geometry/Transform.h>
+#include <mc_state_observation/ObjectObserver.h>
+#include <mc_state_observation/gui_helpers.h>
 
 namespace mc_state_observation
 {
 
 ObjectObserver::ObjectObserver(const std::string & type, double dt)
 : mc_observers::Observer(type, dt), nh_(mc_rtc::ROSBridge::get_node_handle())
-{}
+{
+}
 
 void ObjectObserver::configure(const mc_control::MCController & controller, const mc_rtc::Configuration & config)
 {
@@ -51,71 +52,45 @@ void ObjectObserver::configure(const mc_control::MCController & controller, cons
     isPublished_ = config("Publish")("use", true);
   }
 
-  ctl.datastore().make_call(object_+"::Robot",
-    [this, &ctl]() -> const mc_rbdyn::Robot &
-    {
-      return ctl.realRobot(object_);
-    }
-  );
+  ctl.datastore().make_call(object_ + "::Robot",
+                            [this, &ctl]() -> const mc_rbdyn::Robot & { return ctl.realRobot(object_); });
 
-  ctl.datastore().make_call(object_+"::SLAM::Robot",
-    [this]() -> const mc_rbdyn::Robot &
-    {
-      return robots_.robot(object_);
-    }
-  );
+  ctl.datastore().make_call(object_ + "::SLAM::Robot",
+                            [this]() -> const mc_rbdyn::Robot & { return robots_.robot(object_); });
 
-  ctl.datastore().make_call(object_+"::X_0_Object",
-    [this, &ctl]() -> const sva::PTransformd &
-    {
-      return ctl.realRobot(object_).posW();
-    }
-  );
+  ctl.datastore().make_call(object_ + "::X_0_Object",
+                            [this, &ctl]() -> const sva::PTransformd & { return ctl.realRobot(object_).posW(); });
 
-  ctl.datastore().make_call(object_+"::X_S_Object",
-    [this]() -> const sva::PTransformd &
-    {
-      return robots_.robot(object_).posW();
-    }
-  );
+  ctl.datastore().make_call(object_ + "::X_S_Object",
+                            [this]() -> const sva::PTransformd & { return robots_.robot(object_).posW(); });
 
-  ctl.datastore().make_call(object_+"::X_Camera_Object_Estimated",
-    [this]() -> const sva::PTransformd &
-    {
-      const std::lock_guard<std::mutex> lock(mutex_);
-      return X_Camera_EstimatedObject_;
-    }
-  );
+  ctl.datastore().make_call(object_ + "::X_Camera_Object_Estimated", [this]() -> const sva::PTransformd & {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    return X_Camera_EstimatedObject_;
+  });
 
-  ctl.datastore().make_call(object_+"::X_Camera_Object_Control",
-    [this, &ctl]() -> const sva::PTransformd
-    {
-      sva::PTransformd X_0_camera = ctl.robot(robot_).bodyPosW(camera_);
-      sva::PTransformd X_0_object = ctl.robot(object_).posW();
-      return X_0_object * X_0_camera.inv();
-    }
-  );
+  ctl.datastore().make_call(object_ + "::X_Camera_Object_Control", [this, &ctl]() -> const sva::PTransformd {
+    sva::PTransformd X_0_camera = ctl.robot(robot_).bodyPosW(camera_);
+    sva::PTransformd X_0_object = ctl.robot(object_).posW();
+    return X_0_object * X_0_camera.inv();
+  });
 
-  ctl.datastore().make_call(object_+"::X_Camera_Object_Real",
-    [this, &ctl]() -> const sva::PTransformd
-    {
-      sva::PTransformd X_0_camera = ctl.realRobot(robot_).bodyPosW(camera_);
-      sva::PTransformd X_0_object = ctl.robot(object_).posW();
-      return X_0_object * X_0_camera.inv();
-    }
-  );
+  ctl.datastore().make_call(object_ + "::X_Camera_Object_Real", [this, &ctl]() -> const sva::PTransformd {
+    sva::PTransformd X_0_camera = ctl.realRobot(robot_).bodyPosW(camera_);
+    sva::PTransformd X_0_object = ctl.realRobot(object_).posW();
+    return X_0_object * X_0_camera.inv();
+  });
 
-  ctl.datastore().make<bool>("Object::"+object_+"::IsValid", false);
+  ctl.datastore().make<bool>("Object::" + object_ + "::IsValid", false);
 
   subscriber_ = nh_->subscribe(topic_, 1, &ObjectObserver::callback, this);
 
-  desc_ = fmt::format("{} (Object: {} Topic: {}, inRobotMap: {})", name(), object_, topic_, isInRobotMap_);
+  desc_ = fmt::format("{} (Object: {}, Topic: {}, inRobotMap: {})", name(), object_, topic_, isInRobotMap_);
 
   thread_ = std::thread(std::bind(&ObjectObserver::rosSpinner, this));
 }
 
-void ObjectObserver::reset(const mc_control::MCController &)
-{}
+void ObjectObserver::reset(const mc_control::MCController &) {}
 
 bool ObjectObserver::run(const mc_control::MCController &)
 {
@@ -126,13 +101,12 @@ void ObjectObserver::update(mc_control::MCController & ctl)
 {
   {
     const std::lock_guard<std::mutex> lock(mutex_);
-    ctl.datastore().assign<bool>("Object::"+object_+"::IsValid", isEstimatedPoseValid_);
+    ctl.datastore().assign<bool>("Object::" + object_ + "::IsValid", isEstimatedPoseValid_);
     if(!isNewEstimatedPose_)
     {
       return;
     }
   }
-
 
   const auto & real_robot = ctl.realRobot(robot_);
   const sva::PTransformd X_0_Camera = real_robot.bodyPosW(camera_);
@@ -157,14 +131,15 @@ void ObjectObserver::update(mc_control::MCController & ctl)
       X_Camera_EstimatedObject_ = X_Camera_EstimatedObject;
     }
   }
-  const sva::PTransformd X_0_EstimatedObject =  X_Camera_EstimatedObject * X_0_Camera;
+  const sva::PTransformd X_0_EstimatedObject = X_Camera_EstimatedObject * X_0_Camera;
   object.posW(X_0_EstimatedObject);
   isNewEstimatedPose_ = false;
   object.forwardKinematics();
 
   if(ctl.datastore().has("SLAM::Robot"))
   {
-    const sva::PTransformd & X_0_Camera = ctl.datastore().call<const mc_rbdyn::Robot &>("SLAM::Robot").bodyPosW(camera_);
+    const sva::PTransformd & X_0_Camera =
+        ctl.datastore().call<const mc_rbdyn::Robot &>("SLAM::Robot").bodyPosW(camera_);
     auto & object = robots_.robot(object_);
     object.posW(X_Camera_EstimatedObject_ * X_0_Camera);
     object.forwardKinematics();
@@ -172,66 +147,53 @@ void ObjectObserver::update(mc_control::MCController & ctl)
 
   if(isPublished_)
   {
-    mc_rtc::ROSBridge::update_robot_publisher(object_+"_estimated", ctl.timeStep, object);
+    mc_rtc::ROSBridge::update_robot_publisher(object_ + "_estimated", ctl.timeStep, object);
     if(ctl.datastore().has("SLAM::Robot"))
     {
-      mc_rtc::ROSBridge::update_robot_publisher(object_+"_estimated_in_SLAM", ctl.timeStep, robots_.robot(object_));
+      mc_rtc::ROSBridge::update_robot_publisher(object_ + "_estimated_in_SLAM", ctl.timeStep, robots_.robot(object_));
     }
   }
 }
 
-void ObjectObserver::addToLogger(const mc_control::MCController & ctl, mc_rtc::Logger & logger, const std::string & category)
+void ObjectObserver::addToLogger(const mc_control::MCController & ctl,
+                                 mc_rtc::Logger & logger,
+                                 const std::string & category)
 {
-  logger.addLogEntry(category+"_posW", [this, &ctl]() { return ctl.realRobot(object_).posW(); });
-  logger.addLogEntry(category+"_posW_in_SLAM", [this]() { return robots_.robot(object_).posW(); });
-  logger.addLogEntry(category+"_X_Camera_Object_Estimated", [this]() { return X_Camera_EstimatedObject_; });
-  logger.addLogEntry(category+"_X_Camera_Object_Real",
-    [this, &ctl]() -> const sva::PTransformd
-    {
-      sva::PTransformd X_0_camera = ctl.realRobot(robot_).bodyPosW(camera_);
-      sva::PTransformd X_0_object = ctl.robot(object_).posW();
-      return X_0_object * X_0_camera.inv();
-    }
-  );
-  logger.addLogEntry(category+"_X_Camera_Object_Control",
-    [this, &ctl]() -> const sva::PTransformd
-    {
-      sva::PTransformd X_0_camera = ctl.robot(robot_).bodyPosW(camera_);
-      sva::PTransformd X_0_object = ctl.robot(object_).posW();
-      return X_0_object * X_0_camera.inv();
-    }
-  );
+  logger.addLogEntry(category + "_posW", [this, &ctl]() { return ctl.realRobot(object_).posW(); });
+  logger.addLogEntry(category + "_posW_in_SLAM", [this]() { return robots_.robot(object_).posW(); });
+  logger.addLogEntry(category + "_X_Camera_Object_Estimated", [this]() { return X_Camera_EstimatedObject_; });
+  logger.addLogEntry(category + "_X_Camera_Object_Real", [this, &ctl]() -> const sva::PTransformd {
+    sva::PTransformd X_0_camera = ctl.realRobot(robot_).bodyPosW(camera_);
+    sva::PTransformd X_0_object = ctl.realRobot(object_).posW();
+    return X_0_object * X_0_camera.inv();
+  });
+  logger.addLogEntry(category + "_X_Camera_Object_Control", [this, &ctl]() -> const sva::PTransformd {
+    sva::PTransformd X_0_camera = ctl.robot(robot_).bodyPosW(camera_);
+    sva::PTransformd X_0_object = ctl.robot(object_).posW();
+    return X_0_object * X_0_camera.inv();
+  });
 }
 
 void ObjectObserver::removeFromLogger(mc_rtc::Logger & logger, const std::string & category)
 {
-  logger.removeLogEntry(category+"_posW");
-  logger.removeLogEntry(category+"_posW_in_SLAM");
-  logger.removeLogEntry(category+"_X_Camera_Object_Estimated");
-  logger.removeLogEntry(category+"_X_Camera_Object_Real");
-  logger.removeLogEntry(category+"_X_Camera_Object_Control");
+  logger.removeLogEntry(category + "_posW");
+  logger.removeLogEntry(category + "_posW_in_SLAM");
+  logger.removeLogEntry(category + "_X_Camera_Object_Estimated");
+  logger.removeLogEntry(category + "_X_Camera_Object_Real");
+  logger.removeLogEntry(category + "_X_Camera_Object_Control");
 }
 
 void ObjectObserver::addToGUI(const mc_control::MCController & ctl,
-                             mc_rtc::gui::StateBuilder & gui,
-                             const std::vector<std::string> & category)
+                              mc_rtc::gui::StateBuilder & gui,
+                              const std::vector<std::string> & category)
 {
   using namespace mc_rtc::gui;
 
-  gui.addElement(category,
-    Transform(
-      "X_0_"+object_,
-      [this, &ctl]() { return ctl.realRobot(object_).posW(); }
-    ),
-    Transform(
-      "X_Camera_"+object_,
-      [this]()
-      {
-        const std::lock_guard<std::mutex> lock(mutex_);
-        return X_Camera_EstimatedObject_;
-      }
-    )
-  );
+  gui.addElement(category, Transform("X_0_" + object_, [this, &ctl]() { return ctl.realRobot(object_).posW(); }),
+                 Transform("X_Camera_" + object_, [this]() {
+                   const std::lock_guard<std::mutex> lock(mutex_);
+                   return X_Camera_EstimatedObject_;
+                 }));
 }
 
 void ObjectObserver::callback(const geometry_msgs::PoseStamped & msg)
@@ -259,7 +221,7 @@ void ObjectObserver::rosSpinner()
 {
   mc_rtc::log::info("[{}] rosSpinner started", name());
   ros::Rate rate(200);
-  while (ros::ok())
+  while(ros::ok())
   {
     ros::spinOnce();
     rate.sleep();
