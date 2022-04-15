@@ -6,6 +6,11 @@
 namespace mc_state_observation
 {
 
+/// Sizes of the states for the state, the measurement, and the input vector
+constexpr unsigned AttitudeObserver::STATE_SIZE;
+constexpr unsigned AttitudeObserver::MEASUREMENT_SIZE;
+constexpr unsigned AttitudeObserver::INPUT_SIZE;
+
 namespace so = stateObservation;
 
 AttitudeObserver::AttitudeObserver(const std::string & type, double dt)
@@ -53,8 +58,7 @@ void AttitudeObserver::reset(const mc_control::MCController & ctl)
   q_(6, 6) = q_(7, 7) = q_(8, 8) = c.linearAccCov;
   r_(3, 3) = r_(4, 4) = r_(5, 5) = c.gyroCovariance;
 
-  filter_.clearInputs();
-  filter_.clearMeasurements();
+  filter_.reset();
   filter_.setQ(q_);
   filter_.setR(r_);
   xk_.setZero();
@@ -137,8 +141,8 @@ bool AttitudeObserver::run(const mc_control::MCController & ctl)
   /// get the estimation and give it to the array
   xk_ = filter_.getEstimatedState(time + 1);
 
-  const so::Vector3 orientation(xk_.segment<3>(indexes::ori));
   // result
+  const so::Vector3 orientation(xk_.segment<3>(indexes::ori));
   m_orientation = c.offset * so::kine::rotationVectorToRotationMatrix(orientation);
 
   return ret;
@@ -214,14 +218,15 @@ void AttitudeObserver::KalmanFilterConfig::addToGUI(mc_rtc::gui::StateBuilder & 
 {
   using namespace mc_rtc::gui;
   // clang-format off
-  gui.addElement(category, make_checkbox("Compensate Mode", compensateMode),
-                 make_number_input("acceleroCovariance", acceleroCovariance),
-                 make_number_input("gyroCovariance", gyroCovariance),
-                 make_number_input("orientationAccCov", orientationAccCov),
-                 make_number_input("linearAccCov", linearAccCov),
-                 make_number_input("stateCov", stateCov),
-                 make_number_input("stateInitCov", stateInitCov),
-                 make_rpy_input("offset", offset));
+  gui.addElement(category, 
+    make_input_element("Compensate Mode", compensateMode),
+    make_input_element("acceleroCovariance", acceleroCovariance),
+    make_input_element("gyroCovariance", gyroCovariance),
+    make_input_element("orientationAccCov", orientationAccCov),
+    make_input_element("linearAccCov", linearAccCov),
+    make_input_element("stateCov", stateCov),
+    make_input_element("stateInitCov", stateInitCov),
+    make_rpy_input("offset", offset));
   // clang-format on
 }
 

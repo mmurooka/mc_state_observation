@@ -6,7 +6,7 @@ set(PROJECT_URL "https://github.com/isri-aist/mc_state_observation")
 set(PROJECT_VERSION 0.1)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(DOXYGEN_USE_MATHJAX "YES")
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 set(CXX_DISABLE_WERROR 1)
 
 option(BUILD_TESTS "Build unit tests" ON)
@@ -17,6 +17,9 @@ project(${PROJECT_NAME} LANGUAGES CXX)
 
 find_package(mc_rtc 1.6 REQUIRED)
 find_package(state-observation 1.3 REQUIRED)
+
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
+find_package(mc_state_observation_ROS COMPONENTS roscpp tf2 tf2_eigen)
 
 add_subdirectory(src)
 
