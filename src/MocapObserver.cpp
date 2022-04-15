@@ -95,8 +95,9 @@ void MocapObserver::addToGUI(const mc_control::MCController & ctl,
                           mc_rtc::log::info("[{}] Manual reset triggerred", name());
                           reset(ctl);
                         }),
-                 Transform("Mocap Origin", [this]() -> const sva::PTransformd & { return X_0_mocap_; },
-                           [this](const sva::PTransformd & pose) { X_0_mocap_ = pose; }),
+                 Transform(
+                     "Mocap Origin", [this]() -> const sva::PTransformd & { return X_0_mocap_; },
+                     [this](const sva::PTransformd & pose) { X_0_mocap_ = pose; }),
                  Transform("Mocap Marker World", [this]() -> const sva::PTransformd & { return X_0_marker_; }),
                  Transform("Mocap Marker Frame", [this, &ctl]() -> const sva::PTransformd {
                    auto & realRobot = ctl.realRobot(updateRobot_);

@@ -53,7 +53,7 @@ protected:
   std::string robot_ = ""; ///< Name of robot to estimate thanks to SLAM
   std::string camera_ = ""; ///< Name of robot's camera body
   std::string body_ = ""; ///< Name of robot's freeflyer
-  mc_rbdyn::Robots robots_; ///< Store robot estimated state
+  std::shared_ptr<mc_rbdyn::Robots> robots_; ///< Store robot estimated state
   /// @}
 
   /// @{
