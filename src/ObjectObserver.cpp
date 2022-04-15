@@ -40,7 +40,7 @@ void ObjectObserver::configure(const mc_control::MCController & controller, cons
     topic_ = static_cast<std::string>(config("Object")("topic"));
     isInRobotMap_ = config("Object")("inRobotMap", false);
 
-    robots_.load(object_, ctl.robot(object_).module());
+    robots_ = mc_rbdyn::loadRobot(ctl.robot(object_).module());
   }
   else
   {
@@ -56,13 +56,13 @@ void ObjectObserver::configure(const mc_control::MCController & controller, cons
                             [this, &ctl]() -> const mc_rbdyn::Robot & { return ctl.realRobot(object_); });
 
   ctl.datastore().make_call(object_ + "::SLAM::Robot",
-                            [this]() -> const mc_rbdyn::Robot & { return robots_.robot(object_); });
+                            [this]() -> const mc_rbdyn::Robot & { return robots_->robot(object_); });
 
   ctl.datastore().make_call(object_ + "::X_0_Object",
                             [this, &ctl]() -> const sva::PTransformd & { return ctl.realRobot(object_).posW(); });
 
   ctl.datastore().make_call(object_ + "::X_S_Object",
-                            [this]() -> const sva::PTransformd & { return robots_.robot(object_).posW(); });
+                            [this]() -> const sva::PTransformd & { return robots_->robot(object_).posW(); });
 
   ctl.datastore().make_call(object_ + "::X_Camera_Object_Estimated", [this]() -> const sva::PTransformd & {
     const std::lock_guard<std::mutex> lock(mutex_);
@@ -140,7 +140,7 @@ void ObjectObserver::update(mc_control::MCController & ctl)
   {
     const sva::PTransformd & X_0_Camera =
         ctl.datastore().call<const mc_rbdyn::Robot &>("SLAM::Robot").bodyPosW(camera_);
-    auto & object = robots_.robot(object_);
+    auto & object = robots_->robot(object_);
     object.posW(X_Camera_EstimatedObject_ * X_0_Camera);
     object.forwardKinematics();
   }
@@ -150,7 +150,7 @@ void ObjectObserver::update(mc_control::MCController & ctl)
     mc_rtc::ROSBridge::update_robot_publisher(object_ + "_estimated", ctl.timeStep, object);
     if(ctl.datastore().has("SLAM::Robot"))
     {
-      mc_rtc::ROSBridge::update_robot_publisher(object_ + "_estimated_in_SLAM", ctl.timeStep, robots_.robot(object_));
+      mc_rtc::ROSBridge::update_robot_publisher(object_ + "_estimated_in_SLAM", ctl.timeStep, robots_->robot(object_));
     }
   }
 }
@@ -160,7 +160,7 @@ void ObjectObserver::addToLogger(const mc_control::MCController & ctl,
                                  const std::string & category)
 {
   logger.addLogEntry(category + "_posW", [this, &ctl]() { return ctl.realRobot(object_).posW(); });
-  logger.addLogEntry(category + "_posW_in_SLAM", [this]() { return robots_.robot(object_).posW(); });
+  logger.addLogEntry(category + "_posW_in_SLAM", [this]() { return robots_->robot(object_).posW(); });
   logger.addLogEntry(category + "_X_Camera_Object_Estimated", [this]() { return X_Camera_EstimatedObject_; });
   logger.addLogEntry(category + "_X_Camera_Object_Real", [this, &ctl]() -> const sva::PTransformd {
     sva::PTransformd X_0_camera = ctl.realRobot(robot_).bodyPosW(camera_);

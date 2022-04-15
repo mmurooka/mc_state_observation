@@ -67,7 +67,7 @@ void SLAMObserver::configure(const mc_control::MCController & ctl, const mc_rtc:
       mc_rtc::log::error_and_throw<std::runtime_error>("No {} body found in {}", camera_, robot_);
     }
     body_ = ctl.robot(robot_).mb().bodies()[0].name();
-    robots_.load({ctl.robot(robot_).module()});
+    robots_ = mc_rbdyn::loadRobot(ctl.robot(robot_).module());
   }
   else
   {
@@ -235,7 +235,7 @@ void SLAMObserver::update(mc_control::MCController & ctl)
 
   if(!ctl.datastore().has("SLAM::Robot"))
   {
-    ctl.datastore().make_call("SLAM::Robot", [this]() -> const mc_rbdyn::Robot & { return robots_.robot(); });
+    ctl.datastore().make_call("SLAM::Robot", [this]() -> const mc_rbdyn::Robot & { return robots_->robot(); });
   }
 
   if(!ctl.datastore().has("SLAM::isAlive"))
@@ -251,7 +251,7 @@ void SLAMObserver::update(mc_control::MCController & ctl)
   isSLAMAlive_ = true;
 
   const auto & real_robot = ctl.realRobot();
-  auto & SLAM_robot = robots_.robot();
+  auto & SLAM_robot = robots_->robot();
   SLAM_robot.mbc().q = real_robot.mbc().q;
   const sva::PTransformd X_0_FF = real_robot.bodyPosW(body_);
   const sva::PTransformd X_0_Camera = real_robot.bodyPosW(camera_);
@@ -280,24 +280,24 @@ void SLAMObserver::update(mc_control::MCController & ctl)
 void SLAMObserver::addToLogger(const mc_control::MCController &, mc_rtc::Logger & logger, const std::string & category)
 {
   logger.addLogEntry(category + "_LeftFoot", [this]() {
-    return (robots_.size() == 1 ? robots_.robot().surfacePose("LeftFoot") : sva::PTransformd::Identity());
+    return (robots_->size() == 1 ? robots_->robot().surfacePose("LeftFoot") : sva::PTransformd::Identity());
   });
   logger.addLogEntry(category + "_LeftFootCenter", [this]() {
-    return (robots_.size() == 1 ? robots_.robot().surfacePose("LeftFootCenter") : sva::PTransformd::Identity());
+    return (robots_->size() == 1 ? robots_->robot().surfacePose("LeftFootCenter") : sva::PTransformd::Identity());
   });
   logger.addLogEntry(category + "_RightFoot", [this]() {
-    return (robots_.size() == 1 ? robots_.robot().surfacePose("RightFoot") : sva::PTransformd::Identity());
+    return (robots_->size() == 1 ? robots_->robot().surfacePose("RightFoot") : sva::PTransformd::Identity());
   });
   logger.addLogEntry(category + "_RightFootCenter", [this]() {
-    return (robots_.size() == 1 ? robots_.robot().surfacePose("RightFootCenter") : sva::PTransformd::Identity());
+    return (robots_->size() == 1 ? robots_->robot().surfacePose("RightFootCenter") : sva::PTransformd::Identity());
   });
   logger.addLogEntry(category + "_com",
-                     [this]() { return (robots_.size() == 1 ? robots_.robot().com() : sva::PTransformd::Identity()); });
+                     [this]() { return (robots_->size() == 1 ? robots_->robot().com() : sva::PTransformd::Identity()); });
   logger.addLogEntry(category + "_comd", [this]() {
-    return (robots_.size() == 1 ? robots_.robot().comVelocity() : sva::PTransformd::Identity());
+    return (robots_->size() == 1 ? robots_->robot().comVelocity() : sva::PTransformd::Identity());
   });
   logger.addLogEntry(category + "_posW", [this]() {
-    return (robots_.size() == 1 ? robots_.robot().posW() : sva::PTransformd::Identity());
+    return (robots_->size() == 1 ? robots_->robot().posW() : sva::PTransformd::Identity());
   });
   logger.addLogEntry(category + "_camera", [this]() { return X_0_Estimated_camera_; });
   logger.addLogEntry(category + "_cameraFiltered", [this]() { return X_0_Filtered_estimated_camera_; });
