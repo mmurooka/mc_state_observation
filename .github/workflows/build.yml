@@ -43,7 +43,7 @@ jobs:
         compiler: ${{ matrix.compiler }}
         build-type: ${{ matrix.build-type }}
         ubuntu: |
-          apt: libltdl-dev libboost-all-dev doxgen doxygen-latex libmc-rtc-dev
+          apt: libltdl-dev libboost-all-dev doxygen doxygen-latex libmc-rtc-dev
           apt-mirrors:
             mc-rtc:
               cloudsmith: mc-rtc/head
