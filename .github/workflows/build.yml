@@ -13,15 +13,13 @@ on:
 
 jobs:
   clang-format:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
-    - name: Install clang-format-6.0
+    - name: Install clang-format-10
       run: |
-        sudo rm -f /etc/apt/sources.list.d/dotnetdev.list /etc/apt/sources.list.d/microsoft-prod.list
         sudo apt-get -qq update
-        sudo apt-get -qq remove clang-6.0 libclang1-6.0 libclang-common-6.0-dev libllvm6.0
-        sudo apt-get -qq install clang-format-6.0 clang-format
+        sudo apt-get -qq install clang-format-10
     - name: Run clang-format-check
       run: |
         ./.clang-format-check.sh
@@ -36,40 +34,25 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
-    - name: Temporary APT mirrors cleanup
-      if: startsWith(runner.os, 'Linux')
-      run: |
-        set -e
-        sudo rm -f /etc/apt/sources.list.d/dotnetdev.list /etc/apt/sources.list.d/microsoft-prod.list
-    - name: Setup extra APT mirror
-      if: startsWith(runner.os, 'Linux')
-      run: |
-        set -x
-        set -e
-        curl -1sLf 'https://dl.cloudsmith.io/public/mc-rtc/head/setup.deb.sh' | sudo -E bash
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
     - name: Install dependencies
       uses: jrl-umi3218/github-actions/install-dependencies@master
       with:
         compiler: ${{ matrix.compiler }}
         build-type: ${{ matrix.build-type }}
         ubuntu: |
-          apt: libltdl-dev libboost-all-dev libmc-rtc-dev
+          apt: libltdl-dev libboost-all-dev doxgen doxygen-latex libmc-rtc-dev
+          apt-mirrors:
+            mc-rtc:
+              cloudsmith: mc-rtc/head
         macos: |
           brew-taps: mc-rtc/mc-rtc
           brew: boost mc_rtc
           github: # Get the head version of mc_rtc
             - path: jrl-umi3218/mc_rtc
               options: -DPYTHON_BINDING:BOOL=OFF
-    - uses: actions/checkout@v1
-      with:
-        submodules: recursive
-    - name: Install system dependencies
-      uses: jrl-umi3218/github-actions/install-dependencies@master
-      with:
-        compiler: ${{ matrix.compiler }}
-        build-type: ${{ matrix.build-type }}
-        ubuntu: |
-          apt: doxygen doxygen-latex libmc-rtc-dev
     - name: Build and test
       uses: jrl-umi3218/github-actions/build-cmake-project@master
       with:
