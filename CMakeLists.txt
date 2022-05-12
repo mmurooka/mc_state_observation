@@ -9,8 +9,6 @@ set(DOXYGEN_USE_MATHJAX "YES")
 set(CMAKE_CXX_STANDARD 14)
 set(CXX_DISABLE_WERROR 1)
 
-option(BUILD_TESTS "Build unit tests" ON)
-
 include(cmake/base.cmake)
 
 project(${PROJECT_NAME} LANGUAGES CXX)
@@ -23,8 +21,7 @@ find_package(mc_state_observation_ROS COMPONENTS roscpp tf2 tf2_eigen)
 
 add_subdirectory(src)
 
-if(BUILD_TESTS)
+if(BUILD_TESTING)
   find_package(Boost COMPONENTS unit_test_framework REQUIRED)
-  enable_testing()
   add_subdirectory(tests)
 endif()
