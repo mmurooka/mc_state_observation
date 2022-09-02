@@ -218,7 +218,7 @@ void AttitudeObserver::KalmanFilterConfig::addToGUI(mc_rtc::gui::StateBuilder & 
 {
   using namespace mc_rtc::gui;
   // clang-format off
-  gui.addElement(category, 
+  gui.addElement(category,
     make_input_element("Compensate Mode", compensateMode),
     make_input_element("acceleroCovariance", acceleroCovariance),
     make_input_element("gyroCovariance", gyroCovariance),

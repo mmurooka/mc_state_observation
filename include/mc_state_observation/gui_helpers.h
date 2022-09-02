@@ -121,14 +121,14 @@ auto make_input_element(const std::string & name, sva::AdmittanceVecd & ref)
   return make_admittancevecd_input(name, ref);
 }
 
-auto make_input_element(const std::string & name, bool ref)
+auto make_input_element(const std::string & name, bool & ref)
 {
   return make_checkbox(name, ref);
 }
 
 template<typename T,
          typename std::enable_if<std::is_arithmetic<T>::value, int>::type = 0>
-auto make_input_element(const std::string & name, T ref)
+auto make_input_element(const std::string & name, T & ref)
 {
   return make_number_input(name, ref);
 }
