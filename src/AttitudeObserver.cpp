@@ -162,7 +162,7 @@ void AttitudeObserver::addToLogger(const mc_control::MCController &,
                                    const std::string & category)
 {
   logger.addLogEntry(category + "_orientation", [this]() -> sva::PTransformd {
-    return sva::PTransformd{m_orientation, Eigen::Vector3d::Zero()};
+    return sva::PTransformd{m_orientation.transpose(), Eigen::Vector3d::Zero()};
   });
   if(log_kf_)
   {
@@ -194,7 +194,7 @@ void AttitudeObserver::addToGUI(const mc_control::MCController & ctl,
                           mc_rtc::log::info("[{}] Manual reset triggerred", name());
                           reset(ctl);
                         }),
-                 make_rpy_label("Result", m_orientation));
+                 make_rpy_label("Result", m_orientation.transpose()));
 }
 
 void AttitudeObserver::KalmanFilterConfig::addToLogger(mc_rtc::Logger & logger, const std::string & category)
