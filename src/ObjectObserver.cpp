@@ -40,7 +40,8 @@ void ObjectObserver::configure(const mc_control::MCController & controller, cons
     topic_ = static_cast<std::string>(config("Object")("topic"));
     isInRobotMap_ = config("Object")("inRobotMap", false);
 
-    robots_ = mc_rbdyn::loadRobot(ctl.robot(object_).module(), object_);
+    robots_ = mc_rbdyn::Robots::make();
+    robots_->load(object_, ctl.robot(object_).module());
   }
   else
   {
