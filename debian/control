@@ -18,7 +18,7 @@ Build-Depends: debhelper (>= 9),
 Package: mc-state-observation
 Section: libdevel
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: libmc-rtc-dev, ${shlibs:Depends}, ${misc:Depends}
 Suggests: ros-@ROS_DISTRO@-mc-state-observation
 Description: Extra observers for mc-rtc
 
