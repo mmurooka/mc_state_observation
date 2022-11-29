@@ -5,6 +5,8 @@ on:
     paths-ignore:
       # Changes to those files don't mandate running CI
       - ".gitignore"
+      - ".github/workflows/package.yaml"
+      - debian/**
     branches:
       - '**'
   pull_request:
@@ -47,30 +49,8 @@ jobs:
           apt-mirrors:
             mc-rtc:
               cloudsmith: mc-rtc/head
-    - name: Setup ROS
-      run: |
-        set -x
-        set -e
-        if [ "${{ matrix.os }}" = "ubuntu-18.04" ]
-        then
-          export ROS_DISTRO="melodic"
-        else
-          export ROS_DISTRO="noetic"
-        fi
-        sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-        wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
-        sudo apt-get update -qq
-        sudo apt-get -qq remove libomp5-9 || true
-        sudo apt-get install -qq ros-${ROS_DISTRO}-mc-rtc-plugin ros-${ROS_DISTRO}-tf2-eigen
-        . /opt/ros/${ROS_DISTRO}/setup.bash
-        echo "ROS_DISTRO=${ROS_DISTRO}" >> $GITHUB_ENV
-        echo "PKG_CONFIG_PATH=${PKG_CONFIG_PATH}" >> $GITHUB_ENV
-        echo "ROS_MASTER_URI=${ROS_MASTER_URI}" >> $GITHUB_ENV
-        echo "ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}" >> $GITHUB_ENV
-        echo "PYTHONPATH=${PYTHONPATH}" >> $GITHUB_ENV
-        echo "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}" >> $GITHUB_ENV
-        echo "PATH=${PATH}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}" >> $GITHUB_ENV
+        ros: |
+          apt: mc-rtc-plugin tf2-eigen
     - name: Build and test
       uses: jrl-umi3218/github-actions/build-cmake-project@master
       with:

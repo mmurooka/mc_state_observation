@@ -1,0 +1,5 @@
+mc-state-observation (1.0.0-1debian1) unstable; urgency=medium
+
+  * Initial release.
+
+ -- Pierre Gergondet <pierre.gergondet+ppa@gmail.com>  Tue, 29 Nov 2022 08:45:54 +0900
