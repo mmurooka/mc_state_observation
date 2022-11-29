@@ -172,3 +172,14 @@ const auto & X_Camera_Object = datastore().call<const sva::PTransformd &>(name_+
 - [mc_rtc](https://github.com/jrl-umi3218/mc_rtc)
 - Eigen3
 - Boost
+
+## Install from APT
+
+```bash
+# For head version replace stable with head
+curl -1sLf 'https://dl.cloudsmith.io/public/mc-rtc/stable/setup.deb.sh' | sudo -E bash
+# For the Attitude observer
+sudo apt install mc-state-observation
+# For ROS-based observers
+sudo apt install ros-${ROS_DISTRO}-mc-state-observation
+```
