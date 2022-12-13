@@ -194,7 +194,9 @@ void AttitudeObserver::addToGUI(const mc_control::MCController & ctl,
                           mc_rtc::log::info("[{}] Manual reset triggerred", name());
                           reset(ctl);
                         }),
-                 make_rpy_label("Result", m_orientation.transpose()));
+                 ArrayLabel("Result", {"r [deg]", "p [deg]", "y [deg]"}, [this]() -> Eigen::Vector3d {
+                   return mc_rbdyn::rpyFromMat(m_orientation.transpose()) * 180. / mc_rtc::constants::PI;
+                 }));
 }
 
 void AttitudeObserver::KalmanFilterConfig::addToLogger(mc_rtc::Logger & logger, const std::string & category)
