@@ -1,3 +1,10 @@
+mc-state-observation (1.0.1-1debian1) unstable; urgency=medium
+
+  * Fix initialization (#22)
+  * Fix display of result in GUI
+
+ -- Pierre Gergondet <pierre.gergondet+ppa@gmail.com>  Thu, 15 Dec 2022 19:50:12 +0900
+
 mc-state-observation (1.0.0-1debian1) unstable; urgency=medium
 
   * Initial release.
