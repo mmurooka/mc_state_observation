@@ -1,6 +1,6 @@
 #pragma once
 
-#include <mc_observers/BodySensorObserver.h>
+#include <mc_observers/Observer.h>
 
 #include <state-observation/dynamical-system/imu-dynamical-system.hpp>
 #include <state-observation/observer/extended-kalman-filter.hpp>
