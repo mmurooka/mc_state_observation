@@ -188,10 +188,9 @@ void ObjectObserver::addToGUI(const mc_control::MCController & ctl,
                               mc_rtc::gui::StateBuilder & gui,
                               const std::vector<std::string> & category)
 {
-  using namespace mc_rtc::gui;
-
-  gui.addElement(category, Transform("X_0_" + object_, [this, &ctl]() { return ctl.realRobot(object_).posW(); }),
-                 Transform("X_Camera_" + object_, [this]() {
+  gui.addElement(category,
+                 mc_rtc::gui::Transform("X_0_" + object_, [this, &ctl]() { return ctl.realRobot(object_).posW(); }),
+                 mc_rtc::gui::Transform("X_Camera_" + object_, [this]() {
                    const std::lock_guard<std::mutex> lock(mutex_);
                    return X_Camera_EstimatedObject_;
                  }));

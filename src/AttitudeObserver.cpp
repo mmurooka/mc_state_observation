@@ -190,18 +190,17 @@ void AttitudeObserver::addToGUI(const mc_control::MCController & ctl,
                                 mc_rtc::gui::StateBuilder & gui,
                                 const std::vector<std::string> & category)
 {
-  using namespace mc_rtc::gui;
   auto kf_category = category;
   kf_category.push_back("KalmanFilter");
   config_.addToGUI(gui, kf_category);
 
-  gui.addElement(category, Button("Reset config to default", [this]() { config_ = defaultConfig_; }),
-                 Button("Reset",
-                        [this, &ctl]() {
-                          mc_rtc::log::info("[{}] Manual reset triggerred", name());
-                          reset(ctl);
-                        }),
-                 ArrayLabel("Result", {"r [deg]", "p [deg]", "y [deg]"}, [this]() -> Eigen::Vector3d {
+  gui.addElement(category, mc_rtc::gui::Button("Reset config to default", [this]() { config_ = defaultConfig_; }),
+                 mc_rtc::gui::Button("Reset",
+                                     [this, &ctl]() {
+                                       mc_rtc::log::info("[{}] Manual reset triggerred", name());
+                                       reset(ctl);
+                                     }),
+                 mc_rtc::gui::ArrayLabel("Result", {"r [deg]", "p [deg]", "y [deg]"}, [this]() -> Eigen::Vector3d {
                    return mc_rbdyn::rpyFromMat(m_orientation.transpose()) * 180. / mc_rtc::constants::PI;
                  }));
 }
@@ -225,17 +224,16 @@ void AttitudeObserver::KalmanFilterConfig::removeFromLogger(mc_rtc::Logger & log
 void AttitudeObserver::KalmanFilterConfig::addToGUI(mc_rtc::gui::StateBuilder & gui,
                                                     const std::vector<std::string> & category)
 {
-  using namespace mc_rtc::gui;
   // clang-format off
   gui.addElement(category,
-    make_input_element("Compensate Mode", compensateMode),
-    make_input_element("acceleroCovariance", acceleroCovariance),
-    make_input_element("gyroCovariance", gyroCovariance),
-    make_input_element("orientationAccCov", orientationAccCov),
-    make_input_element("linearAccCov", linearAccCov),
-    make_input_element("stateCov", stateCov),
-    make_input_element("stateInitCov", stateInitCov),
-    make_rpy_input("offset", offset));
+    mc_state_observation::gui::make_input_element("Compensate Mode", compensateMode),
+    mc_state_observation::gui::make_input_element("acceleroCovariance", acceleroCovariance),
+    mc_state_observation::gui::make_input_element("gyroCovariance", gyroCovariance),
+    mc_state_observation::gui::make_input_element("orientationAccCov", orientationAccCov),
+    mc_state_observation::gui::make_input_element("linearAccCov", linearAccCov),
+    mc_state_observation::gui::make_input_element("stateCov", stateCov),
+    mc_state_observation::gui::make_input_element("stateInitCov", stateInitCov),
+    mc_state_observation::gui::make_rpy_input("offset", offset));
   // clang-format on
 }
 

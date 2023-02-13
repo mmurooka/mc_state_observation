@@ -23,7 +23,7 @@ void MocapObserver::reset(const mc_control::MCController & ctl)
   run(ctl);
 }
 
-bool MocapObserver::run(const mc_control::MCController & ctl)
+bool MocapObserver::run(const mc_control::MCController &)
 {
   if(!calibrated_)
   {
@@ -77,33 +77,32 @@ void MocapObserver::addToGUI(const mc_control::MCController & ctl,
                              mc_rtc::gui::StateBuilder & gui,
                              const std::vector<std::string> & category)
 {
-  using namespace mc_rtc::gui;
-
-  gui.addElement(category,
-                 Button("Calibrate Marker (put robot at mocap origin)",
-                        [this, &ctl]() {
-                          mc_rtc::log::info("[{}] Calibration triggerred", name());
-                          calibrated_ = calibrateMarkerToBody(ctl);
-                        }),
-                 Button("Initialize origin",
-                        [this, &ctl]() {
-                          mc_rtc::log::info("[{}] Initialize origin triggerred", name());
-                          originInitialized_ = initializeOrigin(ctl);
-                        }),
-                 Button("Reset",
-                        [this, &ctl]() {
-                          mc_rtc::log::info("[{}] Manual reset triggerred", name());
-                          reset(ctl);
-                        }),
-                 Transform(
-                     "Mocap Origin", [this]() -> const sva::PTransformd & { return X_0_mocap_; },
-                     [this](const sva::PTransformd & pose) { X_0_mocap_ = pose; }),
-                 Transform("Mocap Marker World", [this]() -> const sva::PTransformd & { return X_0_marker_; }),
-                 Transform("Mocap Marker Frame", [this, &ctl]() -> const sva::PTransformd {
-                   auto & realRobot = ctl.realRobot(updateRobot_);
-                   auto X_0_body = realRobot.bodyPosW(body_);
-                   return X_marker_body_.inv() * X_0_body;
-                 }));
+  gui.addElement(
+      category,
+      mc_rtc::gui::Button("Calibrate Marker (put robot at mocap origin)",
+                          [this, &ctl]() {
+                            mc_rtc::log::info("[{}] Calibration triggerred", name());
+                            calibrated_ = calibrateMarkerToBody(ctl);
+                          }),
+      mc_rtc::gui::Button("Initialize origin",
+                          [this, &ctl]() {
+                            mc_rtc::log::info("[{}] Initialize origin triggerred", name());
+                            originInitialized_ = initializeOrigin(ctl);
+                          }),
+      mc_rtc::gui::Button("Reset",
+                          [this, &ctl]() {
+                            mc_rtc::log::info("[{}] Manual reset triggerred", name());
+                            reset(ctl);
+                          }),
+      mc_rtc::gui::Transform(
+          "Mocap Origin", [this]() -> const sva::PTransformd & { return X_0_mocap_; },
+          [this](const sva::PTransformd & pose) { X_0_mocap_ = pose; }),
+      mc_rtc::gui::Transform("Mocap Marker World", [this]() -> const sva::PTransformd & { return X_0_marker_; }),
+      mc_rtc::gui::Transform("Mocap Marker Frame", [this, &ctl]() -> const sva::PTransformd {
+        auto & realRobot = ctl.realRobot(updateRobot_);
+        auto X_0_body = realRobot.bodyPosW(body_);
+        return X_marker_body_.inv() * X_0_body;
+      }));
 }
 
 bool MocapObserver::checkPipelines(const mc_control::MCController & ctl)
