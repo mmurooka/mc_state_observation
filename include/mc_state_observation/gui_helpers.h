@@ -12,7 +12,7 @@ inline auto make_checkbox(std::string name, bool & variable)
 {
   auto GetF = [&variable]() { return variable; };
   auto SetF = [&variable]() { variable = !variable; };
-  return mc_rtc::gui::CheckboxImpl<decltype(GetF), decltype(SetF)>(name, GetF, SetF);
+  return mc_rtc::gui::Checkbox(name, GetF, SetF);
 }
 
 template<typename T>
@@ -20,7 +20,7 @@ auto make_number_input(std::string name, T & value)
 {
   auto GetF = [&value]() { return value; };
   auto SetF = [&value](const T & newValue) { value = newValue; };
-  return mc_rtc::gui::NumberInputImpl<decltype(GetF), decltype(SetF)>(name, GetF, SetF);
+  return mc_rtc::gui::NumberInput(name, GetF, SetF);
 }
 
 inline auto make_rpy_input(std::string name, Eigen::Matrix3d & orientation)
@@ -31,24 +31,22 @@ inline auto make_rpy_input(std::string name, Eigen::Matrix3d & orientation)
   auto SetF = [&orientation](const Eigen::Vector3d & rpy) {
     orientation = mc_rbdyn::rpyToMat(rpy * mc_rtc::constants::PI / 180);
   };
-  return mc_rtc::gui::ArrayInputImpl<decltype(GetF), decltype(SetF)>(name, {"r [deg]", "p [deg]", "y [deg]"}, GetF,
-                                                                     SetF);
+  return mc_rtc::gui::ArrayInput(name, {"r [deg]", "p [deg]", "y [deg]"}, GetF, SetF);
 }
 
 inline auto make_motionvecd_input(std::string name, sva::MotionVecd & vel)
 {
   auto GetF = [&vel]() -> const sva::MotionVecd & { return vel; };
   auto SetF = [&vel](const sva::MotionVecd & newVel) { vel = newVel; };
-  return mc_rtc::gui::ArrayInputImpl<decltype(GetF), decltype(SetF)>(
-      name, {"wx [rad/s]", "wy [rad/s]", "wz [rad/s]", "vx [m/s]", "vy [m/s]", "vz [m/s]"}, GetF, SetF);
+  return mc_rtc::gui::ArrayInput(name, {"wx [rad/s]", "wy [rad/s]", "wz [rad/s]", "vx [m/s]", "vy [m/s]", "vz [m/s]"},
+                                 GetF, SetF);
 }
 
 inline auto make_admittancevecd_input(std::string name, sva::AdmittanceVecd & vel)
 {
   auto GetF = [&vel]() -> Eigen::Vector6d { return vel.vector(); };
   auto SetF = [&vel](const Eigen::Vector6d & newVel) { vel = newVel; };
-  return mc_rtc::gui::ArrayInputImpl<decltype(GetF), decltype(SetF)>(name, {"wx", "wy", "wz", "vx", "vy", "vz"}, GetF,
-                                                                     SetF);
+  return mc_rtc::gui::ArrayInput(name, {"wx", "wy", "wz", "vx", "vy", "vz"}, GetF, SetF);
 }
 
 inline auto make_rpy_label(std::string name, const Eigen::Matrix3d & orientation)
