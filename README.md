@@ -74,6 +74,8 @@ Filter:
   d: 2                              # savitzky-golay parameters
 Publish:
   use: true                         # publish estimated robot in ROS
+GUI:
+  plots: true                       # Enable SLAM plots in mc_rtc GUI (can be disabled/enabled at runtime)
 Simulation:
   use: false                        # If true, set estimated to rea/camera of robot
   noise:

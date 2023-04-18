@@ -135,6 +135,11 @@ void SLAMObserver::configure(const mc_control::MCController & ctl, const mc_rtc:
     }
   }
 
+  if(config.has("GUI"))
+  {
+    config("GUI")("plots", plotsEnabled_);
+  }
+
   desc_ = fmt::format("{} (Camera: {}, Estimated: {}, inSimulation: {})", name(), camera_, estimated_, isSimulated_);
 
   thread_ = std::thread(std::bind(&SLAMObserver::rosSpinner, this));
@@ -344,7 +349,9 @@ void SLAMObserver::addToGUI(const mc_control::MCController & ctl,
                                            return ret;
                                          }),
                  mc_rtc::gui::Label("Is Observer initialized?", [this]() { return (isInitialized_ ? "Yes" : "No"); }),
-                 mc_rtc::gui::Button("Delete initialization", [this]() { isInitialized_ = false; }));
+                 mc_rtc::gui::Button("Delete initialization", [this]() { isInitialized_ = false; }),
+                 mc_rtc::gui::Checkbox(
+                     "Enable plots", [this]() { return plotsEnabled_; }, [this, &gui]() { togglePlots(gui); }));
 
   std::vector<std::string> categoryFilter = category;
   categoryFilter.push_back("Filter");
@@ -407,6 +414,14 @@ void SLAMObserver::addToGUI(const mc_control::MCController & ctl,
                        }));
   }
 
+  if(plotsEnabled_)
+  {
+    addPlots(gui);
+  }
+}
+
+void SLAMObserver::addPlots(mc_rtc::gui::StateBuilder & gui)
+{
   gui.addPlot(
       "SLAM::Translation", mc_rtc::gui::plot::X("t", [this]() { return t_; }),
       mc_rtc::gui::plot::Y(
@@ -468,6 +483,25 @@ void SLAMObserver::addToGUI(const mc_control::MCController & ctl,
                     return rpy.z();
                   },
                   mc_rtc::gui::Color::Green, mc_rtc::gui::plot::Style::Dotted));
+}
+
+void SLAMObserver::removePlots(mc_rtc::gui::StateBuilder & gui)
+{
+  gui.removePlot("SLAM::Translation");
+  gui.removePlot("SLAM::Rotation");
+}
+
+void SLAMObserver::togglePlots(mc_rtc::gui::StateBuilder & gui)
+{
+  plotsEnabled_ = !plotsEnabled_;
+  if(plotsEnabled_)
+  {
+    addPlots(gui);
+  }
+  else
+  {
+    removePlots(gui);
+  }
 }
 
 void SLAMObserver::rosSpinner()

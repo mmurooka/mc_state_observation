@@ -1,13 +1,13 @@
 #pragma once
 
+#include <mc_control/MCController.h>
 #include <mc_observers/Observer.h>
 #include <mc_rbdyn/Robot.h>
-#include <mc_control/MCController.h>
 #include <SpaceVecAlg/SpaceVecAlg>
-#include <mc_state_observation/filtering.h>
 #include <ros/ros.h>
-#include <tf2_ros/transform_listener.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
+#include <mc_state_observation/filtering.h>
 #include <thread>
 
 namespace mc_state_observation
@@ -48,6 +48,15 @@ protected:
                 mc_rtc::gui::StateBuilder &,
                 const std::vector<std::string> & /* category */) override;
 
+  /** Add plots to the GUI */
+  void addPlots(mc_rtc::gui::StateBuilder & gui);
+
+  /** Remove plots from the GUI */
+  void removePlots(mc_rtc::gui::StateBuilder & gui);
+
+  /** Toggle plots on/off */
+  void togglePlots(mc_rtc::gui::StateBuilder & gui);
+
 protected:
   /// @{
   std::string robot_ = ""; ///< Name of robot to estimate thanks to SLAM
@@ -60,9 +69,11 @@ protected:
   std::string map_ = ""; ///< Name of map TF in ROS
   std::string estimated_ = ""; ///< Name of estimated camera TF in ROS
   bool isInitialized_ = false; ///< Check if the observer is initialized or not
-  sva::PTransformd X_Slam_Estimated_Camera_ = sva::PTransformd::Identity(); ///< Transformation to go from SLAM world to estimated camera
+  sva::PTransformd X_Slam_Estimated_Camera_ =
+      sva::PTransformd::Identity(); ///< Transformation to go from SLAM world to estimated camera
   sva::PTransformd X_0_Slam_ = sva::PTransformd::Identity(); ///< Transformation to go from Robot world to SLAM world
-  sva::PTransformd X_0_Estimated_camera_ = sva::PTransformd::Identity(); ///< Camera pose in Robot world estimated by SLAM
+  sva::PTransformd X_0_Estimated_camera_ =
+      sva::PTransformd::Identity(); ///< Camera pose in Robot world estimated by SLAM
   bool isSLAMAlive_ = false; ///< Check if slam is alive or not
   /// @}
 
@@ -81,7 +92,8 @@ protected:
   /// @{
   bool isFiltered_ = false; ///< Check if a filter is apply or not
   std::unique_ptr<filter::Transform> filter_; ///< Filter based on savitzky-golay
-  sva::PTransformd X_0_Filtered_estimated_camera_ = sva::PTransformd::Identity(); ///< Estimated camera pose in robot_map
+  sva::PTransformd X_0_Filtered_estimated_camera_ =
+      sva::PTransformd::Identity(); ///< Estimated camera pose in robot_map
   /// @}
 
   /// @{
@@ -95,6 +107,10 @@ protected:
   Eigen::Vector3d maxOrientationNoise_ = Eigen::Vector3d(0.05, 0.05, 0.05);
   Eigen::Vector3d minTranslationNoise_ = Eigen::Vector3d(-0.01, -0.01, -0.01);
   Eigen::Vector3d maxTranslationNoise_ = Eigen::Vector3d(0.01, 0.01, 0.01);
+  /// @}
+
+  /// @{
+  bool plotsEnabled_ = false; ///< Are GUI plots enabled
   /// @}
 
   double t_ = 0.0;
