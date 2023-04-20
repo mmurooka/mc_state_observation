@@ -30,13 +30,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04]
+        os: [ubuntu-20.04]
         build-type: [RelWithDebInfo]
         compiler: [gcc, clang]
-        exclude:
-          # clang's variant implementation on 18.04 is buggy
-          - os: ubuntu-18.04
-            compiler: clang
 
     runs-on: ${{ matrix.os }}
     steps:
