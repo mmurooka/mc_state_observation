@@ -17,19 +17,25 @@ set_default_cmake_build_type(RelWithDebInfo)
 
 project(${PROJECT_NAME} LANGUAGES CXX)
 
-if(UNIX AND NOT APPLE AND NOT EMSCRIPTEN)
+if(UNIX
+   AND NOT APPLE
+   AND NOT EMSCRIPTEN)
   set(WITH_ROS_OBSERVERS_DEFAULT ON)
 else()
   set(WITH_ROS_OBSERVERS_DEFAULT OFF)
 endif()
-option(WITH_ROS_OBSERVERS "Enable ROS-based observers" ${WITH_ROS_OBSERVERS_DEFAULT})
+option(WITH_ROS_OBSERVERS "Enable ROS-based observers"
+       ${WITH_ROS_OBSERVERS_DEFAULT})
 
-set(AMENT_CMAKE_UNINSTALL_TARGET OFF CACHE BOOL "" FORCE)
+set(AMENT_CMAKE_UNINSTALL_TARGET
+    OFF
+    CACHE BOOL "" FORCE)
 find_package(mc_rtc REQUIRED)
 find_package(state-observation 1.3 REQUIRED)
 
 if(WITH_ROS_OBSERVERS AND NOT TARGET mc_rtc::mc_rtc_ros)
-  message(FATAL_ERROR "mc_rtc ROS plugin is required to build ROS-based observers")
+  message(
+    FATAL_ERROR "mc_rtc ROS plugin is required to build ROS-based observers")
 endif()
 
 if(WITH_ROS_OBSERVERS)
@@ -38,8 +44,3 @@ if(WITH_ROS_OBSERVERS)
 endif()
 
 add_subdirectory(src)
-
-if(BUILD_TESTING)
-  find_package(Boost COMPONENTS unit_test_framework REQUIRED)
-  add_subdirectory(tests)
-endif()
