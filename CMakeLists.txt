@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.10)
 
 set(PROJECT_NAME mc_state_observation)
 set(PROJECT_DESCRIPTION "Implementation of state-observation for mc_rtc")
@@ -13,6 +13,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CXX_DISABLE_WERROR 1)
 
 include(cmake/base.cmake)
+set_default_cmake_build_type(RelWithDebInfo)
 
 project(${PROJECT_NAME} LANGUAGES CXX)
 
@@ -23,6 +24,7 @@ else()
 endif()
 option(WITH_ROS_OBSERVERS "Enable ROS-based observers" ${WITH_ROS_OBSERVERS_DEFAULT})
 
+set(AMENT_CMAKE_UNINSTALL_TARGET OFF CACHE BOOL "" FORCE)
 find_package(mc_rtc REQUIRED)
 find_package(state-observation 1.3 REQUIRED)
 
@@ -30,8 +32,10 @@ if(WITH_ROS_OBSERVERS AND NOT TARGET mc_rtc::mc_rtc_ros)
   message(FATAL_ERROR "mc_rtc ROS plugin is required to build ROS-based observers")
 endif()
 
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
-find_package(mc_state_observation_ROS COMPONENTS roscpp tf2 tf2_eigen)
+if(WITH_ROS_OBSERVERS)
+  list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
+  find_package(mc_state_observation_ROS REQUIRED)
+endif()
 
 add_subdirectory(src)
 

@@ -1,14 +1,16 @@
-#include <mc_control/MCController.h>
-#include <mc_observers/ObserverMacros.h>
-#include <mc_rtc/constants.h>
-#include <mc_rtc/ros.h>
-#include <mc_rtc/version.h>
-#include <SpaceVecAlg/Conversions.h>
-#include <SpaceVecAlg/SpaceVecAlg>
-#include <tf2_eigen/tf2_eigen.h>
-#include <Eigen/src/Geometry/Quaternion.h>
 #include <mc_state_observation/SLAMObserver.h>
 #include <mc_state_observation/gui_helpers.h>
+
+#include <mc_observers/ObserverMacros.h>
+
+#include <mc_control/MCController.h>
+
+#include <mc_rtc/constants.h>
+#include <mc_rtc/version.h>
+
+#include <SpaceVecAlg/Conversions.h>
+#include <SpaceVecAlg/SpaceVecAlg>
+
 #include <random>
 
 namespace
@@ -53,6 +55,10 @@ namespace mc_state_observation
 
 SLAMObserver::SLAMObserver(const std::string & type, double dt)
 : mc_observers::Observer(type, dt), nh_(mc_rtc::ROSBridge::get_node_handle())
+#ifdef MC_STATE_OBSERVATION_ROS_IS_ROS2
+  ,
+  tfBuffer_(nh_->get_clock()), tfBroadcaster_(nh_)
+#endif
 {
 }
 
@@ -154,10 +160,10 @@ bool SLAMObserver::run(const mc_control::MCController & ctl)
   t_ += ctl.solver().dt();
 
   auto getTransformStamped = [this](const std::string & origin, const std::string & to,
-                                    geometry_msgs::TransformStamped & transformStamped) -> bool {
+                                    TransformStamped & transformStamped) -> bool {
     try
     {
-      transformStamped = tfBuffer_.lookupTransform(origin, to, ros::Time(0));
+      transformStamped = tfBuffer_.lookupTransform(origin, to, RosTime(0));
     }
     catch(tf2::TransformException & ex)
     {
@@ -167,7 +173,7 @@ bool SLAMObserver::run(const mc_control::MCController & ctl)
     return true;
   };
 
-  geometry_msgs::TransformStamped transformStamped;
+  TransformStamped transformStamped;
   if(!isInitialized_)
   {
     std::string origin = map_;
@@ -188,7 +194,7 @@ bool SLAMObserver::run(const mc_control::MCController & ctl)
   {
     // Connect SLAM and Robot map
     auto transform = tf2::eigenToTransform(sva::conversions::toAffine(X_0_Slam_));
-    transform.header.stamp = ros::Time::now();
+    transform.header.stamp = RosTimeNow();
     transform.header.frame_id = "robot_map";
     transform.child_frame_id = map_;
     tfBroadcaster_.sendTransform(transform);
@@ -507,10 +513,10 @@ void SLAMObserver::togglePlots(mc_rtc::gui::StateBuilder & gui)
 void SLAMObserver::rosSpinner()
 {
   mc_rtc::log::info("[{}] rosSpinner started", name());
-  ros::Rate rate(30);
-  while(ros::ok())
+  RosRate rate(30);
+  while(ros_ok())
   {
-    ros::spinOnce();
+    spinOnce(nh_);
     rate.sleep();
   }
   mc_rtc::log::info("[{}] rosSpinner finished", name());

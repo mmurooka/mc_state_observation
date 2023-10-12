@@ -4,7 +4,6 @@
 #include <mc_rtc/version.h>
 #include <SpaceVecAlg/Conversions.h>
 #include <SpaceVecAlg/SpaceVecAlg>
-#include <tf2_eigen/tf2_eigen.h>
 #include <Eigen/src/Geometry/Transform.h>
 #include <mc_state_observation/ObjectObserver.h>
 #include <mc_state_observation/gui_helpers.h>
@@ -84,7 +83,11 @@ void ObjectObserver::configure(const mc_control::MCController & controller, cons
 
   ctl.datastore().make<bool>("Object::" + object_ + "::IsValid", false);
 
+#ifdef MC_STATE_OBSERVATION_ROS_IS_ROS2
+  subscriber_ = nh_->create_subscription<PoseStamped>(topic_, 1, [this](const PoseStamped & msg) { callback(msg); });
+#else
   subscriber_ = nh_->subscribe(topic_, 1, &ObjectObserver::callback, this);
+#endif
 
   desc_ = fmt::format("{} (Object: {}, Topic: {}, inRobotMap: {})", name(), object_, topic_, isInRobotMap_);
 
@@ -196,7 +199,7 @@ void ObjectObserver::addToGUI(const mc_control::MCController & ctl,
                  }));
 }
 
-void ObjectObserver::callback(const geometry_msgs::PoseStamped & msg)
+void ObjectObserver::callback(const PoseStamped & msg)
 {
   Eigen::Affine3d affine;
   tf2::fromMsg(msg.pose, affine);
@@ -220,10 +223,10 @@ void ObjectObserver::callback(const geometry_msgs::PoseStamped & msg)
 void ObjectObserver::rosSpinner()
 {
   mc_rtc::log::info("[{}] rosSpinner started", name());
-  ros::Rate rate(200);
-  while(ros::ok())
+  RosRate rate(200);
+  while(ros_ok())
   {
-    ros::spinOnce();
+    spinOnce(nh_);
     rate.sleep();
   }
   mc_rtc::log::info("[{}] rosSpinner finished", name());
