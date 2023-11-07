@@ -4,7 +4,7 @@
 
 namespace so = stateObservation;
 
-namespace mc_state_observation::leggedOdometry
+namespace mc_state_observation::odometry
 {
 
 ///////////////////////////////////////////////////////////////////////
@@ -858,4 +858,4 @@ void LeggedOdometryManager::changeOdometryType(const OdometryType & newOdometryT
 {
   odometryType_ = newOdometryType;
 }
-} // namespace mc_state_observation::leggedOdometry
+} // namespace mc_state_observation::odometry

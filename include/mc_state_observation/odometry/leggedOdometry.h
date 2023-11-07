@@ -1,20 +1,10 @@
-/**
- * \file      leggedOdometryTools.h
- * \author    Arnaud Demont, Mehdi Benallegue
- * \date       2023
- * \brief      Library for an easened legged odometry implementation.
- *
- * \details
- *
- *
- */
-
 #pragma once
 
 #include <mc_state_observation/measurements/measurementsTools.h>
+
 #include <state-observation/dynamics-estimators/kinetics-observer.hpp>
 
-namespace mc_state_observation::leggedOdometry
+namespace mc_state_observation::odometry
 {
 
 /**
@@ -414,4 +404,4 @@ protected:
   bool accUpdatedUpstream_ = false;
 };
 
-} // namespace mc_state_observation::leggedOdometry
+} // namespace mc_state_observation::odometry
