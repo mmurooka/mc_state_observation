@@ -10,9 +10,12 @@ namespace mc_state_observation::odometry
 /**
  * Interface for the implementation of legged odometry. This odometry is based on the tracking of successive contacts
  * for the estimation of the pose of the floating base of the robot.
+
  * The tilt cannot be estimated from this method (but the yaw can), it has to be estimated beforehand by another
- * observer. One can decide to perform flat or 6D odometry. The flat odometry considers that the robot walks on a flat
+ * observer.
+ * One can decide to perform flat or 6D odometry. The flat odometry considers that the robot walks on a flat
  * ground and corrects the estimated height accordingly, it is preferable in this use case.
+ *
  * The odometry manager must be initialized once all the configuration parameters are retrieved using the init function,
  * and called on every iteration with \ref LeggedOdometryManager::run(const mc_control::MCController & ctl,
  * mc_rtc::Logger & logger, sva::PTransformd & pose, sva::MotionVecd & vel, sva::MotionVecd & acc).
