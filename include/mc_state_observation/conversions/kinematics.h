@@ -1,9 +1,3 @@
-#ifndef MCSOKINEMATICSTOOLS_H
-#define MCSOKINEMATICSTOOLS_H
-#pragma once
-
-#include <mc_observers/api.h>
-#include <mc_rtc/gui/StateBuilder.h>
 #include <mc_rtc/log/Logger.h>
 #include <SpaceVecAlg/SpaceVecAlg>
 #include <state-observation/dynamics-estimators/kinetics-observer.hpp>
@@ -115,5 +109,3 @@ void addToLogger(const stateObservation::kine::Kinematics & kine, mc_rtc::Logger
 void removeFromLogger(mc_rtc::Logger & logger, const std::string & prefix);
 
 } // namespace mc_state_observation::kinematicsTools
-
-#endif
