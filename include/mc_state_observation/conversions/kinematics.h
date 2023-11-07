@@ -15,17 +15,12 @@
 namespace mc_state_observation::kinematicsTools
 {
 
-///////////////////////////////////////////////////////////////////////
-/// -------------------Sva to Kinematics conversion--------------------
-///////////////////////////////////////////////////////////////////////
-
 /// @brief Creates a Kinematics object from a PTransformd object that contains the position and the orientation of a
 /// frame within another.
 /// @param pTransform The pose of the frame within the other frame, stored as a sva PTransform object.
-/// @param zeroKine Defines the kinematic variables to initialize to zero. For example some compositions need to set a
-/// zero velocity to obtain the one of the resulting kinematic.
-stateObservation::kine::Kinematics poseFromSva(const sva::PTransformd & pTransform,
-                                               stateObservation::kine::Kinematics::Flags::Byte zeroKine);
+/// @param zeroKine Defines the kinematic variables to initialize to zero
+stateObservation::kine::Kinematics fromSva(const sva::PTransformd & pTransform,
+                                           stateObservation::kine::Kinematics::Flags::Byte zeroKine);
 
 /// @brief Creates a Kinematics object from a PTransformd object that contains the position and the orientation of a
 /// frame A within another frame B, and from a MotionVecd object that contains the associated velocities.
@@ -36,9 +31,9 @@ stateObservation::kine::Kinematics poseFromSva(const sva::PTransformd & pTransfo
 /// @param vel The velocity of the frame A inside B.
 /// @param velIsGlobal If true, the velocity vectors are expressed in the global frame (B), if false, they are expressed
 /// in the local frame (A).
-stateObservation::kine::Kinematics poseAndVelFromSva(const sva::PTransformd & pTransform,
-                                                     const sva::MotionVecd & vel,
-                                                     bool velIsGlobal = true);
+stateObservation::kine::Kinematics fromSva(const sva::PTransformd & pTransform,
+                                           const sva::MotionVecd & vel,
+                                           bool velIsGlobal = true);
 
 /// @brief Creates a Kinematics object from a PTransformd object that contains the position and the orientation of a
 /// frame A within another frame B, and from two MotionVecd object that contain the associated velocities and
@@ -59,7 +54,7 @@ stateObservation::kine::Kinematics kinematicsFromSva(const sva::PTransformd & pT
                                                      bool velIsGlobal = true,
                                                      bool accIsGlobal = true);
 
-/// @brief Adds the velocity variables of a frame A within a frame B contained in a MotionVectord object
+/// @brief Sets the velocity variables of a frame A within a frame B contained in a MotionVectord object
 /// to the corresponding Kinematics object.
 /// @details The motion vectors given by mc_rtc can be expressed in the global frame B (example:
 /// rbd::MultiBodyConfig::bodyVelW), but some are expressed in the local frame A (example:
@@ -68,10 +63,10 @@ stateObservation::kine::Kinematics kinematicsFromSva(const sva::PTransformd & pT
 /// @param vel The linear and angular velocities of the frame A inside B.
 /// @param velIsGlobal If true, the velocity vectors are expressed in the global frame (B), if false, they are expressed
 /// in the local frame (A).
-stateObservation::kine::Kinematics & addVelocities(stateObservation::kine::Kinematics & kine,
-                                                   const sva::MotionVecd & vel,
-                                                   bool velIsGlobal = true);
-/// @brief Adds the velocity variables of a frame A within a frame B contained in a MotionVectord object
+stateObservation::kine::Kinematics & setVelocitiesAndAccelerations(stateObservation::kine::Kinematics & kine,
+                                                                   const sva::MotionVecd & vel,
+                                                                   bool velIsGlobal = true);
+/// @brief Sets the velocity variables of a frame A within a frame B contained in a MotionVectord object
 /// to the corresponding Kinematics object.
 /// @details The motion vectors given by mc_rtc can be expressed in the global frame B (example:
 /// rbd::MultiBodyConfig::bodyVelW), but some are expressed in the local frame A (example:
@@ -89,15 +84,8 @@ stateObservation::kine::Kinematics & addVelsAndAccs(stateObservation::kine::Kine
                                                     bool velIsGlobal = true,
                                                     bool accIsGlobal = true);
 
-///////////////////////////////////////////////////////////////////////
-/// -------------------Kinematics to SVA conversion--------------------
-///////////////////////////////////////////////////////////////////////
-
+/// @brief Converts a Kinematics object to the corresponding PTransformd (position + orientation) object
 sva::PTransformd pTransformFromKinematics(const stateObservation::kine::Kinematics & kine);
-
-///////////////////////////////////////////////////////////////////////
-/// -------------------------Logging functions-------------------------
-///////////////////////////////////////////////////////////////////////
 
 void addToLogger(const stateObservation::kine::Kinematics & kine, mc_rtc::Logger & logger, const std::string & prefix);
 

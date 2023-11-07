@@ -70,7 +70,9 @@ so::kine::Kinematics fromSva(const sva::PTransformd & pTransform,
   return kine;
 }
 
-so::kine::Kinematics & setVelocities(so::kine::Kinematics & kine, const sva::MotionVecd & vel, bool velIsGlobal)
+so::kine::Kinematics & setVelocitiesAndAccelerations(so::kine::Kinematics & kine,
+                                                     const sva::MotionVecd & vel,
+                                                     bool velIsGlobal)
 {
   BOOST_ASSERT((kine.position.isSet() && kine.orientation.isSet())
                && "The position and the orientation are not set, please give them first");
