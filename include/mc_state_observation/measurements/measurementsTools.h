@@ -17,54 +17,11 @@
 #include <mc_rtc/log/Logger.h>
 #include <mc_rtc/logging.h>
 
+#include <mc_state_observation/measurements/ContactWithSensor.h>
+#include <mc_state_observation/measurements/IMU.h>
+
 namespace mc_state_observation::measurements
 {
-
-/**
- * Sensors manager for observers implemented in mc_rtc.
- **/
-
-///////////////////////////////////////////////////////////////////////
-/// -----------------------------Sensors-------------------------------
-///////////////////////////////////////////////////////////////////////
-
-/// @brief Class containing the information of a sensor to facilitate its handling.
-struct Sensor
-{
-public:
-  inline const int & getID() const { return id_; }
-  inline const std::string & getName() const { return name_; }
-
-protected:
-  Sensor() {}
-  ~Sensor() {}
-  Sensor(int id, std::string name) : id_(id), name_(name) {}
-
-  bool operator<(const Sensor & contact2) const { return (getID() < contact2.id_); }
-
-protected:
-  int id_;
-  std::string name_;
-};
-///////////////////////////////////////////////////////////////////////
-/// --------------------------------IMUs-------------------------------
-///////////////////////////////////////////////////////////////////////
-
-/// @brief Class containing the information of an IMU.
-struct IMU : public Sensor
-{
-public:
-  IMU(int id, std::string name)
-  {
-    id_ = id;
-    name_ = name;
-    gyroBias << 0.0, 0.0, 0.0;
-  }
-  ~IMU() {}
-
-public:
-  Eigen::Vector3d gyroBias;
-};
 
 /// @brief List of IMUs.
 /// @details Facilitates the handling of IMUs.
@@ -122,156 +79,13 @@ private:
   // Index generator, incremented everytime a new IMU is added
   int num_ = 0;
 };
-
-///////////////////////////////////////////////////////////////////////
-/// ------------------------------Contacts-----------------------------
-///////////////////////////////////////////////////////////////////////
-
+ContactWithSensor contact;
 /**
  * Contacts manager for observers implemented in mc_rtc.
  * This contact manager handles the detection of contacts with three different methods, using contact surfaces, contacts
  * directly given by the controller, or a thresholding on the measured contact force.
  * On each iteration, the manager updates the list of current contacts and of removed contacts.
  **/
-
-/* Contains the important variables associated to the contact */
-
-struct Contact : public Sensor
-{
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-protected:
-  Contact() {}
-  ~Contact() {}
-  // constructor if the contact is not associated to a surface
-  Contact(int id, std::string name)
-  {
-    id_ = id;
-    name_ = name;
-    resetContact();
-  }
-  // constructor if the contact is associated to a surface
-  Contact(int id, std::string name, std::string surface) : Contact(id, name) { surfaceName(surface); }
-
-public:
-  inline void resetContact()
-  {
-    wasAlreadySet_ = false;
-    isSet_ = false;
-  }
-
-  void surfaceName(std::string surfaceName) { surface_ = surfaceName; }
-  const std::string & surfaceName() const
-  {
-    BOOST_ASSERT(!surface_.empty() && "The contact was created without a surface.");
-    return surface_;
-  }
-
-  /*// ! Not working yet
-  inline const Eigen::Vector3d & getZMP()
-  {
-    return zmp;
-  }
-  */
-
-public:
-  bool isSet_ = false;
-  bool wasAlreadySet_ = false;
-  // Eigen::Vector3d zmp; // ! Not working yet
-protected:
-  std::string surface_;
-};
-
-/**
- * Structure of contacts with sensors, containing all the necessary information about the contact. If the contact is
- *detected using a thresholding on the contact force, the contact force cannot be obtained and the name of the contact
- *will be the one of the force sensor. Otherwise the name of the contact surface is used, allowing the creation of
- *contacts associated to a same sensor but a different surface.
- **/
-struct ContactWithSensor : public Contact
-{
-
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-public:
-  ContactWithSensor() {}
-  // constructor if the contact is not associated to a surface
-  ContactWithSensor(int id, std::string forceSensorName)
-  {
-    id_ = id;
-    name_ = forceSensorName;
-    forceSensorName_ = forceSensorName;
-
-    resetContact();
-  }
-
-  // constructor if the contact is associated to a surface
-  ContactWithSensor(int id,
-                    const std::string & forceSensorName,
-                    const std::string & surfaceName,
-                    bool sensorAttachedToSurface)
-  {
-    id_ = id;
-    name_ = surfaceName;
-    resetContact();
-
-    surface_ = surfaceName;
-    forceSensorName_ = forceSensorName;
-    sensorAttachedToSurface_ = sensorAttachedToSurface;
-  }
-  ~ContactWithSensor() {}
-  inline void resetContact()
-  {
-    wasAlreadySet_ = false;
-    isSet_ = false;
-    sensorWasEnabled_ = false;
-
-    // also filtered force? see when this feature will be corrected
-  }
-
-  std::string & forceSensorName() { return forceSensorName_; }
-
-public:
-  Eigen::Matrix<double, 6, 1> wrenchInCentroid_ = Eigen::Matrix<double, 6, 1>::Zero(); // for debug only
-  double forceNorm_ = 0.0; // for debug only
-  // the sensor measurement have to be used by the observer
-  bool sensorEnabled_ = true;
-  // allows to know if the contact's measurements have to be added during the update.
-  bool sensorWasEnabled_ = false;
-
-  // measured contact wrench, expressed in the frame of the contact. Not automatically computed so must be explicitely
-  // computed and called.
-  Eigen::Matrix<double, 6, 1> contactWrenchVector_;
-
-  // indicates if the sensor is directly attached to a surface (true) or not (false). Default is true because in the
-  // case of detection of contacts by thresholding the measured force (@contactsDetection_ = fromThreshold), we cannot
-  // know precisely the surface of contact, so we will consider that the kinematics of the contact surface are the
-  // ones of the sensor
-  bool sensorAttachedToSurface_ = true;
-  // surface of contact
-protected:
-  std::string forceSensorName_;
-
-  /* Force filtering for the contact detection */ // ! Not working yet!
-  // Eigen::Vector3d filteredForce = Eigen::Vector3d::Zero();
-  // double lambda = 0.0;
-};
-
-/**
- * Structure of contacts without sensors, containing all the necessary information about the contact.
- **/
-struct ContactWithoutSensor : public Contact
-{
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-public:
-  ContactWithoutSensor() {}
-  ~ContactWithoutSensor() {}
-  ContactWithoutSensor(int id, std::string name)
-  {
-    id_ = id;
-    name_ = name;
-    surfaceName(name);
-    resetContact();
-  }
-};
 
 /// @brief Map of contacts containing the list of all the contacts and functions facilitating their handling.
 /// @details The template allows to define other kinds of contacts and thus add custom parameters to them. Warning! This
@@ -287,8 +101,8 @@ public:
     BOOST_ASSERT((std::is_base_of<ContactWithSensor, ContactWithSensorT>::value)
                  && "The template class for the contacts with sensors must inherit from the ContactWithSensor class");
     BOOST_ASSERT(
-        (std::is_base_of<ContactWithoutSensor, ContactWithoutSensorT>::value)
-        && "The template class for the contacts with sensors must inherit from the ContactWithoutSensor class");
+        (std::is_base_of<Contact, ContactWithoutSensorT>::value)
+        && "The template class for the contacts without sensors must inherit from the ContactWithoutSensor class");
   }
 
 public:
@@ -553,7 +367,7 @@ public:
   {
     BOOST_ASSERT((std::is_base_of<ContactWithSensor, ContactWithSensorT>::value)
                  && "The template class for the contacts with sensors must inherit from the ContactWithSensor class");
-    BOOST_ASSERT((std::is_base_of<ContactWithoutSensor, ContactWithoutSensorT>::value)
+    BOOST_ASSERT((std::is_base_of<Contact, ContactWithoutSensorT>::value)
                  && "The template class for the contacts with sensors must inherit from the ContactWithSensor class");
   }
   ~ContactsManager() {}

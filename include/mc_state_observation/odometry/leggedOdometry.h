@@ -71,7 +71,7 @@ public:
 };
 
 // Inherits from the class ContactWithoutSensor to prevent
-class LoContactWithoutSensor : public measurements::ContactWithoutSensor
+class LoContactWithoutSensor : public measurements::Contact
 {
   // the legged odometry requires the use of contacts associated to force sensors, this class must therefore not be
   // implemented
