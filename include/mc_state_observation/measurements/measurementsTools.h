@@ -79,7 +79,7 @@ private:
   // Index generator, incremented everytime a new IMU is added
   int num_ = 0;
 };
-ContactWithSensor contact;
+
 /**
  * Contacts manager for observers implemented in mc_rtc.
  * This contact manager handles the detection of contacts with three different methods, using contact surfaces, contacts
