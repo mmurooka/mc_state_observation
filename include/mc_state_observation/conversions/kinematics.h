@@ -1,17 +1,12 @@
 #include <mc_rtc/log/Logger.h>
 #include <SpaceVecAlg/SpaceVecAlg>
-#include <state-observation/dynamics-estimators/kinetics-observer.hpp>
+#include <state-observation/tools/rigid-body-kinematics.hpp>
 
 /**
  * Conversion framework between the sva representation of kinematics (PTransform for pose, MotionVec for velocities and
- * accelerations) and the one used in rigid-body-kinematics (Kinematics, LocalKinematics).
- * The Kinematics and LocalKinematics objects allow a user-friendly representation of the kinematics of a frame within
- * another and offer all the necessary operations on kinematics : composition, inversion, etc.
- * The Kinematics object contains the same kinematics but expressed in the frame A (the transformation
- * between the two representations is therefore a multiplication by the transpose of the orientation matrix of A inside
- * B).
- * In both Kinematics and LocalKinematics, the orientation of A inside B is stored in an Orientation object that
- * contains its matrix or quaternion form and eases the transformations to other representations.
+ * accelerations) and the one used in rigid-body-kinematics (Kinematics).
+ * The Kinematics object allows a user-friendly representation of the kinematics of a frame within
+ * another and offers all the necessary operations on kinematics : composition, inversion, etc.
  *
  * Equivalences : PTransform = {position + Orientation}
  *                 MotionVec = {linVel + angVel} or {linAcc + angAcc}
