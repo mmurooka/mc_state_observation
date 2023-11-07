@@ -1,3 +1,17 @@
+add_library(
+  mc_state_observation SHARED
+  conversions/kinematics.cpp
+  odometry/leggedOdometry.cpp)
+target_link_libraries(
+  mc_state_observation PUBLIC SpaceVecAlg::SpaceVecAlg
+                              state-observation::state-observation)
+install(
+  TARGETS mc_state_observation
+  EXPORT "${TARGETS_EXPORT_NAME}"
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+
 macro(add_simple_observer observer_name)
   add_observer(${observer_name} "${observer_name}.cpp"
                "${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/${observer_name}.h")

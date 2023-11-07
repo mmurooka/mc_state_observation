@@ -9,7 +9,7 @@ namespace mc_state_observation::kinematicsTools
 /// -------------------Sva to Kinematics conversion--------------------
 ///////////////////////////////////////////////////////////////////////
 
-so::kine::Kinematics poseFromSva(const sva::PTransformd & pTransform, so::kine::Kinematics::Flags::Byte zeroKine)
+so::kine::Kinematics fromSva(const sva::PTransformd & pTransform, so::kine::Kinematics::Flags::Byte zeroKine)
 {
   so::kine::Kinematics kine;
   kine.setZero(zeroKine);
@@ -18,9 +18,7 @@ so::kine::Kinematics poseFromSva(const sva::PTransformd & pTransform, so::kine::
   return kine;
 }
 
-so::kine::Kinematics poseAndVelFromSva(const sva::PTransformd & pTransform,
-                                       const sva::MotionVecd & vel,
-                                       bool velIsGlobal)
+so::kine::Kinematics fromSva(const sva::PTransformd & pTransform, const sva::MotionVecd & vel, bool velIsGlobal)
 {
   so::kine::Kinematics kine;
   kine.position = pTransform.translation();
@@ -39,11 +37,11 @@ so::kine::Kinematics poseAndVelFromSva(const sva::PTransformd & pTransform,
   return kine;
 }
 
-so::kine::Kinematics kinematicsFromSva(const sva::PTransformd & pTransform,
-                                       const sva::MotionVecd & vel,
-                                       const sva::MotionVecd & acc,
-                                       bool velIsGlobal,
-                                       bool accIsGlobal)
+so::kine::Kinematics fromSva(const sva::PTransformd & pTransform,
+                             const sva::MotionVecd & vel,
+                             const sva::MotionVecd & acc,
+                             bool velIsGlobal,
+                             bool accIsGlobal)
 {
   so::kine::Kinematics kine;
   kine.position = pTransform.translation();
@@ -72,7 +70,7 @@ so::kine::Kinematics kinematicsFromSva(const sva::PTransformd & pTransform,
   return kine;
 }
 
-so::kine::Kinematics & addVelocities(so::kine::Kinematics & kine, const sva::MotionVecd & vel, bool velIsGlobal)
+so::kine::Kinematics & setVelocities(so::kine::Kinematics & kine, const sva::MotionVecd & vel, bool velIsGlobal)
 {
   BOOST_ASSERT((kine.position.isSet() && kine.orientation.isSet())
                && "The position and the orientation are not set, please give them first");

@@ -41,16 +41,16 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
                            / (robot.indirectSurfaceForceSensor("LeftFootCenter").force().z()
                               + robot.indirectSurfaceForceSensor("RightFootCenter").force().z());
 
-    worldAnchorPose_ = kinematicsTools::poseFromSva(
+    worldAnchorPose_ = kinematicsTools::fromSva(
         sva::interpolate(robot.surfacePose("RightFootCenter"), robot.surfacePose("LeftFootCenter"), leftFootRatio),
         so::kine::Kinematics::Flags::pose);
   }
   else
   {
     worldAnchorPose_ =
-        kinematicsTools::poseFromSva(ctl.datastore().call<sva::PTransformd>(
-                                         "KinematicAnchorFrame::" + ctl.robot(robotName).name(), ctl.robot(robotName)),
-                                     so::kine::Kinematics::Flags::pose);
+        kinematicsTools::fromSva(ctl.datastore().call<sva::PTransformd>(
+                                     "KinematicAnchorFrame::" + ctl.robot(robotName).name(), ctl.robot(robotName)),
+                                 so::kine::Kinematics::Flags::pose);
   }
 
   auto & logger = (const_cast<mc_control::MCController &>(ctl)).logger();
@@ -261,7 +261,7 @@ void LeggedOdometryManager::getFbFromContacts(const mc_control::MCController & c
     LoContactWithSensor & setContact = contactsManager_.contactWithSensor(setContactIndex);
 
     const so::kine::Kinematics & worldFbPose_curr =
-        kinematicsTools::poseFromSva(odometryRobot().posW(), so::kine::Kinematics::Flags::pose);
+        kinematicsTools::fromSva(odometryRobot().posW(), so::kine::Kinematics::Flags::pose);
 
     // the contact already exists so we will use it to estimate the pose of the floating base
     if(setContact.wasAlreadySet_)
@@ -555,12 +555,12 @@ const so::kine::Kinematics & LeggedOdometryManager::getCurrentContactKinematics(
   // robot is necessary because odometry robot doesn't have the copy of the force measurements
   const sva::PTransformd & bodyContactSensorPose = fs.X_p_f();
   so::kine::Kinematics bodyContactSensorKine =
-      kinematicsTools::poseFromSva(bodyContactSensorPose, so::kine::Kinematics::Flags::vel);
+      kinematicsTools::fromSva(bodyContactSensorPose, so::kine::Kinematics::Flags::vel);
 
   // kinematics of the sensor's parent body in the world
   so::kine::Kinematics worldBodyKineOdometryRobot =
-      kinematicsTools::poseFromSva(odometryRobot().mbc().bodyPosW[odometryRobot().bodyIndexByName(fs.parentBody())],
-                                   so::kine::Kinematics::Flags::pose);
+      kinematicsTools::fromSva(odometryRobot().mbc().bodyPosW[odometryRobot().bodyIndexByName(fs.parentBody())],
+                               so::kine::Kinematics::Flags::pose);
 
   so::kine::Kinematics worldSensorKineOdometryRobot = worldBodyKineOdometryRobot * bodyContactSensorKine;
 
@@ -575,7 +575,7 @@ const so::kine::Kinematics & LeggedOdometryManager::getCurrentContactKinematics(
     // the kinematics of the contacts are the ones of the surface, but we must transport the measured wrench
     sva::PTransformd worldSurfacePoseOdometryRobot = odometryRobot().surfacePose(contact.surfaceName());
     contact.currentWorldKine_ =
-        kinematicsTools::poseFromSva(worldSurfacePoseOdometryRobot, so::kine::Kinematics::Flags::pose);
+        kinematicsTools::fromSva(worldSurfacePoseOdometryRobot, so::kine::Kinematics::Flags::pose);
 
     so::kine::Kinematics contactSensorKine = contact.currentWorldKine_.getInverse() * worldSensorKineOdometryRobot;
     // expressing the force measurement in the frame of the surface
@@ -773,11 +773,11 @@ so::kine::Kinematics & LeggedOdometryManager::getAnchorFramePose(const mc_contro
     const auto & imu = ctl.robot(robotName_).bodySensor(bodySensorName);
 
     const sva::PTransformd & imuXbs = imu.X_b_s();
-    so::kine::Kinematics parentImuKine = kinematicsTools::poseFromSva(imuXbs, so::kine::Kinematics::Flags::pose);
+    so::kine::Kinematics parentImuKine = kinematicsTools::fromSva(imuXbs, so::kine::Kinematics::Flags::pose);
 
     const sva::PTransformd & parentPoseW = odometryRobot().bodyPosW(imu.parentBody());
 
-    so::kine::Kinematics worldParentKine = kinematicsTools::poseFromSva(parentPoseW, so::kine::Kinematics::Flags::pose);
+    so::kine::Kinematics worldParentKine = kinematicsTools::fromSva(parentPoseW, so::kine::Kinematics::Flags::pose);
 
     // pose of the IMU in the world frame
     worldAnchorPose_ = worldParentKine * parentImuKine;
@@ -827,11 +827,11 @@ so::kine::Kinematics & LeggedOdometryManager::getAnchorFramePose(const mc_contro
   {
     const auto & imu = ctl.robot(robotName_).bodySensor(bodySensorName);
     const sva::PTransformd & imuXbs = imu.X_b_s();
-    so::kine::Kinematics parentImuKine = kinematicsTools::poseFromSva(imuXbs, so::kine::Kinematics::Flags::pose);
+    so::kine::Kinematics parentImuKine = kinematicsTools::fromSva(imuXbs, so::kine::Kinematics::Flags::pose);
 
     const sva::PTransformd & parentPoseW = odometryRobot().bodyPosW(imu.parentBody());
 
-    so::kine::Kinematics worldParentKine = kinematicsTools::poseFromSva(parentPoseW, so::kine::Kinematics::Flags::pose);
+    so::kine::Kinematics worldParentKine = kinematicsTools::fromSva(parentPoseW, so::kine::Kinematics::Flags::pose);
 
     // pose of the IMU in the world frame
     so::kine::Kinematics worldImuKine = worldParentKine * parentImuKine;
