@@ -11,12 +11,10 @@
 
 #pragma once
 
-#include <mc_state_observation/observersTools/measurementsTools.h>
+#include <mc_state_observation/measurements/measurementsTools.h>
 #include <state-observation/dynamics-estimators/kinetics-observer.hpp>
 
-namespace mc_state_observation
-{
-namespace leggedOdometry
+namespace mc_state_observation::leggedOdometry
 {
 
 /**
@@ -416,6 +414,4 @@ protected:
   bool accUpdatedUpstream_ = false;
 };
 
-} // namespace leggedOdometry
-
-} // namespace mc_state_observation
+} // namespace mc_state_observation::leggedOdometry

@@ -1,10 +1,8 @@
-#include <mc_state_observation/observersTools/kinematicsTools.h>
+#include <mc_state_observation/conversions/kinematics.h>
 
 namespace so = stateObservation;
 
-namespace mc_state_observation
-{
-namespace kinematicsTools
+namespace mc_state_observation::kinematicsTools
 {
 
 ///////////////////////////////////////////////////////////////////////
@@ -126,42 +124,48 @@ so::kine::Kinematics & addVelsAndAccs(so::kine::Kinematics & kine,
 
 void addToLogger(const stateObservation::kine::Kinematics & kine, mc_rtc::Logger & logger, const std::string & prefix)
 {
-  logger.addLogEntry(prefix + "_position",
-                     [&kine]() -> const stateObservation::Vector3
-                     {
-                       if(kine.position.isSet()) { return kine.position(); }
-                       else { return stateObservation::Vector3::Zero(); }
-                     });
-  logger.addLogEntry(prefix + "_ori",
-                     [&kine]() -> Eigen::Quaterniond
-                     {
-                       if(kine.orientation.isSet()) { return kine.orientation.inverse().toQuaternion(); }
-                       else { return stateObservation::kine::Orientation::zeroRotation().toQuaternion(); }
-                     });
-  logger.addLogEntry(prefix + "_linVel",
-                     [&kine]() -> const stateObservation::Vector3
-                     {
-                       if(kine.linVel.isSet()) { return kine.linVel(); }
-                       else { return stateObservation::Vector3::Zero(); };
-                     });
-  logger.addLogEntry(prefix + "_angVel",
-                     [&kine]() -> const stateObservation::Vector3
-                     {
-                       if(kine.angVel.isSet()) { return kine.angVel(); }
-                       else { return stateObservation::Vector3::Zero(); };
-                     });
-  logger.addLogEntry(prefix + "_linAcc",
-                     [&kine]() -> const stateObservation::Vector3
-                     {
-                       if(kine.linAcc.isSet()) { return kine.linAcc(); }
-                       else { return stateObservation::Vector3::Zero(); };
-                     });
-  logger.addLogEntry(prefix + "_angAcc",
-                     [&kine]() -> const stateObservation::Vector3
-                     {
-                       if(kine.angAcc.isSet()) { return kine.angAcc(); }
-                       else { return stateObservation::Vector3::Zero(); };
-                     });
+  logger.addLogEntry(prefix + "_position", [&kine]() -> const stateObservation::Vector3 {
+    if(kine.position.isSet()) { return kine.position(); }
+    else
+    {
+      return stateObservation::Vector3::Zero();
+    }
+  });
+  logger.addLogEntry(prefix + "_ori", [&kine]() -> Eigen::Quaterniond {
+    if(kine.orientation.isSet()) { return kine.orientation.inverse().toQuaternion(); }
+    else
+    {
+      return stateObservation::kine::Orientation::zeroRotation().toQuaternion();
+    }
+  });
+  logger.addLogEntry(prefix + "_linVel", [&kine]() -> const stateObservation::Vector3 {
+    if(kine.linVel.isSet()) { return kine.linVel(); }
+    else
+    {
+      return stateObservation::Vector3::Zero();
+    };
+  });
+  logger.addLogEntry(prefix + "_angVel", [&kine]() -> const stateObservation::Vector3 {
+    if(kine.angVel.isSet()) { return kine.angVel(); }
+    else
+    {
+      return stateObservation::Vector3::Zero();
+    };
+  });
+  logger.addLogEntry(prefix + "_linAcc", [&kine]() -> const stateObservation::Vector3 {
+    if(kine.linAcc.isSet()) { return kine.linAcc(); }
+    else
+    {
+      return stateObservation::Vector3::Zero();
+    };
+  });
+  logger.addLogEntry(prefix + "_angAcc", [&kine]() -> const stateObservation::Vector3 {
+    if(kine.angAcc.isSet()) { return kine.angAcc(); }
+    else
+    {
+      return stateObservation::Vector3::Zero();
+    };
+  });
 }
 
 void removeFromLogger(mc_rtc::Logger & logger, const std::string & prefix)
@@ -186,5 +190,4 @@ sva::PTransformd pTransformFromKinematics(const so::kine::Kinematics & kine)
   return pose;
 }
 
-} // namespace kinematicsTools
-} // namespace mc_state_observation
+} // namespace mc_state_observation::kinematicsTools

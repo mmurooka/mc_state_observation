@@ -23,9 +23,7 @@
  *                 MotionVec = {linVel + angVel} or {linAcc + angAcc}
  **/
 
-namespace mc_state_observation
-{
-namespace kinematicsTools
+namespace mc_state_observation::kinematicsTools
 {
 
 ///////////////////////////////////////////////////////////////////////
@@ -116,7 +114,6 @@ void addToLogger(const stateObservation::kine::Kinematics & kine, mc_rtc::Logger
 
 void removeFromLogger(mc_rtc::Logger & logger, const std::string & prefix);
 
-} // namespace kinematicsTools
-} // namespace mc_state_observation
+} // namespace mc_state_observation::kinematicsTools
 
 #endif

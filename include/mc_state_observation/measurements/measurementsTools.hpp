@@ -1,9 +1,7 @@
 #pragma once
-#include "mc_state_observation/observersTools/measurementsTools.h"
-namespace mc_state_observation
-{
+#include "mc_state_observation/measurements/measurementsTools.h"
 
-namespace measurements
+namespace mc_state_observation::measurements
 {
 
 ///////////////////////////////////////////////////////////////////////
@@ -98,13 +96,9 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::initDetection(
     const std::vector<std::string> & forceSensorsToOmit)
 {
   if(contactsDetection == fromSolver)
-  {
-    contactsFinder_ = &ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFromSolver;
-  }
+  { contactsFinder_ = &ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFromSolver; }
   if(contactsDetection == fromThreshold)
-  {
-    contactsFinder_ = &ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFromThreshold;
-  }
+  { contactsFinder_ = &ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFromThreshold; }
 
   contactDetectionThreshold_ = contactDetectionThreshold;
   contactsSensorDisabledInit_ = contactsSensorDisabledInit;
@@ -131,9 +125,7 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::initDetection(
     {
       if(std::find(forceSensorsToOmit.begin(), forceSensorsToOmit.end(), forceSensor.name())
          != forceSensorsToOmit.end())
-      {
-        continue;
-      }
+      { continue; }
       const std::string & fsName = forceSensor.name();
 
       mapContacts_.insertContact(fsName, true);
@@ -159,8 +151,7 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::addContactToGui
           surface + " : " + (mapContacts_.contactWithSensor(surface).isSet_ ? "Contact is set" : "Contact is not set")
               + ": Use wrench sensor: ",
           [this, surface]() { return mapContacts_.contactWithSensor(surface).sensorEnabled_; },
-          [this, surface]()
-          {
+          [this, surface]() {
             mapContacts_.contactWithSensor(surface).sensorEnabled_ =
                 !mapContacts_.contactWithSensor(surface).sensorEnabled_;
             std::cout << std::endl
@@ -335,9 +326,7 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::updateContacts(
   {
     if(oldContacts_.find(foundContact)
        != oldContacts_.end()) // checks if the contact was already set on the last iteration
-    {
-      contactWithSensor(foundContact).wasAlreadySet_ = true;
-    }
+    { contactWithSensor(foundContact).wasAlreadySet_ = true; }
     else // the contact was not set on the last iteration
     {
       contactWithSensor(foundContact).wasAlreadySet_ = false;
@@ -370,5 +359,4 @@ std::string ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::set_to_s
   return out.str();
 }
 
-} // namespace measurements
-} // namespace mc_state_observation
+} // namespace mc_state_observation::measurements
