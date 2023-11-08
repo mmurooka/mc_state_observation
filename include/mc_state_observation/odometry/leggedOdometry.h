@@ -28,19 +28,8 @@ namespace mc_state_observation::odometry
 // the associated sensor
 class LoContactWithSensor : public measurements::ContactWithSensor
 {
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-protected:
-  LoContactWithSensor() {}
-
 public:
-  LoContactWithSensor(int id, std::string forceSensorName)
-  {
-    id_ = id;
-    name_ = forceSensorName;
-    forceSensorName_ = forceSensorName;
-
-    resetContact();
-  }
+  LoContactWithSensor(int id, std::string forceSensorName) : measurements::ContactWithSensor(id, forceSensorName) {}
 
   LoContactWithSensor(int id, const std::string & forceSensorName, const std::string & surfaceName)
   : measurements::ContactWithSensor(id, forceSensorName, surfaceName)
