@@ -1,3 +1,4 @@
+#include "mc_state_observation/measurements/measurementsTools.h"
 #include <mc_state_observation/conversions/kinematics.h>
 
 #include <mc_state_observation/odometry/leggedOdometry.h>
@@ -66,9 +67,9 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
   {
     ctl.gui()->addElement({odometryName_, "Odometry"},
                           mc_rtc::gui::ComboInput(
-                              "Choose from list", {"6dOdometry", "flatOdometry"},
+                              "Choose from list", {"6dOdometry", "Flat"},
                               [this]() -> std::string {
-                                if(odometryType_ == measurements::flatOdometry) { return "flatOdometry"; }
+                                if(odometryType_ == measurements::OdometryType::Flat) { return "Flat"; }
                                 else
                                 {
                                   return "6dOdometry";
@@ -78,10 +79,10 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
     logger.addLogEntry(odometryName_ + "_debug_OdometryType", [this]() -> std::string {
       switch(odometryType_)
       {
-        case measurements::flatOdometry:
-          return "flatOdometry";
+        case measurements::OdometryType::Flat:
+          return "Flat";
           break;
-        case measurements::odometry6d:
+        case measurements::OdometryType::Odometry6d:
           return "6dOdometry";
           break;
         default:
@@ -546,7 +547,7 @@ void LeggedOdometryManager::setNewContact(LoContactWithSensor & contact, const m
     contact.worldRefKine_.orientation = so::Matrix3(worldSurfacePoseOdometryRobot.rotation().transpose());
   }
 
-  if(odometryType_ == measurements::flatOdometry) { contact.worldRefKine_.position()(2) = 0.0; }
+  if(odometryType_ == measurements::OdometryType::Flat) { contact.worldRefKine_.position()(2) = 0.0; }
 }
 
 const so::kine::Kinematics & LeggedOdometryManager::getCurrentContactKinematics(LoContactWithSensor & contact,
@@ -844,10 +845,10 @@ so::kine::Kinematics & LeggedOdometryManager::getAnchorFramePose(const mc_contro
 void LeggedOdometryManager::changeOdometryType(const std::string & newOdometryType)
 {
   OdometryType prevOdometryType = odometryType_;
-  if(newOdometryType == "flatOdometry") { odometryType_ = measurements::flatOdometry; }
+  if(newOdometryType == "Flat") { odometryType_ = measurements::OdometryType::Flat; }
   else if(newOdometryType == "6dOdometry")
   {
-    odometryType_ = measurements::odometry6d;
+    odometryType_ = measurements::OdometryType::Odometry6d;
   }
 
   if(odometryType_ != prevOdometryType)

@@ -358,13 +358,12 @@ public:
   MapContacts<ContactWithSensorT> mapContacts_;
 
 protected:
+  // method used to detect the contacts
+  ContactsDetection contactsDetectionMethod_ = Undefined;
   double contactDetectionThreshold_;
-  // list of the currently set contacts. The custom comparator is used to ensure that the sorting of contacts is
-  // consistent
 
   // list of the current contacts
   ContactsSet contactsFound_;
-
   // list of contacts that were set on last iteration
   ContactsSet oldContacts_;
   // list of the contacts that just got removed
@@ -374,18 +373,18 @@ protected:
   std::vector<std::string> surfacesForContactDetection_;
   // list of sensors that must not be used from the start of the observer
   std::vector<std::string> contactsSensorDisabledInit_;
+
   // name of the observer using this contacts manager.
   std::string observerName_;
-  // method used to detect the contacts
-  ContactsDetection contactsDetectionMethod_ = Undefined;
+
   bool verbose_ = true;
 };
 
 // allowed odometry types
-enum OdometryType
+enum class OdometryType
 {
-  odometry6d,
-  flatOdometry,
+  Odometry6d,
+  Flat,
   None
 };
 
