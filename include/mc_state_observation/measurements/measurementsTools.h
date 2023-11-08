@@ -236,13 +236,10 @@ public:
   /// be named with the name of the surface.
   /// @param forceSensorName The name of the force sensor.
   /// @param surface The name of the surface that will be used also to name the contact.
-  /// @param sensorAttachedToSurface True if the sensor is attached to the surface.
-  inline void insertContact(const std::string & forceSensorName,
-                            const std::string surface,
-                            const bool & sensorAttachedToSurface)
+  inline void insertContact(const std::string & forceSensorName, const std::string surface)
   {
-    if(checkAlreadyExists(sensorAttachedToSurface, surface)) return;
-    insertElement(forceSensorName, surface, sensorAttachedToSurface);
+    if(checkAlreadyExists(surface)) return;
+    insertElement(forceSensorName, surface);
 
     num_++;
   }
@@ -253,15 +250,11 @@ private:
   /// be named with the name of the surface.
   /// @param forceSensorName The name of the force sensor.
   /// @param surface The name of the surface that will be used also to name the contact.
-  /// @param sensorAttachedToSurface True if the sensor is attached to the surface.
-  inline void insertElement(const std::string & forceSensorName,
-                            const std::string surface,
-                            const bool sensorAttachedToSurface)
+  inline void insertElement(const std::string & forceSensorName, const std::string surface)
   {
     insertOrder_.push_back(surface);
 
-    mapContactsWithSensors_.insert(
-        std::make_pair(surface, ContactWithSensorT(num_, forceSensorName, surface, sensorAttachedToSurface)));
+    mapContactsWithSensors_.insert(std::make_pair(surface, ContactWithSensorT(num_, forceSensorName, surface)));
     hasSensor_.insert(std::make_pair(surface, true));
   }
   /// @brief Insert a contact to the map of contacts. The contact can either be associated to a sensor or not.
@@ -311,9 +304,8 @@ private:
   ///
   /// @param name The name of the contact
   /// @param hasSensor True if the contact is attached to a sensor.
-  /// @param sensorAttachedToSurface True if the sensor is attached to the surface.
   /// @return bool
-  inline bool checkAlreadyExists(bool sensorAttachedToSurface, const std::string & name)
+  inline bool checkAlreadyExists(const std::string & name)
   {
     if(std::find(insertOrder_.begin(), insertOrder_.end(), name) != insertOrder_.end()) // the contact already exists
     {
