@@ -18,7 +18,7 @@ void ContactsManager<ContactWithSensorT>::init(const std::string & observerName,
 template<typename ContactWithSensorT>
 void ContactsManager<ContactWithSensorT>::initDetection(const mc_control::MCController & ctl,
                                                         const std::string & robotName,
-                                                        const ContactsDetection & contactsDetection,
+                                                        ContactsDetection contactsDetection,
                                                         const std::vector<std::string> & surfacesForContactDetection,
                                                         const std::vector<std::string> & contactsSensorDisabledInit,
                                                         const double & contactDetectionThreshold)
@@ -87,7 +87,7 @@ void ContactsManager<ContactWithSensorT>::initDetection(const mc_control::MCCont
 template<typename ContactWithSensorT>
 void ContactsManager<ContactWithSensorT>::initDetection(const mc_control::MCController & ctl,
                                                         const std::string & robotName,
-                                                        const ContactsDetection & contactsDetection,
+                                                        ContactsDetection contactsDetection,
                                                         const std::vector<std::string> & contactsSensorDisabledInit,
                                                         const double & contactDetectionThreshold,
                                                         const std::vector<std::string> & forceSensorsToOmit)

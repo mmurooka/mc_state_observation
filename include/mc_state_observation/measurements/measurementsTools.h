@@ -254,10 +254,9 @@ public:
 public:
   ContactsManager()
   {
-    BOOST_ASSERT((std::is_base_of<ContactWithSensor, ContactWithSensorT>::value)
-                 && "The template class for the contacts with sensors must inherit from the ContactWithSensor class");
+    static_assert(std::is_base_of_v<ContactWithSensor, ContactWithSensorT>,
+                  "The template class for the contacts with sensors must inherit from the ContactWithSensor class");
   }
-  ~ContactsManager() {}
 
   // initialization of the odometry
   void init(const std::string & observerName, const bool verbose = true);
@@ -271,7 +270,7 @@ public:
   /// @param contactDetectionThreshold threshold on the measured force for the contact detection
   void initDetection(const mc_control::MCController & ctl,
                      const std::string & robotName,
-                     const ContactsDetection & contactsDetection,
+                     ContactsDetection contactsDetection,
                      const std::vector<std::string> & surfacesForContactDetection,
                      const std::vector<std::string> & contactsSensorDisabledInit,
                      const double & contactDetectionThreshold);
@@ -286,7 +285,7 @@ public:
   /// @param forceSensorsToOmit list of force sensors that cannot be used for the contacts detection
   void initDetection(const mc_control::MCController & ctl,
                      const std::string & robotName,
-                     const ContactsDetection & contactsDetection,
+                     ContactsDetection contactsDetection,
                      const std::vector<std::string> & contactsSensorDisabledInit,
                      const double & contactDetectionThreshold,
                      const std::vector<std::string> & forceSensorsToOmit);
