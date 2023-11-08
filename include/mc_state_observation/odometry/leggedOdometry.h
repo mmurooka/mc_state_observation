@@ -42,18 +42,9 @@ public:
     resetContact();
   }
 
-  LoContactWithSensor(int id,
-                      const std::string & forceSensorName,
-                      const std::string & surfaceName,
-                      bool sensorAttachedToSurface)
+  LoContactWithSensor(int id, const std::string & forceSensorName, const std::string & surfaceName)
+  : measurements::ContactWithSensor(id, forceSensorName, surfaceName)
   {
-    id_ = id;
-    name_ = forceSensorName;
-    resetContact();
-
-    surface_ = surfaceName;
-    forceSensorName_ = forceSensorName;
-    sensorAttachedToSurface_ = sensorAttachedToSurface;
   }
 
 public:
@@ -61,8 +52,6 @@ public:
   stateObservation::kine::Kinematics worldRefKine_;
   // indicates whether the contact can be used for the orientation odometry or not
   bool useForOrientation_ = false;
-  // norm of the force measured by the sensor
-  double forceNorm_ = 0.0;
   // current estimation of the kinematics of the floating base in the world, obtained from the reference pose of the
   // contact in the world
   stateObservation::kine::Kinematics currentWorldFbPose_;

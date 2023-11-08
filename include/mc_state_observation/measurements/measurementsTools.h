@@ -319,11 +319,7 @@ private:
     {
       if(!hasSensor_.at(name))
       { mc_rtc::log::error_and_throw("The contact already exists and was associated to no sensor"); }
-      if(contactWithSensor(name).sensorAttachedToSurface_ != sensorAttachedToSurface)
-      {
-        mc_rtc::log::error_and_throw(
-            "You previously said that the contact sensor was not attached to the contact surface");
-      }
+
       return true;
     }
     else

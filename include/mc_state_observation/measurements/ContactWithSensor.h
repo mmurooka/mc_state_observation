@@ -24,12 +24,8 @@ public:
   }
 
   // constructor if the contact is associated to a surface
-  ContactWithSensor(int id,
-                    const std::string & forceSensorName,
-                    const std::string & surfaceName,
-                    bool sensorAttachedToSurface)
-  : Contact(id, surfaceName, surfaceName), sensorAttachedToSurface_(sensorAttachedToSurface),
-    forceSensorName_(forceSensorName)
+  ContactWithSensor(int id, const std::string & forceSensorName, const std::string & surfaceName)
+  : Contact(id, surfaceName, surfaceName), forceSensorName_(forceSensorName)
   {
   }
 
@@ -46,7 +42,7 @@ public:
 public:
   Eigen::Matrix<double, 6, 1> wrenchInCentroid_ = Eigen::Matrix<double, 6, 1>::Zero(); // for logs
   double forceNorm_ = 0.0;
-  // the sensor measurement have to be used by the observer
+  // the sensor measurement has to be used by the observer
   bool sensorEnabled_ = true;
   // allows to know if the contact's measurements have to be added during the update.
   bool sensorWasEnabled_ = false;
@@ -55,12 +51,6 @@ public:
   // computed and called.
   Eigen::Matrix<double, 6, 1> contactWrenchVector_;
 
-  // indicates if the sensor is directly attached to a surface (true) or not (false). Default is true because in the
-  // case of detection of contacts by thresholding the measured force (@contactsDetection_ = fromThreshold), we cannot
-  // know precisely the surface of contact, so we will consider that the kinematics of the contact surface are the
-  // ones of the sensor
-  bool sensorAttachedToSurface_ = true;
-  // surface of contact
 protected:
   std::string forceSensorName_;
 
