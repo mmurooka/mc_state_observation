@@ -1,7 +1,5 @@
-add_library(
-  mc_state_observation SHARED
-  conversions/kinematics.cpp
-  odometry/leggedOdometry.cpp)
+add_library(mc_state_observation SHARED conversions/kinematics.cpp
+                                        odometry/leggedOdometry.cpp)
 target_link_libraries(
   mc_state_observation PUBLIC SpaceVecAlg::SpaceVecAlg
                               state-observation::state-observation)

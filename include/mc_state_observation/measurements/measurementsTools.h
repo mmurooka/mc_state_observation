@@ -187,10 +187,7 @@ public:
   inline const int & getNumFromName(const std::string & name)
   {
     if(hasSensor_.at(name)) { return mapContactsWithSensors_.at(name).getID(); }
-    else
-    {
-      return mapContactsWithoutSensors_.at(name).getID();
-    }
+    else { return mapContactsWithoutSensors_.at(name).getID(); }
   }
 
   /* // ! Not working yet
@@ -293,10 +290,7 @@ private:
 
       return true;
     }
-    else
-    {
-      return false;
-    }
+    else { return false; }
   }
 
   /// @brief Check if a contact already exists in the list. If it already exists, checks that the contact remained
@@ -310,14 +304,13 @@ private:
     if(std::find(insertOrder_.begin(), insertOrder_.end(), name) != insertOrder_.end()) // the contact already exists
     {
       if(!hasSensor_.at(name))
-      { mc_rtc::log::error_and_throw("The contact already exists and was associated to no sensor"); }
+      {
+        mc_rtc::log::error_and_throw("The contact already exists and was associated to no sensor");
+      }
 
       return true;
     }
-    else
-    {
-      return false;
-    }
+    else { return false; }
   }
 
 private:
