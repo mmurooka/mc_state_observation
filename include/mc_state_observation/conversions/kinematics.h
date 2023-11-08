@@ -12,7 +12,7 @@
  *                 MotionVec = {linVel + angVel} or {linAcc + angAcc}
  **/
 
-namespace mc_state_observation::kinematicsTools
+namespace mc_state_observation::conversions::kinematics
 {
 
 /// @brief Creates a Kinematics object from a PTransformd object that contains the position and the orientation of a
@@ -91,4 +91,4 @@ void addToLogger(const stateObservation::kine::Kinematics & kine, mc_rtc::Logger
 
 void removeFromLogger(mc_rtc::Logger & logger, const std::string & prefix);
 
-} // namespace mc_state_observation::kinematicsTools
+} // namespace mc_state_observation::conversions::kinematics

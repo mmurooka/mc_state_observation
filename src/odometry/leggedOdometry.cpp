@@ -42,16 +42,16 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
                            / (robot.indirectSurfaceForceSensor("LeftFootCenter").force().z()
                               + robot.indirectSurfaceForceSensor("RightFootCenter").force().z());
 
-    worldAnchorPose_ = kinematicsTools::fromSva(
+    worldAnchorPose_ = conversions::kinematics::fromSva(
         sva::interpolate(robot.surfacePose("RightFootCenter"), robot.surfacePose("LeftFootCenter"), leftFootRatio),
         so::kine::Kinematics::Flags::pose);
   }
   else
   {
-    worldAnchorPose_ =
-        kinematicsTools::fromSva(ctl.datastore().call<sva::PTransformd>(
-                                     "KinematicAnchorFrame::" + ctl.robot(robotName).name(), ctl.robot(robotName)),
-                                 so::kine::Kinematics::Flags::pose);
+    worldAnchorPose_ = conversions::kinematics::fromSva(
+        ctl.datastore().call<sva::PTransformd>("KinematicAnchorFrame::" + ctl.robot(robotName).name(),
+                                               ctl.robot(robotName)),
+        so::kine::Kinematics::Flags::pose);
   }
 
   auto & logger = (const_cast<mc_control::MCController &>(ctl)).logger();
@@ -68,28 +68,28 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
     ctl.gui()->addElement({odometryName_, "Odometry"},
                           mc_rtc::gui::ComboInput(
                               "Choose from list", {"6dOdometry", "Flat"},
-                              [this]() -> std::string {
+                              [this]() -> std::string
+                              {
                                 if(odometryType_ == measurements::OdometryType::Flat) { return "Flat"; }
-                                else
-                                {
-                                  return "6dOdometry";
-                                }
+                                else { return "6dOdometry"; }
                               },
                               [this](const std::string & typeOfOdometry) { changeOdometryType(typeOfOdometry); }));
-    logger.addLogEntry(odometryName_ + "_debug_OdometryType", [this]() -> std::string {
-      switch(odometryType_)
-      {
-        case measurements::OdometryType::Flat:
-          return "Flat";
-          break;
-        case measurements::OdometryType::Odometry6d:
-          return "6dOdometry";
-          break;
-        default:
-          break;
-      }
-      return "default";
-    });
+    logger.addLogEntry(odometryName_ + "_debug_OdometryType",
+                       [this]() -> std::string
+                       {
+                         switch(odometryType_)
+                         {
+                           case measurements::OdometryType::Flat:
+                             return "Flat";
+                             break;
+                           case measurements::OdometryType::Odometry6d:
+                             return "6dOdometry";
+                             break;
+                           default:
+                             break;
+                         }
+                         return "default";
+                       });
   }
 }
 
@@ -262,7 +262,7 @@ void LeggedOdometryManager::getFbFromContacts(const mc_control::MCController & c
     LoContactWithSensor & setContact = contactsManager_.contact(setContactIndex);
 
     const so::kine::Kinematics & worldFbPose_curr =
-        kinematicsTools::fromSva(odometryRobot().posW(), so::kine::Kinematics::Flags::pose);
+        conversions::kinematics::fromSva(odometryRobot().posW(), so::kine::Kinematics::Flags::pose);
 
     // the contact already exists so we will use it to estimate the pose of the floating base
     if(setContact.wasAlreadySet_)
@@ -434,10 +434,7 @@ void LeggedOdometryManager::updateOdometryRobot(const mc_control::MCController &
 
       odometryRobot().accW(acc);
     }
-    else
-    {
-      mc_rtc::log::error("The acceleration must be already updated upstream.");
-    }
+    else { mc_rtc::log::error("The acceleration must be already updated upstream."); }
   }
 
   if(updateVels)
@@ -556,12 +553,12 @@ const so::kine::Kinematics & LeggedOdometryManager::getCurrentContactKinematics(
   // robot is necessary because odometry robot doesn't have the copy of the force measurements
   const sva::PTransformd & bodyContactSensorPose = fs.X_p_f();
   so::kine::Kinematics bodyContactSensorKine =
-      kinematicsTools::fromSva(bodyContactSensorPose, so::kine::Kinematics::Flags::vel);
+      conversions::kinematics::fromSva(bodyContactSensorPose, so::kine::Kinematics::Flags::vel);
 
   // kinematics of the sensor's parent body in the world
   so::kine::Kinematics worldBodyKineOdometryRobot =
-      kinematicsTools::fromSva(odometryRobot().mbc().bodyPosW[odometryRobot().bodyIndexByName(fs.parentBody())],
-                               so::kine::Kinematics::Flags::pose);
+      conversions::kinematics::fromSva(odometryRobot().mbc().bodyPosW[odometryRobot().bodyIndexByName(fs.parentBody())],
+                                       so::kine::Kinematics::Flags::pose);
 
   so::kine::Kinematics worldSensorKineOdometryRobot = worldBodyKineOdometryRobot * bodyContactSensorKine;
 
@@ -576,7 +573,7 @@ const so::kine::Kinematics & LeggedOdometryManager::getCurrentContactKinematics(
     // the kinematics of the contacts are the ones of the surface, but we must transport the measured wrench
     sva::PTransformd worldSurfacePoseOdometryRobot = odometryRobot().surfacePose(contact.surfaceName());
     contact.currentWorldKine_ =
-        kinematicsTools::fromSva(worldSurfacePoseOdometryRobot, so::kine::Kinematics::Flags::pose);
+        conversions::kinematics::fromSva(worldSurfacePoseOdometryRobot, so::kine::Kinematics::Flags::pose);
 
     so::kine::Kinematics contactSensorKine = contact.currentWorldKine_.getInverse() * worldSensorKineOdometryRobot;
     // expressing the force measurement in the frame of the surface
@@ -610,11 +607,11 @@ void LeggedOdometryManager::selectForOrientationOdometry()
 void LeggedOdometryManager::addContactLogEntries(mc_rtc::Logger & logger, const LoContactWithSensor & contact)
 {
   const std::string & contactName = contact.name();
-  kinematicsTools::addToLogger(contact.worldRefKine_, logger, odometryName_ + "_" + contactName + "_refPose");
-  kinematicsTools::addToLogger(contact.currentWorldFbPose_, logger,
-                               odometryName_ + "_" + contactName + "_currentWorldFbPose");
-  kinematicsTools::addToLogger(contact.currentWorldKine_, logger,
-                               odometryName_ + "_" + contactName + "_currentWorldContactKine");
+  conversions::kinematics::addToLogger(contact.worldRefKine_, logger, odometryName_ + "_" + contactName + "_refPose");
+  conversions::kinematics::addToLogger(contact.currentWorldFbPose_, logger,
+                                       odometryName_ + "_" + contactName + "_currentWorldFbPose");
+  conversions::kinematics::addToLogger(contact.currentWorldKine_, logger,
+                                       odometryName_ + "_" + contactName + "_currentWorldContactKine");
 }
 
 void LeggedOdometryManager::removeContactLogEntries(mc_rtc::Logger & logger, const LoContactWithSensor & contact)
@@ -622,9 +619,9 @@ void LeggedOdometryManager::removeContactLogEntries(mc_rtc::Logger & logger, con
   const std::string & contactName = contact.name();
   logger.removeLogEntry(odometryName_ + "_" + contactName + "_ref_position");
   logger.removeLogEntry(odometryName_ + "_" + contactName + "_ref_orientation");
-  kinematicsTools::removeFromLogger(logger, odometryName_ + "_" + contactName + "_refPose");
-  kinematicsTools::removeFromLogger(logger, odometryName_ + "_" + contactName + "_currentWorldFbPose");
-  kinematicsTools::removeFromLogger(logger, odometryName_ + "_" + contactName + "_currentWorldContactKine");
+  conversions::kinematics::removeFromLogger(logger, odometryName_ + "_" + contactName + "_refPose");
+  conversions::kinematics::removeFromLogger(logger, odometryName_ + "_" + contactName + "_currentWorldFbPose");
+  conversions::kinematics::removeFromLogger(logger, odometryName_ + "_" + contactName + "_currentWorldContactKine");
 }
 
 so::kine::Kinematics & LeggedOdometryManager::getAnchorFramePose(const mc_control::MCController & ctl)
@@ -774,11 +771,12 @@ so::kine::Kinematics & LeggedOdometryManager::getAnchorFramePose(const mc_contro
     const auto & imu = ctl.robot(robotName_).bodySensor(bodySensorName);
 
     const sva::PTransformd & imuXbs = imu.X_b_s();
-    so::kine::Kinematics parentImuKine = kinematicsTools::fromSva(imuXbs, so::kine::Kinematics::Flags::pose);
+    so::kine::Kinematics parentImuKine = conversions::kinematics::fromSva(imuXbs, so::kine::Kinematics::Flags::pose);
 
     const sva::PTransformd & parentPoseW = odometryRobot().bodyPosW(imu.parentBody());
 
-    so::kine::Kinematics worldParentKine = kinematicsTools::fromSva(parentPoseW, so::kine::Kinematics::Flags::pose);
+    so::kine::Kinematics worldParentKine =
+        conversions::kinematics::fromSva(parentPoseW, so::kine::Kinematics::Flags::pose);
 
     // pose of the IMU in the world frame
     worldAnchorPose_ = worldParentKine * parentImuKine;
@@ -828,11 +826,12 @@ so::kine::Kinematics & LeggedOdometryManager::getAnchorFramePose(const mc_contro
   {
     const auto & imu = ctl.robot(robotName_).bodySensor(bodySensorName);
     const sva::PTransformd & imuXbs = imu.X_b_s();
-    so::kine::Kinematics parentImuKine = kinematicsTools::fromSva(imuXbs, so::kine::Kinematics::Flags::pose);
+    so::kine::Kinematics parentImuKine = conversions::kinematics::fromSva(imuXbs, so::kine::Kinematics::Flags::pose);
 
     const sva::PTransformd & parentPoseW = odometryRobot().bodyPosW(imu.parentBody());
 
-    so::kine::Kinematics worldParentKine = kinematicsTools::fromSva(parentPoseW, so::kine::Kinematics::Flags::pose);
+    so::kine::Kinematics worldParentKine =
+        conversions::kinematics::fromSva(parentPoseW, so::kine::Kinematics::Flags::pose);
 
     // pose of the IMU in the world frame
     so::kine::Kinematics worldImuKine = worldParentKine * parentImuKine;
@@ -846,13 +845,12 @@ void LeggedOdometryManager::changeOdometryType(const std::string & newOdometryTy
 {
   OdometryType prevOdometryType = odometryType_;
   if(newOdometryType == "Flat") { odometryType_ = measurements::OdometryType::Flat; }
-  else if(newOdometryType == "6dOdometry")
-  {
-    odometryType_ = measurements::OdometryType::Odometry6d;
-  }
+  else if(newOdometryType == "6dOdometry") { odometryType_ = measurements::OdometryType::Odometry6d; }
 
   if(odometryType_ != prevOdometryType)
-  { mc_rtc::log::info("[{}]: Odometry mode changed to: {}", odometryType_, newOdometryType); }
+  {
+    mc_rtc::log::info("[{}]: Odometry mode changed to: {}", odometryType_, newOdometryType);
+  }
 }
 
 void LeggedOdometryManager::changeOdometryType(const OdometryType & newOdometryType)
