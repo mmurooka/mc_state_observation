@@ -154,8 +154,8 @@ void ContactsManager<ContactWithSensorT>::addContactToGui(const mc_control::MCCo
 }
 
 template<typename ContactWithSensorT>
-const std::set<int> & ContactsManager<ContactWithSensorT>::findContacts(const mc_control::MCController & ctl,
-                                                                        const std::string & robotName)
+const std::set<int> & ContactsManager<ContactWithSensorT>::updateContacts(const mc_control::MCController & ctl,
+                                                                          const std::string & robotName)
 {
   // Detection of the contacts depending on the configured mode
   (this->*contactsFinder_)(ctl, robotName);

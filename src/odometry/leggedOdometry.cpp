@@ -182,7 +182,7 @@ void LeggedOdometryManager::run(const mc_control::MCController & ctl,
   odometryRobot().forwardAcceleration();
 
   // detects the contacts currently set with the environment
-  contactsManager().findContacts(ctl, robotName_);
+  contactsManager().updateContacts(ctl, robotName_);
   // updates the contacts and the resulting floating base kinematics
   updateFbAndContacts(ctl, logger, true, true, tilt);
   // updates the floating base kinematics in the observer
@@ -211,7 +211,7 @@ void LeggedOdometryManager::run(const mc_control::MCController & ctl,
   odometryRobot().forwardAcceleration();
 
   // detects the contacts currently set with the environment
-  contactsManager().findContacts(ctl, robotName_);
+  contactsManager().updateContacts(ctl, robotName_);
   // updates the contacts and the resulting floating base kinematics
   updateFbAndContacts(ctl, logger, true, false, tilt);
   // updates the floating base kinematics in the observer
@@ -239,7 +239,7 @@ void LeggedOdometryManager::run(const mc_control::MCController & ctl,
   odometryRobot().forwardAcceleration();
 
   // detects the contacts currently set with the environment
-  contactsManager().findContacts(ctl, robotName_);
+  contactsManager().updateContacts(ctl, robotName_);
   // updates the contacts and the resulting floating base kinematics
   updateFbAndContacts(ctl, logger, false, false, tilt);
   // updates the floating base kinematics in the observer

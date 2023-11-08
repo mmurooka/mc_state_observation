@@ -250,6 +250,7 @@ public:
     Sensors,
     Undefined
   };
+  typedef std::set<int> ContactsSet;
 
 public:
   ContactsManager()
@@ -258,6 +259,35 @@ public:
                   "The template class for the contacts with sensors must inherit from the ContactWithSensor class");
   }
 
+protected:
+  // pointer to the function that will be used for the contact detection depending on the chosen method
+  void (ContactsManager::*contactsFinder_)(const mc_control::MCController &, const std::string &) = 0;
+  /// @brief Updates the list @contactsFound_ of currently set contacts directly from the controller.
+  /// @details Called by \ref findContacts(const mc_control::MCController & ctl) if @contactsDetection_ is equal to
+  /// "Solver". The contacts are given by the controller directly (then thresholded based on the measured force).
+  void findContactsFromSolver(const mc_control::MCController & ctl, const std::string & robotName);
+  /// @brief Updates the list @contactsFound_ of currently set contacts from the surfaces given by the user.
+  /// @details Called by \ref findContacts(const mc_control::MCController & ctl) if @contactsDetection_ is equal to
+  /// "Surfaces". The contacts are obtained by thresholded based the force measured by the associated force sensor).
+  void findContactsFromSurfaces(const mc_control::MCController & ctl, const std::string & robotName);
+  /// @brief Updates the list @contactsFound_ of currently set contacts from a thresholding of the measured forces.
+  /// @details Called by \ref findContacts(const mc_control::MCController & ctl) if @contactsDetection_ is equal to
+  /// "Sensors". The contacts are not required to be given by the controller (the detection is based on a
+  /// thresholding of the measured force).
+  void findContactsFromSensors(const mc_control::MCController & ctl, const std::string & robotName);
+  /// @brief Updates the list of contacts to inform whether they are newly set, removed, etc.
+  void updateContacts();
+
+  /// @brief Adds the contact to the GUI to enable or disable it easily.
+  /// @param ctl The controller.
+  /// @param name Name of the contact.
+  /// addContactToGui(const mc_control::MCController &, const std::string &).
+  void addContactToGui(const mc_control::MCController & ctl, const std::string & surface);
+
+  /// @brief Returns the desired list of contacts as a string object
+  std::string set_to_string(const ContactsSet & contactSet);
+
+public:
   // initialization of the odometry
   void init(const std::string & observerName, const bool verbose = true);
 
@@ -290,36 +320,9 @@ public:
                      double contactDetectionThreshold,
                      const std::vector<std::string> & forceSensorsToOmit);
 
-  /// @brief Adds the contact to the GUI to enable or disable it easily.
-  /// @param ctl The controller.
-  /// @param name Name of the contact.
-  /// addContactToGui(const mc_control::MCController &, const std::string &).
-  void addContactToGui(const mc_control::MCController & ctl, const std::string & surface);
-
-  typedef std::set<int> ContactsSet;
-
-  std::string set_to_string(const ContactsSet & contactSet);
-
   /// @brief Updates the list of currently set contacts and returns it.
   /// @return std::set<FoundContactsListType> &
-  const ContactsSet & findContacts(const mc_control::MCController & ctl, const std::string & robotName);
-  /// @brief Updates the list @contactsFound_ of currently set contacts directly from the controller.
-  /// @details Called by \ref findContacts(const mc_control::MCController & ctl) if @contactsDetection_ is equal to
-  /// "Solver". The contacts are given by the controller directly (then thresholded based on the measured force).
-  void findContactsFromSolver(const mc_control::MCController & ctl, const std::string & robotName);
-  /// @brief Updates the list @contactsFound_ of currently set contacts from the surfaces given by the user.
-  /// @details Called by \ref findContacts(const mc_control::MCController & ctl) if @contactsDetection_ is equal to
-  /// "Surfaces". The contacts are obtained by thresholded based the force measured by the associated force sensor).
-  void findContactsFromSurfaces(const mc_control::MCController & ctl, const std::string & robotName);
-  /// @brief Updates the list @contactsFound_ of currently set contacts from a thresholding of the measured forces.
-  /// @details Called by \ref findContacts(const mc_control::MCController & ctl) if @contactsDetection_ is equal to
-  /// "Sensors". The contacts are not required to be given by the controller (the detection is based on a
-  /// thresholding of the measured force).
-  void findContactsFromSensors(const mc_control::MCController & ctl, const std::string & robotName);
-  /// @brief Updates the list of contacts to inform whether they are newly set, removed, etc.
-  void updateContacts();
-
-  void (ContactsManager::*contactsFinder_)(const mc_control::MCController &, const std::string &) = 0;
+  const ContactsSet & updateContacts(const mc_control::MCController & ctl, const std::string & robotName);
 
   /// @brief Accessor for the a contact associated to a sensor contained in the map
   ///
