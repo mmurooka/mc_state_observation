@@ -273,7 +273,7 @@ public:
                      ContactsDetection contactsDetection,
                      const std::vector<std::string> & surfacesForContactDetection,
                      const std::vector<std::string> & contactsSensorDisabledInit,
-                     const double & contactDetectionThreshold);
+                     double contactDetectionThreshold);
 
   /// @brief initialization for a detection based on a threshold on the measured contact forces or for contacts given by
   /// the controller
@@ -287,7 +287,7 @@ public:
                      const std::string & robotName,
                      ContactsDetection contactsDetection,
                      const std::vector<std::string> & contactsSensorDisabledInit,
-                     const double & contactDetectionThreshold,
+                     double contactDetectionThreshold,
                      const std::vector<std::string> & forceSensorsToOmit);
 
   /// @brief Adds the contact to the GUI to enable or disable it easily.
