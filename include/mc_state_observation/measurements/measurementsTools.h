@@ -203,11 +203,10 @@ private:
   inline bool checkAlreadyExists(const std::string & forceSensorName)
   {
     if(listContacts_.find(forceSensorName) != listContacts_.end()) // the contact already exists
-    { return true; }
-    else
     {
-      return false;
+      return true;
     }
+    else { return false; }
   }
 
   /// @brief Check if a contact already exists in the list. If it already exists, checks that the contact remained

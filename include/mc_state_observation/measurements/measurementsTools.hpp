@@ -120,7 +120,9 @@ void ContactsManager<ContactWithSensorT>::initDetection(const mc_control::MCCont
     {
       if(std::find(forceSensorsToOmit.begin(), forceSensorsToOmit.end(), forceSensor.name())
          != forceSensorsToOmit.end())
-      { continue; }
+      {
+        continue;
+      }
       const std::string & fsName = forceSensor.name();
 
       mapContacts_.insertContact(fsName);
@@ -144,7 +146,8 @@ void ContactsManager<ContactWithSensorT>::addContactToGui(const mc_control::MCCo
                             name + " : " + (mapContacts_.contact(name).isSet_ ? "Contact is set" : "Contact is not set")
                                 + ": Use wrench sensor: ",
                             [this, name]() { return mapContacts_.contact(name).sensorEnabled_; },
-                            [this, name]() {
+                            [this, name]()
+                            {
                               mapContacts_.contact(name).sensorEnabled_ = !mapContacts_.contact(name).sensorEnabled_;
                               std::cout << std::endl
                                         << "Enable / disable :" + name + " "
@@ -299,7 +302,9 @@ void ContactsManager<ContactWithSensorT>::updateContacts()
   {
     if(oldContacts_.find(foundContact)
        != oldContacts_.end()) // checks if the contact was already set on the last iteration
-    { contact(foundContact).wasAlreadySet_ = true; }
+    {
+      contact(foundContact).wasAlreadySet_ = true;
+    }
     else // the contact was not set on the last iteration
     {
       contact(foundContact).wasAlreadySet_ = false;
