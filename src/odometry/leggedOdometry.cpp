@@ -67,28 +67,28 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
     ctl.gui()->addElement({odometryName_, "Odometry"},
                           mc_rtc::gui::ComboInput(
                               "Choose from list", {"6dOdometry", "flatOdometry"},
-                              [this]() -> std::string
-                              {
+                              [this]() -> std::string {
                                 if(odometryType_ == measurements::flatOdometry) { return "flatOdometry"; }
-                                else { return "6dOdometry"; }
+                                else
+                                {
+                                  return "6dOdometry";
+                                }
                               },
                               [this](const std::string & typeOfOdometry) { changeOdometryType(typeOfOdometry); }));
-    logger.addLogEntry(odometryName_ + "_debug_OdometryType",
-                       [this]() -> std::string
-                       {
-                         switch(odometryType_)
-                         {
-                           case measurements::flatOdometry:
-                             return "flatOdometry";
-                             break;
-                           case measurements::odometry6d:
-                             return "6dOdometry";
-                             break;
-                           default:
-                             break;
-                         }
-                         return "default";
-                       });
+    logger.addLogEntry(odometryName_ + "_debug_OdometryType", [this]() -> std::string {
+      switch(odometryType_)
+      {
+        case measurements::flatOdometry:
+          return "flatOdometry";
+          break;
+        case measurements::odometry6d:
+          return "6dOdometry";
+          break;
+        default:
+          break;
+      }
+      return "default";
+    });
   }
 }
 
@@ -258,7 +258,7 @@ void LeggedOdometryManager::getFbFromContacts(const mc_control::MCController & c
   // the floating base obtained from each contact
   for(const int & setContactIndex : contactsManager().contactsFound())
   {
-    LoContactWithSensor & setContact = contactsManager_.contactWithSensor(setContactIndex);
+    LoContactWithSensor & setContact = contactsManager_.contact(setContactIndex);
 
     const so::kine::Kinematics & worldFbPose_curr =
         kinematicsTools::fromSva(odometryRobot().posW(), so::kine::Kinematics::Flags::pose);
@@ -331,7 +331,7 @@ void LeggedOdometryManager::updateFbAndContacts(const mc_control::MCController &
   {
     for(const int & setContactIndex : contactsManager().contactsFound())
     {
-      LoContactWithSensor & setContact = contactsManager_.contactWithSensor(setContactIndex);
+      LoContactWithSensor & setContact = contactsManager_.contact(setContactIndex);
       if(setContact.wasAlreadySet_)
       {
         // force weighted sum of the estimated floating base positions
@@ -392,10 +392,10 @@ void LeggedOdometryManager::updateFbAndContacts(const mc_control::MCController &
   for(const int & foundContactIndex : contactsManager().contactsFound())
   {
 
-    if(!contactsManager().contactWithSensor(foundContactIndex).wasAlreadySet_) // the contact was not set so we will
-                                                                               // compute its kinematics
+    if(!contactsManager().contact(foundContactIndex).wasAlreadySet_) // the contact was not set so we will
+                                                                     // compute its kinematics
     {
-      LoContactWithSensor & foundContact = contactsManager_.contactWithSensor(foundContactIndex);
+      LoContactWithSensor & foundContact = contactsManager_.contact(foundContactIndex);
 
       setNewContact(foundContact, robot);
       addContactLogEntries(logger, foundContact);
@@ -404,7 +404,7 @@ void LeggedOdometryManager::updateFbAndContacts(const mc_control::MCController &
 
   for(auto & removedContactIndex : contactsManager().removedContacts())
   {
-    LoContactWithSensor & removedContact = contactsManager_.contactWithSensor(removedContactIndex);
+    LoContactWithSensor & removedContact = contactsManager_.contact(removedContactIndex);
 
     removeContactLogEntries(logger, removedContact);
   }
@@ -433,7 +433,10 @@ void LeggedOdometryManager::updateOdometryRobot(const mc_control::MCController &
 
       odometryRobot().accW(acc);
     }
-    else { mc_rtc::log::error("The acceleration must be already updated upstream."); }
+    else
+    {
+      mc_rtc::log::error("The acceleration must be already updated upstream.");
+    }
   }
 
   if(updateVels)
@@ -587,7 +590,7 @@ void LeggedOdometryManager::selectForOrientationOdometry()
   contactsManager_.oriOdometryContacts_.clear();
   for(auto it = contactsManager_.contactsFound().begin(); it != contactsManager_.contactsFound().end(); it++)
   {
-    LoContactWithSensor & contact = contactsManager_.contactWithSensor(*it);
+    LoContactWithSensor & contact = contactsManager_.contact(*it);
     if(contact.name().find("Hand") == std::string::npos
        && contact.wasAlreadySet_) // we don't use hands for the orientation odometry
     {
@@ -643,12 +646,12 @@ so::kine::Kinematics & LeggedOdometryManager::getAnchorFramePose(const mc_contro
   for(const int & setContactIndex : contactsManager().contactsFound())
   {
     if(contactsManager()
-           .contactWithSensor(setContactIndex)
+           .contact(setContactIndex)
            .wasAlreadySet_) // the contact already exists so we will use it to estimate the floating base pose
     {
       posUpdatable = true;
 
-      LoContactWithSensor & setContact = contactsManager_.contactWithSensor(setContactIndex);
+      LoContactWithSensor & setContact = contactsManager_.contact(setContactIndex);
       const so::kine::Kinematics & worldContactKine =
           getCurrentContactKinematics(setContact, robot.forceSensor(setContact.name()));
 
@@ -730,12 +733,12 @@ so::kine::Kinematics & LeggedOdometryManager::getAnchorFramePose(const mc_contro
   for(const int & setContactIndex : contactsManager().contactsFound())
   {
     if(contactsManager()
-           .contactWithSensor(setContactIndex)
+           .contact(setContactIndex)
            .wasAlreadySet_) // the contact already exists so we will use it to estimate the floating base pose
     {
       posUpdatable = true;
 
-      LoContactWithSensor & setContact = contactsManager_.contactWithSensor(setContactIndex);
+      LoContactWithSensor & setContact = contactsManager_.contact(setContactIndex);
       const so::kine::Kinematics & worldContactKine =
           getCurrentContactKinematics(setContact, robot.forceSensor(setContact.name()));
 
@@ -842,12 +845,13 @@ void LeggedOdometryManager::changeOdometryType(const std::string & newOdometryTy
 {
   OdometryType prevOdometryType = odometryType_;
   if(newOdometryType == "flatOdometry") { odometryType_ = measurements::flatOdometry; }
-  else if(newOdometryType == "6dOdometry") { odometryType_ = measurements::odometry6d; }
+  else if(newOdometryType == "6dOdometry")
+  {
+    odometryType_ = measurements::odometry6d;
+  }
 
   if(odometryType_ != prevOdometryType)
-  {
-    mc_rtc::log::info("[{}]: Odometry mode changed to: {}", odometryType_, newOdometryType);
-  }
+  { mc_rtc::log::info("[{}]: Odometry mode changed to: {}", odometryType_, newOdometryType); }
 }
 
 void LeggedOdometryManager::changeOdometryType(const OdometryType & newOdometryType)

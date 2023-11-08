@@ -59,35 +59,13 @@ public:
   stateObservation::kine::Kinematics currentWorldKine_;
 };
 
-// Inherits from the class ContactWithoutSensor to prevent
-class LoContactWithoutSensor : public measurements::Contact
-{
-  // the legged odometry requires the use of contacts associated to force sensors, this class must therefore not be
-  // implemented
-public:
-  LoContactWithoutSensor(int id, std::string name)
-  {
-    throw std::runtime_error("The legged odometry requires to use only contacts with sensors.");
-    // BOOST_ASSERT(false && "The legged odometry requires to use only contacts with sensors.");
-    id_ = id;
-    name_ = name;
-  }
-
-protected:
-  LoContactWithoutSensor()
-  {
-    throw std::runtime_error("The legged odometry requires to use only contacts with sensors.");
-    // BOOST_ASSERT(false && "The legged odometry requires to use only contacts with sensors.");
-  }
-};
-
 /// @brief Structure that implements all the necessary functions to perform legged odometry.
 /// @details Handles the odometry from the contacts detection to the final pose estimation of the floating base. Also
 /// allows to compute the pose of an anchor frame linked to the robot.
 struct LeggedOdometryManager
 {
 public:
-  typedef measurements::ContactsManager<LoContactWithSensor, LoContactWithoutSensor> ContactsManager;
+  typedef measurements::ContactsManager<LoContactWithSensor> ContactsManager;
 
 public:
   LeggedOdometryManager() {}

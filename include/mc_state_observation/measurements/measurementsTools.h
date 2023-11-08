@@ -93,8 +93,7 @@ private:
 /// @details The template allows to define other kinds of contacts and thus add custom parameters to them. Warning! This
 /// class has been tested only on contacts with sensors
 /// @tparam ContactWithSensorT Contacts associated to a sensor.
-/// @tparam ContactWithoutSensorT Contacts that are not associated to a sensor.
-template<typename ContactWithSensorT, typename ContactWithoutSensorT>
+template<typename ContactWithSensorT>
 struct MapContacts
 {
 public:
@@ -102,77 +101,38 @@ public:
   {
     BOOST_ASSERT((std::is_base_of<ContactWithSensor, ContactWithSensorT>::value)
                  && "The template class for the contacts with sensors must inherit from the ContactWithSensor class");
-    BOOST_ASSERT(
-        (std::is_base_of<Contact, ContactWithoutSensorT>::value)
-        && "The template class for the contacts without sensors must inherit from the ContactWithoutSensor class");
   }
 
 public:
   /// @brief Accessor for the a contact associated to a sensor contained in the map
-  ///
+  /// @details Version for a contact that is associated to a force sensor but to no surface
   /// @param name The name of the contact to access
-  /// @return contactsWithSensorT&
-  inline ContactWithSensorT & contactWithSensor(const std::string & name)
+  /// @return ContactWithSensorT&
+  inline ContactWithSensorT & contact(const std::string & name)
   {
-    BOOST_ASSERT(checkAlreadyExists(name, true) && "The requested sensor doesn't exist");
-    return mapContactsWithSensors_.at(name);
+    BOOST_ASSERT(checkAlreadyExists(name) && "The requested sensor doesn't exist");
+    return listContacts_.at(name);
   }
   /// @brief Accessor for the a contact associated to a sensor contained in the map
   ///
   /// @param num_ The index of the contact to access
   /// @return ContactWithSensor&
-  inline ContactWithSensorT & contactWithSensor(const int & num)
+  inline ContactWithSensorT & contact(const int & num)
   {
     BOOST_ASSERT((num >= 0 && num < num_) && "The requested sensor doesn't exist");
-    BOOST_ASSERT(checkAlreadyExists(getNameFromNum(num), true) && "The requested sensor doesn't exist");
-    return mapContactsWithSensors_.at(getNameFromNum(num));
+    BOOST_ASSERT(checkAlreadyExists(getNameFromNum(num)) && "The requested sensor doesn't exist");
+    return listContacts_.at(getNameFromNum(num));
   }
 
-  /// @brief Accessor for the a contact that is not associated to a sensor contained in the map
-  /// @param name The name of the contact to access
-  /// @return ContactWithoutSensor&
-  inline ContactWithoutSensorT & contactWithoutSensor(const std::string & name)
-  {
-    BOOST_ASSERT(checkAlreadyExists(name, false) && "The requested sensor doesn't exist");
-    return mapContactsWithoutSensors_.at(name);
-  }
-
-  /// @brief Accessor for the a contact that is not associated to a sensor contained in the map
-  /// @param num_ The index of the contact to access
-  /// @return ContactWithoutSensorT&
-  inline ContactWithoutSensorT & contactWithoutSensor(const int & num)
-  {
-    BOOST_ASSERT((num >= 0 && num < num_) && "The requested sensor doesn't exist");
-    BOOST_ASSERT(checkAlreadyExists(getNameFromNum(num), true) && "The requested sensor doesn't exist");
-    return mapContactsWithoutSensors_.at(getNameFromNum(num));
-  }
-
-  /// @brief Get the map of all the contacts associated to a sensor
+  /// @brief Get the map of all the contacts
   ///
   /// @return std::unordered_map<std::string, contactsWithSensorT>&
-  inline std::unordered_map<std::string, ContactWithSensorT> & contactsWithSensors() { return mapContactsWithSensors_; }
-  /// @brief Get the map of all the contacts that are not associated to a sensor
-  ///
-  /// @return std::unordered_map<std::string, ContactWithoutSensorT>&
-  inline std::unordered_map<std::string, ContactWithoutSensorT> & contactsWithoutSensors()
-  {
-    return mapContactsWithoutSensors_;
-  }
+  inline std::unordered_map<std::string, ContactWithSensorT> & contacts() { return listContacts_; }
 
   /// @brief Get the list of all the contacts (with and without sensors)
   ///
   /// @return const std::vector<std::string> &
   inline const std::vector<std::string> & getList() { return insertOrder_; }
-
-  /// @brief Returns true if the contact is associated to a sensor
-  ///
-  /// @param name The index of the contact to access
-  /// @return bool
-  inline bool hasSensor(const std::string & element)
-  {
-    BOOST_ASSERT(hasElement(element) && "This contact does not belong to the list.");
-    return hasSensor_.at(element);
-  }
 
   /// @brief Get the name of a contact given its index
   ///
@@ -181,49 +141,23 @@ public:
   inline const std::string & getNameFromNum(const int & num) { return insertOrder_.at(num); }
 
   /// @brief Get the index of a contact given its name
-  ///
   /// @param name The name of the contact
   /// @return const int &
-  inline const int & getNumFromName(const std::string & name)
-  {
-    if(hasSensor_.at(name)) { return mapContactsWithSensors_.at(name).getID(); }
-    else { return mapContactsWithoutSensors_.at(name).getID(); }
-  }
-
-  /* // ! Not working yet
-  /// @brief Get the measured zmp of a contact given its name
-  ///
-  /// @param name The name of the contact
-  /// @return const Eigen::Vector3d &
-  inline const Eigen::Vector3d & getZMPFromName(const std::string & name)
-  {
-    if(hasSensor_.at(name))
-    {
-      return mapContactsWithSensors_.at(name).getZMP();
-    }
-    else
-    {
-      return mapContactsWithoutSensors_.at(name).getZMP();
-    }
-  }
-  */
+  inline const int & getNumFromName(const std::string & name) { return listContacts_.at(name).getID(); }
 
   /// @brief Checks if the given contact exists
   ///
   /// @param element The name of the contact
   /// @return bool
-  inline bool hasElement(const std::string & element) { return hasSensor_.find(element) != hasSensor_.end(); }
+  inline bool hasElement(const std::string & element) { return listContacts_.find(element) != listContacts_.end(); }
 
-  /// @brief Check that a contact still does not exist, if so, insert a contact to the map of contacts. The contact
-  /// can either be associated to a sensor or not.
-  /// @details Version for contacts that are either associated to a surface or to a force sensor.
-  /// @param element The name of the contact. If the contact has a sensor, its name is the one of the sensor, else, its
-  /// name is the one of the surface.
-  /// @param hasSensor True if the contact is attached to a sensor.
-  inline void insertContact(const std::string & name, const bool & hasSensor)
+  /// @brief Check that a contact still does not exist, if so, insert a contact to the map of contacts.
+  /// @details Version for contacts that are detected by a thresholding on a force sensor measurement.
+  /// @param element The name of the contact which corresponds to the name of the sensor.
+  inline void insertContact(const std::string & forceSensorName)
   {
-    if(checkAlreadyExists(name, hasSensor)) return;
-    insertElement(name, hasSensor);
+    if(checkAlreadyExists(forceSensorName)) return;
+    insertElement(forceSensorName);
 
     num_++;
   }
@@ -235,43 +169,44 @@ public:
   /// @param surface The name of the surface that will be used also to name the contact.
   inline void insertContact(const std::string & forceSensorName, const std::string surface)
   {
-    if(checkAlreadyExists(surface)) return;
+    if(checkAlreadyExists(forceSensorName, surface)) return;
     insertElement(forceSensorName, surface);
 
     num_++;
   }
 
 private:
-  /// @brief Insert a contact to the map of contacts. The contact can either be associated to a sensor or not.
+  /// @brief Insert a contact to the map of contacts.
   /// @details Version for contacts that are associated to both a force sensor and a contact surface. The contact will
   /// be named with the name of the surface.
   /// @param forceSensorName The name of the force sensor.
   /// @param surface The name of the surface that will be used also to name the contact.
   inline void insertElement(const std::string & forceSensorName, const std::string surface)
   {
+    listContacts_.insert(std::make_pair(surface, ContactWithSensorT(num_, forceSensorName, surface)));
     insertOrder_.push_back(surface);
-
-    mapContactsWithSensors_.insert(std::make_pair(surface, ContactWithSensorT(num_, forceSensorName, surface)));
-    hasSensor_.insert(std::make_pair(surface, true));
   }
-  /// @brief Insert a contact to the map of contacts. The contact can either be associated to a sensor or not.
-  /// @details Version for contacts that are either associated to a surface or to a force sensor.
-  /// @param name The name of the contact. If hasSensor is true, the name is the one of the forceSensor, else, the name
-  /// is the one of the surface.
-  /// @param hasSensor True if the contact is attached to a sensor.
-  inline void insertElement(const std::string & name, const bool & hasSensor)
+  /// @brief Insert a contact to the map of contacts.
+  /// @details Version for contacts that are associated to a force sensor but to no surface.
+  /// @param name The name of the contact (= name of the sensor)
+  inline void insertElement(const std::string & forceSensorName)
   {
-    insertOrder_.push_back(name);
+    listContacts_.insert(std::make_pair(forceSensorName, ContactWithSensorT(num_, forceSensorName)));
+    insertOrder_.push_back(forceSensorName);
+  }
 
-    if(hasSensor)
-    {
-      mapContactsWithSensors_.insert(std::make_pair(name, ContactWithSensorT(num_, name)));
-      hasSensor_.insert(std::make_pair(name, true));
-    }
+  /// @brief Check if a contact already exists in the list. If it already exists, checks that the contact remained
+  /// unchanged.
+  /// @details Version for contacts associated to a force sensor and to no surface
+  /// @param name The name of the contact (=name of the force sensor)
+  /// @return bool
+  inline bool checkAlreadyExists(const std::string & forceSensorName)
+  {
+    if(listContacts_.find(forceSensorName) != listContacts_.end()) // the contact already exists
+    { return true; }
     else
     {
-      mapContactsWithoutSensors_.insert(std::make_pair(name, ContactWithoutSensorT(num_, name)));
-      hasSensor_.insert(std::make_pair(name, true));
+      return false;
     }
   }
 
@@ -279,48 +214,20 @@ private:
   /// unchanged.
   ///
   /// @param name The name of the contact
-  /// @param hasSensor True if the contact is attached to a sensor.
   /// @return bool
-  inline bool checkAlreadyExists(const std::string & name, const bool hasSensor)
+  inline bool checkAlreadyExists(const std::string & forceSensorName, const std::string & surface)
   {
-    if(std::find(insertOrder_.begin(), insertOrder_.end(), name) != insertOrder_.end()) // the contact already exists
+    if(listContacts_.find(surface) != listContacts_.end()) // the contact already exists
     {
-      BOOST_ASSERT_MSG(hasSensor_.at(name) == hasSensor,
-                       "The association / non-association to a force sensor must be preserved.");
-
-      return true;
+      if(contact(surface).forceSensorName() == forceSensorName) { return true; }
     }
-    else { return false; }
-  }
-
-  /// @brief Check if a contact already exists in the list. If it already exists, checks that the contact remained
-  /// unchanged.
-  ///
-  /// @param name The name of the contact
-  /// @param hasSensor True if the contact is attached to a sensor.
-  /// @return bool
-  inline bool checkAlreadyExists(const std::string & name)
-  {
-    if(std::find(insertOrder_.begin(), insertOrder_.end(), name) != insertOrder_.end()) // the contact already exists
-    {
-      if(!hasSensor_.at(name))
-      {
-        mc_rtc::log::error_and_throw("The contact already exists and was associated to no sensor");
-      }
-
-      return true;
-    }
-    else { return false; }
+    return false;
   }
 
 private:
-  // map containing all the contacts and indicating if each sensor has a contact or not
-  std::unordered_map<std::string, bool> hasSensor_;
-  // map containing all the contacts associated to a sensor
-  std::unordered_map<std::string, ContactWithSensorT> mapContactsWithSensors_;
-  // map containing all the contacts that are not associated to a sensor
-  std::unordered_map<std::string, ContactWithoutSensorT> mapContactsWithoutSensors_;
-  // List of all the contacts
+  // unordered map containing all the contacts
+  std::unordered_map<std::string, ContactWithSensorT> listContacts_;
+  // List of the contacts to access their indexes
   std::vector<std::string> insertOrder_;
   // Index generator, incremented everytime a new contact is created
   int num_ = 0;
@@ -332,8 +239,7 @@ private:
 /// @details The template allows to define other kinds of contacts and thus add custom parameters to them. Warning! This
 /// class has been tested only on contacts with sensors
 /// @tparam ContactWithSensorT Contacts associated to a sensor.
-/// @tparam ContactWithoutSensorT Contacts that are not associated to a sensor.
-template<typename ContactWithSensorT, typename ContactWithoutSensorT>
+template<typename ContactWithSensorT>
 struct ContactsManager
 {
 public:
@@ -349,8 +255,6 @@ public:
   ContactsManager()
   {
     BOOST_ASSERT((std::is_base_of<ContactWithSensor, ContactWithSensorT>::value)
-                 && "The template class for the contacts with sensors must inherit from the ContactWithSensor class");
-    BOOST_ASSERT((std::is_base_of<Contact, ContactWithoutSensorT>::value)
                  && "The template class for the contacts with sensors must inherit from the ContactWithSensor class");
   }
   ~ContactsManager() {}
@@ -388,18 +292,10 @@ public:
                      const std::vector<std::string> & forceSensorsToOmit);
 
   /// @brief Adds the contact to the GUI to enable or disable it easily.
-  /// @details Version for a contact associated to a force sensor.
   /// @param ctl The controller.
-  /// @param sensorName Sensor attached to the contact.
-  void addContactToGui(const mc_control::MCController & ctl, const std::string & sensorName);
-
-  /// @brief Adds the contact to the GUI to enable or disable it easily.
-  /// @details Version for a contact associated to a surface.
-  /// @param ctl The controller.
-  /// @param surface Surface of the contact.
-  /// @param forSurfaceContact Indicates that the contact is attached to a surface. Allows to differentiate from
+  /// @param name Name of the contact.
   /// addContactToGui(const mc_control::MCController &, const std::string &).
-  void addContactToGui(const mc_control::MCController & ctl, const std::string & surface, bool forSurfaceContact);
+  void addContactToGui(const mc_control::MCController & ctl, const std::string & surface);
 
   typedef std::set<int> ContactsSet;
 
@@ -430,58 +326,18 @@ public:
   ///
   /// @param name The name of the contact to access
   /// @return contactsWithSensorT&
-  inline ContactWithSensorT & contactWithSensor(const std::string & name)
-  {
-    return mapContacts_.contactWithSensor(name);
-  }
+  inline ContactWithSensorT & contact(const std::string & name) { return mapContacts_.contact(name); }
 
   /// @brief Accessor for the a contact associated to a sensor contained in the map
   ///
   /// @param num The index of the contact to access
   /// @return ContactWithSensor&
-  inline ContactWithSensorT & contactWithSensor(const int & num) { return mapContacts_.contactWithSensor(num); }
+  inline ContactWithSensorT & contact(const int & num) { return mapContacts_.contact(num); }
 
-  /// @brief Accessor for the a contact associated to a sensor contained in the map
-  ///
-  /// @param num The contact itself.
-  /// @return ContactWithSensor&
-  inline ContactWithSensorT & contactWithSensor(ContactWithSensorT & contact) { return contact; }
-
-  /// @brief Accessor for the a contact that is not associated to a sensor contained in the map
-  /// @param name The name of the contact to access
-  /// @return ContactWithoutSensor&
-  inline ContactWithoutSensorT & contactWithoutSensor(const std::string & name)
-  {
-    return mapContacts_.contactWithoutSensor(name);
-  }
-
-  /// @brief Accessor for the a contact that is not associated to a sensor contained in the map
-  /// @param num_ The index of the contact to access
-  /// @return ContactWithoutSensorT&
-  inline ContactWithoutSensorT & contactWithoutSensor(const int & num)
-  {
-    return mapContacts_.contactWithoutSensor(num);
-  }
-
-  /// @brief Accessor for the a contact that is not associated to a sensor contained in the map
-  /// @param name The contact itself.
-  /// @return ContactWithoutSensor&
-  inline ContactWithoutSensorT & contactWithoutSensor(const ContactWithoutSensorT & contact) { return contact; }
-
-  /// @brief Get the map of all the contacts associated to a sensor
+  /// @brief Get the map of all the contacts
   ///
   /// @return std::unordered_map<std::string, contactsWithSensorT>&
-  inline std::unordered_map<std::string, ContactWithSensorT> & contactsWithSensors()
-  {
-    return mapContacts_.contactsWithSensors();
-  }
-  /// @brief Get the map of all the contacts that are not associated to a sensor
-  ///
-  /// @return std::unordered_map<std::string, ContactWithoutSensorT>&
-  inline std::unordered_map<std::string, ContactWithoutSensorT> & contactsWithoutSensors()
-  {
-    return mapContacts_.contactsWithoutSensors();
-  }
+  inline std::unordered_map<std::string, ContactWithSensorT> & contacts() { return mapContacts_.contacts(); }
 
   /// @brief Get the list of all the contacts.
   /// @return const std::vector<std::string> &
@@ -497,7 +353,7 @@ public:
 
 public:
   // map of contacts used by the manager.
-  MapContacts<ContactWithSensorT, ContactWithoutSensorT> mapContacts_;
+  MapContacts<ContactWithSensorT> mapContacts_;
 
 protected:
   double contactDetectionThreshold_;

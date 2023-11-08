@@ -8,25 +8,23 @@ namespace mc_state_observation::measurements
 /// ------------------------------Contacts-----------------------------
 ///////////////////////////////////////////////////////////////////////
 
-template<typename ContactWithSensorT, typename ContactWithoutSensorT>
-void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::init(const std::string & observerName,
-                                                                      const bool verbose)
+template<typename ContactWithSensorT>
+void ContactsManager<ContactWithSensorT>::init(const std::string & observerName, const bool verbose)
 {
   observerName_ = observerName;
   verbose_ = verbose;
 }
 
-template<typename ContactWithSensorT, typename ContactWithoutSensorT>
-void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::initDetection(
-    const mc_control::MCController & ctl,
-    const std::string & robotName,
-    const ContactsDetection & contactsDetection,
-    const std::vector<std::string> & surfacesForContactDetection,
-    const std::vector<std::string> & contactsSensorDisabledInit,
-    const double & contactDetectionThreshold)
+template<typename ContactWithSensorT>
+void ContactsManager<ContactWithSensorT>::initDetection(const mc_control::MCController & ctl,
+                                                        const std::string & robotName,
+                                                        const ContactsDetection & contactsDetection,
+                                                        const std::vector<std::string> & surfacesForContactDetection,
+                                                        const std::vector<std::string> & contactsSensorDisabledInit,
+                                                        const double & contactDetectionThreshold)
 {
 
-  contactsFinder_ = &ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFromSurfaces;
+  contactsFinder_ = &ContactsManager<ContactWithSensorT>::findContactsFromSurfaces;
 
   contactDetectionThreshold_ = contactDetectionThreshold;
   surfacesForContactDetection_ = surfacesForContactDetection;
@@ -66,7 +64,7 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::initDetection(
         const mc_rbdyn::ForceSensor & forceSensor = robot.surfaceForceSensor(surface);
         const std::string & fsName = forceSensor.name();
         mapContacts_.insertContact(fsName, surface);
-        addContactToGui(ctl, surface, true);
+        addContactToGui(ctl, surface);
       }
       else // if the surface is not associated to a force sensor, we will fetch the force sensor indirectly attached to
            // the surface
@@ -74,7 +72,7 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::initDetection(
         const mc_rbdyn::ForceSensor & forceSensor = robot.indirectSurfaceForceSensor(surface);
         const std::string & fsName = forceSensor.name();
         mapContacts_.insertContact(fsName, surface);
-        addContactToGui(ctl, surface, true);
+        addContactToGui(ctl, surface);
       }
     }
   }
@@ -82,27 +80,22 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::initDetection(
   for(auto const & contactSensorDisabledInit : contactsSensorDisabledInit)
   {
     BOOST_ASSERT(mapContacts_.hasElement(contactSensorDisabledInit) && "This sensor is not attached to the robot");
-    mapContacts_.contactWithSensor(contactSensorDisabledInit).sensorEnabled_ = false;
+    mapContacts_.contact(contactSensorDisabledInit).sensorEnabled_ = false;
   }
 }
 
-template<typename ContactWithSensorT, typename ContactWithoutSensorT>
-void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::initDetection(
-    const mc_control::MCController & ctl,
-    const std::string & robotName,
-    const ContactsDetection & contactsDetection,
-    const std::vector<std::string> & contactsSensorDisabledInit,
-    const double & contactDetectionThreshold,
-    const std::vector<std::string> & forceSensorsToOmit)
+template<typename ContactWithSensorT>
+void ContactsManager<ContactWithSensorT>::initDetection(const mc_control::MCController & ctl,
+                                                        const std::string & robotName,
+                                                        const ContactsDetection & contactsDetection,
+                                                        const std::vector<std::string> & contactsSensorDisabledInit,
+                                                        const double & contactDetectionThreshold,
+                                                        const std::vector<std::string> & forceSensorsToOmit)
 {
   if(contactsDetection == fromSolver)
-  {
-    contactsFinder_ = &ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFromSolver;
-  }
+  { contactsFinder_ = &ContactsManager<ContactWithSensorT>::findContactsFromSolver; }
   if(contactsDetection == fromThreshold)
-  {
-    contactsFinder_ = &ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFromThreshold;
-  }
+  { contactsFinder_ = &ContactsManager<ContactWithSensorT>::findContactsFromThreshold; }
 
   contactDetectionThreshold_ = contactDetectionThreshold;
   contactsSensorDisabledInit_ = contactsSensorDisabledInit;
@@ -129,12 +122,10 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::initDetection(
     {
       if(std::find(forceSensorsToOmit.begin(), forceSensorsToOmit.end(), forceSensor.name())
          != forceSensorsToOmit.end())
-      {
-        continue;
-      }
+      { continue; }
       const std::string & fsName = forceSensor.name();
 
-      mapContacts_.insertContact(fsName, true);
+      mapContacts_.insertContact(fsName);
       addContactToGui(ctl, fsName);
     }
   }
@@ -142,51 +133,31 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::initDetection(
   for(auto const & contactSensorDisabledInit : contactsSensorDisabledInit)
   {
     BOOST_ASSERT(mapContacts_.hasElement(contactSensorDisabledInit) && "This sensor is not attached to the robot");
-    mapContacts_.contactWithSensor(contactSensorDisabledInit).sensorEnabled_ = false;
+    mapContacts_.contact(contactSensorDisabledInit).sensorEnabled_ = false;
   }
 }
 
-template<typename ContactWithSensorT, typename ContactWithoutSensorT>
-void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::addContactToGui(const mc_control::MCController & ctl,
-                                                                                 const std::string & surface,
-                                                                                 bool)
+template<typename ContactWithSensorT>
+void ContactsManager<ContactWithSensorT>::addContactToGui(const mc_control::MCController & ctl,
+                                                          const std::string & name)
 {
-  ctl.gui()->addElement(
-      {observerName_, "Contacts"},
-      mc_rtc::gui::Checkbox(
-          surface + " : " + (mapContacts_.contactWithSensor(surface).isSet_ ? "Contact is set" : "Contact is not set")
-              + ": Use wrench sensor: ",
-          [this, surface]() { return mapContacts_.contactWithSensor(surface).sensorEnabled_; },
-          [this, surface]()
-          {
-            mapContacts_.contactWithSensor(surface).sensorEnabled_ =
-                !mapContacts_.contactWithSensor(surface).sensorEnabled_;
-            std::cout << std::endl
-                      << "Enable / disable :" + surface + " "
-                             + std::to_string(mapContacts_.contactWithSensor(surface).sensorEnabled_)
-                      << std::endl;
-          }));
-}
-template<typename ContactWithSensorT, typename ContactWithoutSensorT>
-void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::addContactToGui(const mc_control::MCController & ctl,
-                                                                                 const std::string & fsName)
-{
-  ctl.gui()->addElement(
-      {observerName_, "Contacts"},
-      mc_rtc::gui::Checkbox(
-          fsName + " : " + (mapContacts_.contactWithSensor(fsName).isSet_ ? "Contact is set" : "Contact is not set")
-              + ": Use wrench sensor: ",
-          [this, fsName]() { return mapContacts_.contactWithSensor(fsName).sensorEnabled_; },
-          [this, fsName]() {
-            mapContacts_.contactWithSensor(fsName).sensorEnabled_ =
-                !mapContacts_.contactWithSensor(fsName).sensorEnabled_;
-          }));
+  ctl.gui()->addElement({observerName_, "Contacts"},
+                        mc_rtc::gui::Checkbox(
+                            name + " : " + (mapContacts_.contact(name).isSet_ ? "Contact is set" : "Contact is not set")
+                                + ": Use wrench sensor: ",
+                            [this, name]() { return mapContacts_.contact(name).sensorEnabled_; },
+                            [this, name]() {
+                              mapContacts_.contact(name).sensorEnabled_ = !mapContacts_.contact(name).sensorEnabled_;
+                              std::cout << std::endl
+                                        << "Enable / disable :" + name + " "
+                                               + std::to_string(mapContacts_.contact(name).sensorEnabled_)
+                                        << std::endl;
+                            }));
 }
 
-template<typename ContactWithSensorT, typename ContactWithoutSensorT>
-const std::set<int> & ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContacts(
-    const mc_control::MCController & ctl,
-    const std::string & robotName)
+template<typename ContactWithSensorT>
+const std::set<int> & ContactsManager<ContactWithSensorT>::findContacts(const mc_control::MCController & ctl,
+                                                                        const std::string & robotName)
 {
   // Detection of the contacts depending on the configured mode
   (this->*contactsFinder_)(ctl, robotName);
@@ -195,10 +166,9 @@ const std::set<int> & ContactsManager<ContactWithSensorT, ContactWithoutSensorT>
   return contactsFound_; // list of currently set contacts
 }
 
-template<typename ContactWithSensorT, typename ContactWithoutSensorT>
-void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFromSolver(
-    const mc_control::MCController & ctl,
-    const std::string & robotName)
+template<typename ContactWithSensorT>
+void ContactsManager<ContactWithSensorT>::findContactsFromSolver(const mc_control::MCController & ctl,
+                                                                 const std::string & robotName)
 {
   mc_rtc::log::warning("This mode has not been tested deeply, there might be issues with the contacts surfaces and "
                        "names. There seems to be an issue when the robot turns in LipmWalking using legged odometry. "
@@ -218,7 +188,7 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFro
         {
           const auto & fs = measRobot.surfaceForceSensor(surfaceName);
           mapContacts_.insertContact(fs.name(), surfaceName);
-          ContactWithSensor & contactWS = mapContacts_.contactWithSensor(surfaceName);
+          ContactWithSensor & contactWS = mapContacts_.contact(surfaceName);
           contactWS.forceNorm_ = fs.wrenchWithoutGravity(measRobot).force().norm();
           if(contactWS.forceNorm_ > contactDetectionThreshold_)
           {
@@ -230,7 +200,7 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFro
         {
           const auto & ifs = measRobot.indirectSurfaceForceSensor(surfaceName);
           mapContacts_.insertContact(ifs.name(), surfaceName);
-          ContactWithSensor & contactWS = mapContacts_.contactWithSensor(surfaceName);
+          ContactWithSensor & contactWS = mapContacts_.contact(surfaceName);
           contactWS.forceNorm_ = ifs.wrenchWithoutGravity(measRobot).force().norm();
           if(contactWS.forceNorm_ > contactDetectionThreshold_)
           {
@@ -250,7 +220,7 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFro
         {
           const auto & fs = measRobot.surfaceForceSensor(surfaceName);
           mapContacts_.insertContact(fs.name(), surfaceName);
-          ContactWithSensor & contactWS = mapContacts_.contactWithSensor(surfaceName);
+          ContactWithSensor & contactWS = mapContacts_.contact(surfaceName);
           contactWS.forceNorm_ = fs.wrenchWithoutGravity(measRobot).force().norm();
           if(contactWS.forceNorm_ > contactDetectionThreshold_)
           {
@@ -263,7 +233,7 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFro
         {
           const auto & ifs = measRobot.indirectSurfaceForceSensor(surfaceName);
           mapContacts_.insertContact(ifs.name(), surfaceName);
-          ContactWithSensor & contactWS = mapContacts_.contactWithSensor(surfaceName);
+          ContactWithSensor & contactWS = mapContacts_.contact(surfaceName);
           contactWS.forceNorm_ = ifs.wrenchWithoutGravity(measRobot).force().norm();
           if(contactWS.forceNorm_ > contactDetectionThreshold_)
           {
@@ -277,16 +247,15 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFro
   }
 }
 
-template<typename ContactWithSensorT, typename ContactWithoutSensorT>
-void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFromSurfaces(
-    const mc_control::MCController & ctl,
-    const std::string & robotName)
+template<typename ContactWithSensorT>
+void ContactsManager<ContactWithSensorT>::findContactsFromSurfaces(const mc_control::MCController & ctl,
+                                                                   const std::string & robotName)
 {
   const auto & measRobot = ctl.robot(robotName);
 
   contactsFound_.clear();
 
-  for(auto & contact : mapContacts_.contactsWithSensors())
+  for(auto & contact : mapContacts_.contacts())
   {
     const std::string & fsName = contact.second.forceSensorName();
     const mc_rbdyn::ForceSensor forceSensor = measRobot.forceSensor(fsName);
@@ -300,16 +269,15 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFro
   }
 }
 
-template<typename ContactWithSensorT, typename ContactWithoutSensorT>
-void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFromThreshold(
-    const mc_control::MCController & ctl,
-    const std::string & robotName)
+template<typename ContactWithSensorT>
+void ContactsManager<ContactWithSensorT>::findContactsFromThreshold(const mc_control::MCController & ctl,
+                                                                    const std::string & robotName)
 {
   const auto & measRobot = ctl.robot(robotName);
 
   contactsFound_.clear();
 
-  for(auto & contact : mapContacts_.contactsWithSensors())
+  for(auto & contact : mapContacts_.contacts())
   {
     const std::string & fsName = contact.second.forceSensorName();
     const mc_rbdyn::ForceSensor forceSensor = measRobot.forceSensor(fsName);
@@ -322,8 +290,8 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFro
   }
 }
 
-template<typename ContactWithSensorT, typename ContactWithoutSensorT>
-void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::updateContacts()
+template<typename ContactWithSensorT>
+void ContactsManager<ContactWithSensorT>::updateContacts()
 {
   /** Debugging output **/
   if(verbose_ && contactsFound_ != oldContacts_)
@@ -333,13 +301,11 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::updateContacts(
   {
     if(oldContacts_.find(foundContact)
        != oldContacts_.end()) // checks if the contact was already set on the last iteration
-    {
-      contactWithSensor(foundContact).wasAlreadySet_ = true;
-    }
+    { contact(foundContact).wasAlreadySet_ = true; }
     else // the contact was not set on the last iteration
     {
-      contactWithSensor(foundContact).wasAlreadySet_ = false;
-      contactWithSensor(foundContact).isSet_ = true;
+      contact(foundContact).wasAlreadySet_ = false;
+      contact(foundContact).isSet_ = true;
     }
   }
   // List of the contact that were set on last iteration but are not set anymore on the current one
@@ -347,13 +313,13 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::updateContacts(
   std::set_difference(oldContacts_.begin(), oldContacts_.end(), contactsFound_.begin(), contactsFound_.end(),
                       std::inserter(removedContacts_, removedContacts_.end()));
 
-  for(const auto & removedContact : removedContacts_) { contactWithSensor(removedContact).resetContact(); }
+  for(const auto & removedContact : removedContacts_) { contact(removedContact).resetContact(); }
   // update the list of previously set contacts
   oldContacts_ = contactsFound_;
 }
 
-template<typename ContactWithSensorT, typename ContactWithoutSensorT>
-std::string ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::set_to_string(const ContactsSet & contactSet)
+template<typename ContactWithSensorT>
+std::string ContactsManager<ContactWithSensorT>::set_to_string(const ContactsSet & contactSet)
 {
   if(contactSet.cbegin() == contactSet.cend()) { return ""; }
   std::ostringstream out;
