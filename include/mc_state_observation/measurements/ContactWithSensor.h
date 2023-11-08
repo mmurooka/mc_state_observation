@@ -54,8 +54,8 @@ public:
   std::string & forceSensorName() { return forceSensorName_; }
 
 public:
-  Eigen::Matrix<double, 6, 1> wrenchInCentroid_ = Eigen::Matrix<double, 6, 1>::Zero(); // for debug only
-  double forceNorm_ = 0.0; // for debug only
+  Eigen::Matrix<double, 6, 1> wrenchInCentroid_ = Eigen::Matrix<double, 6, 1>::Zero(); // for logs
+  double forceNorm_ = 0.0;
   // the sensor measurement have to be used by the observer
   bool sensorEnabled_ = true;
   // allows to know if the contact's measurements have to be added during the update.
