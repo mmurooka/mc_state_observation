@@ -509,7 +509,7 @@ void LeggedOdometryManager::setNewContact(LoContactWithSensor & contact, const m
   const mc_rbdyn::ForceSensor & forceSensor = measurementsRobot.forceSensor(contact.forceSensorName());
   // If the contact is not detected using surfaces, we must consider that the frame of the sensor is the one of the
   // surface).
-  if(contactsManager_.getContactsDetection() == ContactsManager::ContactsDetection::fromThreshold)
+  if(contactsManager_.getContactsDetection() == ContactsManager::ContactsDetection::Sensors)
   {
     so::kine::Kinematics worldNewContactKineOdometryRobot;
     so::kine::Kinematics worldContactKineRef;
@@ -564,7 +564,7 @@ const so::kine::Kinematics & LeggedOdometryManager::getCurrentContactKinematics(
 
   so::kine::Kinematics worldSensorKineOdometryRobot = worldBodyKineOdometryRobot * bodyContactSensorKine;
 
-  if(contactsManager_.getContactsDetection() == ContactsManager::ContactsDetection::fromThreshold)
+  if(contactsManager_.getContactsDetection() == ContactsManager::ContactsDetection::Sensors)
   {
     // If the contact is detecting using thresholds, we will then consider the sensor frame as
     // the contact surface frame directly.

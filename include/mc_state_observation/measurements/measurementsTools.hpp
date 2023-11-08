@@ -32,29 +32,29 @@ void ContactsManager<ContactWithSensorT>::initDetection(const mc_control::MCCont
 
   const auto & robot = ctl.robot(robotName);
 
-  if(contactsDetection != fromSolver && contactsDetection != fromThreshold && contactsDetection != fromSurfaces)
+  if(contactsDetection != Solver && contactsDetection != Sensors && contactsDetection != Surfaces)
   {
     mc_rtc::log::error_and_throw<std::runtime_error>(
-        "Contacts detection type not allowed. Please pick among : [fromSolver, fromThreshold, fromSurfaces] or "
+        "Contacts detection type not allowed. Please pick among : [Solver, Sensors, Surfaces] or "
         "initialize a list of surfaces with the variable surfacesForContactDetection");
   }
 
   if(surfacesForContactDetection.size() > 0)
   {
-    if(contactsDetection != fromSurfaces)
+    if(contactsDetection != Surfaces)
     {
       mc_rtc::log::error_and_throw<std::runtime_error>(
           "The list of potential contact surfaces was given but the detection using surfaces is not selected");
     }
   }
-  else if(contactsDetection == fromSurfaces)
+  else if(contactsDetection == Surfaces)
   {
     mc_rtc::log::error_and_throw<std::runtime_error>(
         "You selected the contacts detection using surfaces but didn't add the list of surfaces, please add it using "
         "the variable surfacesForContactDetection");
   }
 
-  if(contactsDetection == fromSurfaces)
+  if(contactsDetection == Surfaces)
   {
     for(const std::string & surface : surfacesForContactDetection)
     {
@@ -92,31 +92,29 @@ void ContactsManager<ContactWithSensorT>::initDetection(const mc_control::MCCont
                                                         const double & contactDetectionThreshold,
                                                         const std::vector<std::string> & forceSensorsToOmit)
 {
-  if(contactsDetection == fromSolver)
-  { contactsFinder_ = &ContactsManager<ContactWithSensorT>::findContactsFromSolver; }
-  if(contactsDetection == fromThreshold)
-  { contactsFinder_ = &ContactsManager<ContactWithSensorT>::findContactsFromThreshold; }
+  if(contactsDetection == Solver) { contactsFinder_ = &ContactsManager<ContactWithSensorT>::findContactsFromSolver; }
+  if(contactsDetection == Sensors) { contactsFinder_ = &ContactsManager<ContactWithSensorT>::findContactsFromSensors; }
 
   contactDetectionThreshold_ = contactDetectionThreshold;
   contactsSensorDisabledInit_ = contactsSensorDisabledInit;
 
   const auto & robot = ctl.robot(robotName);
 
-  if(contactsDetection != fromSolver && contactsDetection != fromThreshold && contactsDetection != fromSurfaces)
+  if(contactsDetection != Solver && contactsDetection != Sensors && contactsDetection != Surfaces)
   {
     mc_rtc::log::error_and_throw<std::runtime_error>(
-        "Contacts detection type not allowed. Please pick among : [fromSolver, fromThreshold, fromSurfaces] or "
+        "Contacts detection type not allowed. Please pick among : [Solver, Sensors, Surfaces] or "
         "initialize a list of surfaces with the variable surfacesForContactDetection");
   }
 
-  if(contactsDetection == fromSurfaces)
+  if(contactsDetection == Surfaces)
   {
     mc_rtc::log::error_and_throw<std::runtime_error>(
         "You selected the contacts detection using surfaces but didn't add the list of surfaces, please use the "
         "ContactsManager constructor that receives this surfaces list");
   }
 
-  if(contactsDetection == fromThreshold)
+  if(contactsDetection == Sensors)
   {
     for(auto forceSensor : robot.forceSensors())
     {
@@ -270,8 +268,8 @@ void ContactsManager<ContactWithSensorT>::findContactsFromSurfaces(const mc_cont
 }
 
 template<typename ContactWithSensorT>
-void ContactsManager<ContactWithSensorT>::findContactsFromThreshold(const mc_control::MCController & ctl,
-                                                                    const std::string & robotName)
+void ContactsManager<ContactWithSensorT>::findContactsFromSensors(const mc_control::MCController & ctl,
+                                                                  const std::string & robotName)
 {
   const auto & measRobot = ctl.robot(robotName);
 

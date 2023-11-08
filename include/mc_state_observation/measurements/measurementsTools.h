@@ -245,10 +245,10 @@ struct ContactsManager
 public:
   enum ContactsDetection
   {
-    fromSolver,
-    fromSurfaces,
-    fromThreshold,
-    undefined
+    Solver,
+    Surfaces,
+    Sensors,
+    Undefined
   };
 
 public:
@@ -306,17 +306,17 @@ public:
   const ContactsSet & findContacts(const mc_control::MCController & ctl, const std::string & robotName);
   /// @brief Updates the list @contactsFound_ of currently set contacts directly from the controller.
   /// @details Called by \ref findContacts(const mc_control::MCController & ctl) if @contactsDetection_ is equal to
-  /// "fromSolver". The contacts are given by the controller directly (then thresholded based on the measured force).
+  /// "Solver". The contacts are given by the controller directly (then thresholded based on the measured force).
   void findContactsFromSolver(const mc_control::MCController & ctl, const std::string & robotName);
   /// @brief Updates the list @contactsFound_ of currently set contacts from the surfaces given by the user.
   /// @details Called by \ref findContacts(const mc_control::MCController & ctl) if @contactsDetection_ is equal to
-  /// "fromSurfaces". The contacts are obtained by thresholded based the force measured by the associated force sensor).
+  /// "Surfaces". The contacts are obtained by thresholded based the force measured by the associated force sensor).
   void findContactsFromSurfaces(const mc_control::MCController & ctl, const std::string & robotName);
   /// @brief Updates the list @contactsFound_ of currently set contacts from a thresholding of the measured forces.
   /// @details Called by \ref findContacts(const mc_control::MCController & ctl) if @contactsDetection_ is equal to
-  /// "fromThreshold". The contacts are not required to be given by the controller (the detection is based on a
+  /// "Sensors". The contacts are not required to be given by the controller (the detection is based on a
   /// thresholding of the measured force).
-  void findContactsFromThreshold(const mc_control::MCController & ctl, const std::string & robotName);
+  void findContactsFromSensors(const mc_control::MCController & ctl, const std::string & robotName);
   /// @brief Updates the list of contacts to inform whether they are newly set, removed, etc.
   void updateContacts();
 
@@ -368,14 +368,14 @@ protected:
   // list of the contacts that just got removed
   ContactsSet removedContacts_;
 
-  // list of surfaces used for contacts detection if @contactsDetection_ is set to "fromSurfaces"
+  // list of surfaces used for contacts detection if @contactsDetection_ is set to "Surfaces"
   std::vector<std::string> surfacesForContactDetection_;
   // list of sensors that must not be used from the start of the observer
   std::vector<std::string> contactsSensorDisabledInit_;
   // name of the observer using this contacts manager.
   std::string observerName_;
   // method used to detect the contacts
-  ContactsDetection contactsDetectionMethod_ = undefined;
+  ContactsDetection contactsDetectionMethod_ = Undefined;
   bool verbose_ = true;
 };
 
