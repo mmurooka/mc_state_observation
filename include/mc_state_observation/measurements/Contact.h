@@ -11,7 +11,6 @@ namespace mc_state_observation::measurements
 
 struct Contact
 {
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 protected:
   inline Contact() = default;
   // constructor if the contact is not associated to a surface
@@ -19,7 +18,6 @@ protected:
   {
     id_ = id;
     name_ = name;
-    resetContact();
   }
   // constructor if the contact is associated to a surface
   inline Contact(int id, std::string name, std::string surface) : Contact(id, name) { setSurfaceName(surface); }

@@ -5,7 +5,8 @@
 namespace mc_state_observation::measurements
 {
 /**
- * Object making easier the handling of contacts associated to a sensor within the observers.
+ * Object that contains all the functions and necessary information making easier the handling of contacts associated to
+ * a sensor within the observers.
 
  * If the contact is detected using a thresholding on the contact force, the contact force cannot be obtained and the
  * name of the contact will be the one of the force sensor. Otherwise the name of the contact surface is used, allowing
@@ -14,17 +15,12 @@ namespace mc_state_observation::measurements
 struct ContactWithSensor : public Contact
 {
 
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 public:
-  ContactWithSensor() {}
+  inline ContactWithSensor() = default;
   // constructor if the contact is not associated to a surface
   ContactWithSensor(int id, std::string forceSensorName)
+  : Contact(id, forceSensorName), forceSensorName_(forceSensorName)
   {
-    id_ = id;
-    name_ = forceSensorName;
-    forceSensorName_ = forceSensorName;
-
-    resetContact();
   }
 
   // constructor if the contact is associated to a surface
@@ -32,26 +28,20 @@ public:
                     const std::string & forceSensorName,
                     const std::string & surfaceName,
                     bool sensorAttachedToSurface)
+  : Contact(id, surfaceName, surfaceName), sensorAttachedToSurface_(sensorAttachedToSurface),
+    forceSensorName_(forceSensorName)
   {
-    id_ = id;
-    name_ = surfaceName;
-    resetContact();
-
-    surface_ = surfaceName;
-    forceSensorName_ = forceSensorName;
-    sensorAttachedToSurface_ = sensorAttachedToSurface;
   }
-  ~ContactWithSensor() {}
+
   inline void resetContact()
   {
-    wasAlreadySet_ = false;
-    isSet_ = false;
+    Contact::resetContact();
     sensorWasEnabled_ = false;
 
     // also filtered force? see when this feature will be corrected
   }
 
-  std::string & forceSensorName() { return forceSensorName_; }
+  const std::string & forceSensorName() const noexcept { return forceSensorName_; }
 
 public:
   Eigen::Matrix<double, 6, 1> wrenchInCentroid_ = Eigen::Matrix<double, 6, 1>::Zero(); // for logs

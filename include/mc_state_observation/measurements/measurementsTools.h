@@ -82,8 +82,10 @@ private:
 
 /**
  * Contacts manager for observers implemented in mc_rtc.
+ *
  * This contact manager handles the detection of contacts with three different methods, using contact surfaces, contacts
  * directly given by the controller, or a thresholding on the measured contact force.
+ *
  * On each iteration, the manager updates the list of current contacts and of removed contacts.
  **/
 
