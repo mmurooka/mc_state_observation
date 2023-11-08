@@ -13,18 +13,17 @@ struct Contact
 {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 protected:
-  Contact() {}
-  ~Contact() {}
+  inline Contact() = default;
   // constructor if the contact is not associated to a surface
-  Contact(int id, std::string name)
+  inline Contact(int id, std::string name)
   {
     id_ = id;
     name_ = name;
     resetContact();
   }
   // constructor if the contact is associated to a surface
-  Contact(int id, std::string name, std::string surface) : Contact(id, name) { setSurfaceName(surface); }
-  bool operator<(const Contact & contact2) const { return (getID() < contact2.id_); }
+  inline Contact(int id, std::string name, std::string surface) : Contact(id, name) { setSurfaceName(surface); }
+  inline bool operator<(const Contact & contact2) const noexcept { return (id() < contact2.id_); }
 
 public:
   inline void resetContact()
@@ -34,9 +33,9 @@ public:
   }
 
   // getters
-  inline const int & getID() const { return id_; }
-  inline const std::string & getName() const { return name_; }
-  const std::string & getSurfaceName() const
+  inline const int & id() const noexcept { return id_; }
+  inline const std::string & name() const noexcept { return name_; }
+  const std::string & surfaceName() const
   {
     BOOST_ASSERT(!surface_.empty() && "The contact was created without a surface.");
     return surface_;

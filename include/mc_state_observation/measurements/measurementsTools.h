@@ -31,7 +31,7 @@ public:
   /// @brief Get the index of the IMU given its name.
   /// @param name The name of the IMU
   /// @return const int &
-  inline const int & getNumFromName(const std::string & name) { return mapIMUs_.find(name)->second.getID(); }
+  inline const int & getNumFromName(const std::string & name) { return mapIMUs_.find(name)->second.id(); }
   /// @brief Get the name of the IMU given its index.
   /// @param num_ The index of the IMU
   /// @return const std::string &

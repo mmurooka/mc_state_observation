@@ -1,5 +1,6 @@
 #pragma once
 #include <Eigen/Core>
+#include <Eigen/src/Core/Matrix.h>
 #include <mc_state_observation/measurements/Sensor.h>
 #include <string>
 
@@ -13,15 +14,9 @@ namespace mc_state_observation::measurements
 struct IMU : public Sensor
 {
 public:
-  IMU(int id, std::string name)
-  {
-    id_ = id;
-    name_ = name;
-    gyroBias << 0.0, 0.0, 0.0;
-  }
-  ~IMU() {}
+  inline IMU(int id, std::string name) : Sensor(id, name) {}
 
 public:
-  Eigen::Vector3d gyroBias;
+  Eigen::Vector3d gyroBias = Eigen::Vector3d::Zero();
 };
 } // namespace mc_state_observation::measurements

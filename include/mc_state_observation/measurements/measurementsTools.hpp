@@ -216,7 +216,7 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFro
           if(contactWS.forceNorm_ > contactDetectionThreshold_)
           {
             // the contact is added to the map of contacts using the name of the associated sensor
-            contactsFound_.insert(contactWS.getID());
+            contactsFound_.insert(contactWS.id());
           }
         }
         else
@@ -229,7 +229,7 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFro
           {
             // the contact is added to the map of contacts using the name of the associated sensor
 
-            contactsFound_.insert(contactWS.getID());
+            contactsFound_.insert(contactWS.id());
           }
         }
       }
@@ -249,7 +249,7 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFro
           {
 
             // the contact is added to the map of contacts using the name of the associated surface
-            contactsFound_.insert(contactWS.getID());
+            contactsFound_.insert(contactWS.id());
           }
         }
         else
@@ -262,7 +262,7 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFro
           {
             // the contact is added to the map of contacts using the name of the associated sensor
 
-            contactsFound_.insert(contactWS.getID());
+            contactsFound_.insert(contactWS.id());
           }
         }
       }
@@ -288,7 +288,7 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFro
     if(contact.second.forceNorm_ > contactDetectionThreshold_)
     {
       //  the contact is added to the map of contacts using the name of the associated surface
-      contactsFound_.insert(contact.second.getID());
+      contactsFound_.insert(contact.second.id());
     }
   }
 }
@@ -310,7 +310,7 @@ void ContactsManager<ContactWithSensorT, ContactWithoutSensorT>::findContactsFro
     if(contact.second.forceNorm_ > contactDetectionThreshold_)
     {
       // the contact is added to the map of contacts using the name of the associated sensor
-      contactsFound_.insert(contact.second.getID());
+      contactsFound_.insert(contact.second.id());
     }
   }
 }

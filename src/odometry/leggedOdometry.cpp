@@ -274,7 +274,7 @@ void LeggedOdometryManager::getFbFromContacts(const mc_control::MCController & c
       // new kinematics of the contact obtained from the floating base. Used to obtain the updated position of the
       // floating base wrt to the contact, in the world frame.
       const so::kine::Kinematics & worldContactKine =
-          getCurrentContactKinematics(setContact, robot.forceSensor(setContact.getName()));
+          getCurrentContactKinematics(setContact, robot.forceSensor(setContact.name()));
 
       setContact.currentWorldFbPose_.position =
           setContact.worldRefKine_.position() + (worldFbPose_curr.position() - worldContactKine.position());
@@ -540,7 +540,7 @@ void LeggedOdometryManager::setNewContact(LoContactWithSensor & contact, const m
   }
   else // the kinematics of the contact are directly the ones of the surface
   {
-    sva::PTransformd worldSurfacePoseOdometryRobot = odometryRobot().surfacePose(contact.getSurfaceName());
+    sva::PTransformd worldSurfacePoseOdometryRobot = odometryRobot().surfacePose(contact.surfaceName());
 
     contact.worldRefKine_.position = worldSurfacePoseOdometryRobot.translation();
     contact.worldRefKine_.orientation = so::Matrix3(worldSurfacePoseOdometryRobot.rotation().transpose());
@@ -573,7 +573,7 @@ const so::kine::Kinematics & LeggedOdometryManager::getCurrentContactKinematics(
   else // the kinematics of the contact are the ones of the associated surface
   {
     // the kinematics of the contacts are the ones of the surface, but we must transport the measured wrench
-    sva::PTransformd worldSurfacePoseOdometryRobot = odometryRobot().surfacePose(contact.getSurfaceName());
+    sva::PTransformd worldSurfacePoseOdometryRobot = odometryRobot().surfacePose(contact.surfaceName());
     contact.currentWorldKine_ =
         kinematicsTools::fromSva(worldSurfacePoseOdometryRobot, so::kine::Kinematics::Flags::pose);
 
@@ -591,7 +591,7 @@ void LeggedOdometryManager::selectForOrientationOdometry()
   for(auto it = contactsManager_.contactsFound().begin(); it != contactsManager_.contactsFound().end(); it++)
   {
     LoContactWithSensor & contact = contactsManager_.contactWithSensor(*it);
-    if(contact.getName().find("Hand") == std::string::npos
+    if(contact.name().find("Hand") == std::string::npos
        && contact.wasAlreadySet_) // we don't use hands for the orientation odometry
     {
       contact.useForOrientation_ = true;
@@ -608,7 +608,7 @@ void LeggedOdometryManager::selectForOrientationOdometry()
 
 void LeggedOdometryManager::addContactLogEntries(mc_rtc::Logger & logger, const LoContactWithSensor & contact)
 {
-  const std::string & contactName = contact.getName();
+  const std::string & contactName = contact.name();
   kinematicsTools::addToLogger(contact.worldRefKine_, logger, odometryName_ + "_" + contactName + "_refPose");
   kinematicsTools::addToLogger(contact.currentWorldFbPose_, logger,
                                odometryName_ + "_" + contactName + "_currentWorldFbPose");
@@ -618,7 +618,7 @@ void LeggedOdometryManager::addContactLogEntries(mc_rtc::Logger & logger, const 
 
 void LeggedOdometryManager::removeContactLogEntries(mc_rtc::Logger & logger, const LoContactWithSensor & contact)
 {
-  const std::string & contactName = contact.getName();
+  const std::string & contactName = contact.name();
   logger.removeLogEntry(odometryName_ + "_" + contactName + "_ref_position");
   logger.removeLogEntry(odometryName_ + "_" + contactName + "_ref_orientation");
   kinematicsTools::removeFromLogger(logger, odometryName_ + "_" + contactName + "_refPose");
@@ -653,7 +653,7 @@ so::kine::Kinematics & LeggedOdometryManager::getAnchorFramePose(const mc_contro
 
       LoContactWithSensor & setContact = contactsManager_.contactWithSensor(setContactIndex);
       const so::kine::Kinematics & worldContactKine =
-          getCurrentContactKinematics(setContact, robot.forceSensor(setContact.getName()));
+          getCurrentContactKinematics(setContact, robot.forceSensor(setContact.name()));
 
       sumForces_position += setContact.forceNorm_;
       // force weighted sum of the estimated floating base positions
@@ -740,7 +740,7 @@ so::kine::Kinematics & LeggedOdometryManager::getAnchorFramePose(const mc_contro
 
       LoContactWithSensor & setContact = contactsManager_.contactWithSensor(setContactIndex);
       const so::kine::Kinematics & worldContactKine =
-          getCurrentContactKinematics(setContact, robot.forceSensor(setContact.getName()));
+          getCurrentContactKinematics(setContact, robot.forceSensor(setContact.name()));
 
       sumForces_position += setContact.forceNorm_;
       // force weighted sum of the estimated floating base positions
