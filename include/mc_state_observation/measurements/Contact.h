@@ -42,20 +42,13 @@ public:
   // getters
   void setSurfaceName(std::string surfaceName) { surface_ = surfaceName; }
 
-  /*// ! Not working yet
-  inline const Eigen::Vector3d & getZMP()
-  {
-    return zmp;
-  }
-  */
-
 public:
   int id_;
   std::string name_;
 
   bool isSet_ = false;
   bool wasAlreadySet_ = false;
-  // Eigen::Vector3d zmp; // ! Not working yet
+
 protected:
   std::string surface_;
 };

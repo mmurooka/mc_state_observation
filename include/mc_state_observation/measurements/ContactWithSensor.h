@@ -33,8 +33,6 @@ public:
   {
     Contact::resetContact();
     sensorWasEnabled_ = false;
-
-    // also filtered force? see when this feature will be corrected
   }
 
   const std::string & forceSensorName() const noexcept { return forceSensorName_; }
@@ -53,9 +51,5 @@ public:
 
 protected:
   std::string forceSensorName_;
-
-  /* Force filtering for the contact detection */ // ! Not working yet!
-  // Eigen::Vector3d filteredForce = Eigen::Vector3d::Zero();
-  // double lambda = 0.0;
 };
 } // namespace mc_state_observation::measurements
