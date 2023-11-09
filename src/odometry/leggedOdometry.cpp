@@ -67,11 +67,11 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
   {
     ctl.gui()->addElement({odometryName_, "Odometry"},
                           mc_rtc::gui::ComboInput(
-                              "Choose from list", {"6dOdometry", "Flat"},
+                              "Choose from list", {"6D", "Flat"},
                               [this]() -> std::string
                               {
                                 if(odometryType_ == measurements::OdometryType::Flat) { return "Flat"; }
-                                else { return "6dOdometry"; }
+                                else { return "6D"; }
                               },
                               [this](const std::string & typeOfOdometry) { changeOdometryType(typeOfOdometry); }));
     logger.addLogEntry(odometryName_ + "_debug_OdometryType",
@@ -83,7 +83,7 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
                              return "Flat";
                              break;
                            case measurements::OdometryType::Odometry6d:
-                             return "6dOdometry";
+                             return "6D";
                              break;
                            default:
                              break;
@@ -845,7 +845,7 @@ void LeggedOdometryManager::changeOdometryType(const std::string & newOdometryTy
 {
   OdometryType prevOdometryType = odometryType_;
   if(newOdometryType == "Flat") { odometryType_ = measurements::OdometryType::Flat; }
-  else if(newOdometryType == "6dOdometry") { odometryType_ = measurements::OdometryType::Odometry6d; }
+  else if(newOdometryType == "6D") { odometryType_ = measurements::OdometryType::Odometry6d; }
 
   if(odometryType_ != prevOdometryType)
   {
