@@ -2,7 +2,7 @@
 
 namespace so = stateObservation;
 
-namespace mc_state_observation::kinematicsTools
+namespace mc_state_observation::conversions::kinematics
 {
 
 ///////////////////////////////////////////////////////////////////////
@@ -184,4 +184,4 @@ sva::PTransformd pTransformFromKinematics(const so::kine::Kinematics & kine)
   return pose;
 }
 
-} // namespace mc_state_observation::kinematicsTools
+} // namespace mc_state_observation::conversions::kinematics
