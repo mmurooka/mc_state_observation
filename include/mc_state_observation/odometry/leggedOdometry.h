@@ -54,7 +54,7 @@ public:
 struct LeggedOdometryManager
 {
 public:
-  typedef measurements::ContactsManager<LoContactWithSensor> ContactsManager;
+  using ContactsManager = measurements::ContactsManager<LoContactWithSensor>;
 
 public:
   LeggedOdometryManager() {}
