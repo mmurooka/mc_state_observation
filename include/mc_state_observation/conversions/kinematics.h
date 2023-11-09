@@ -63,9 +63,9 @@ stateObservation::kine::Kinematics fromSva(const sva::PTransformd & pTransform,
 /// @param vel The linear and angular velocities of the frame A inside B.
 /// @param velIsGlobal If true, the velocity vectors are expressed in the global frame (B), if false, they are expressed
 /// in the local frame (A).
-stateObservation::kine::Kinematics & setVelocitiesAndAccelerations(stateObservation::kine::Kinematics & kine,
-                                                                   const sva::MotionVecd & vel,
-                                                                   bool velIsGlobal = true);
+stateObservation::kine::Kinematics & setVelocities(stateObservation::kine::Kinematics & kine,
+                                                   const sva::MotionVecd & vel,
+                                                   bool velIsGlobal = true);
 /// @brief Sets the velocity variables of a frame A within a frame B contained in a MotionVectord object
 /// to the corresponding Kinematics object.
 /// @details The motion vectors given by mc_rtc can be expressed in the global frame B (example:
@@ -78,11 +78,11 @@ stateObservation::kine::Kinematics & setVelocitiesAndAccelerations(stateObservat
 /// in the local frame (A).
 /// @param accIsGlobal If true, the acceleration vectors are expressed in the global frame (B), if false, they are
 /// expressed in the local frame (A).
-stateObservation::kine::Kinematics & addVelsAndAccs(stateObservation::kine::Kinematics & kine,
-                                                    const sva::MotionVecd & vel,
-                                                    const sva::MotionVecd & acc,
-                                                    bool velIsGlobal = true,
-                                                    bool accIsGlobal = true);
+stateObservation::kine::Kinematics & setVelocitiesAndAccelerations(stateObservation::kine::Kinematics & kine,
+                                                                   const sva::MotionVecd & vel,
+                                                                   const sva::MotionVecd & acc,
+                                                                   bool velIsGlobal = true,
+                                                                   bool accIsGlobal = true);
 
 /// @brief Converts a Kinematics object to the corresponding PTransformd (position + orientation) object
 sva::PTransformd pTransformFromKinematics(const stateObservation::kine::Kinematics & kine);
