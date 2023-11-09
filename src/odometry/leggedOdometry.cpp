@@ -15,7 +15,7 @@ namespace mc_state_observation::odometry
 void LeggedOdometryManager::init(const mc_control::MCController & ctl,
                                  const std::string & robotName,
                                  const std::string & odometryName,
-                                 OdometryType & odometryType,
+                                 OdometryType odometryType,
                                  const bool withYawEstimation,
                                  const bool velUpdatedUpstream,
                                  const bool accUpdatedUpstream,
@@ -95,10 +95,10 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
 
 void LeggedOdometryManager::initDetection(const mc_control::MCController & ctl,
                                           const std::string & robotName,
-                                          const ContactsManager::ContactsDetection & contactsDetection,
+                                          const ContactsManager::ContactsDetection contactsDetection,
                                           const std::vector<std::string> & surfacesForContactDetection,
                                           const std::vector<std::string> & contactsSensorDisabledInit,
-                                          const double & contactsDetectionThreshold)
+                                          const double contactsDetectionThreshold)
 {
   contactsManager_.initDetection(ctl, robotName, contactsDetection, surfacesForContactDetection,
                                  contactsSensorDisabledInit, contactsDetectionThreshold);
@@ -106,9 +106,9 @@ void LeggedOdometryManager::initDetection(const mc_control::MCController & ctl,
 
 void LeggedOdometryManager::initDetection(const mc_control::MCController & ctl,
                                           const std::string & robotName,
-                                          const ContactsManager::ContactsDetection & contactsDetection,
+                                          const ContactsManager::ContactsDetection contactsDetection,
                                           const std::vector<std::string> & contactsSensorDisabledInit,
-                                          const double & contactsDetectionThreshold,
+                                          const double contactsDetectionThreshold,
                                           const std::vector<std::string> & forceSensorsToOmit)
 {
   contactsManager_.initDetection(ctl, robotName, contactsDetection, contactsSensorDisabledInit,
@@ -853,7 +853,7 @@ void LeggedOdometryManager::changeOdometryType(const std::string & newOdometryTy
   }
 }
 
-void LeggedOdometryManager::changeOdometryType(const OdometryType & newOdometryType)
+void LeggedOdometryManager::changeOdometryType(const OdometryType newOdometryType)
 {
   odometryType_ = newOdometryType;
 }

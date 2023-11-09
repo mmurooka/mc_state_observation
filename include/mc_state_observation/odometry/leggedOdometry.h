@@ -100,7 +100,7 @@ public:
   void init(const mc_control::MCController & ctl,
             const std::string & robotName,
             const std::string & odometryName,
-            measurements::OdometryType & odometryType,
+            measurements::OdometryType odometryType,
             const bool withYawEstimation,
             const bool velUpdatedUpstream,
             const bool accUpdatedUpstream,
@@ -116,10 +116,10 @@ public:
   /// @param contactDetectionThreshold threshold on the measured force for the contact detection
   void initDetection(const mc_control::MCController & ctl,
                      const std::string & robotName,
-                     const ContactsManager::ContactsDetection & contactsDetection,
+                     const ContactsManager::ContactsDetection contactsDetection,
                      const std::vector<std::string> & surfacesForContactDetection,
                      const std::vector<std::string> & contactsSensorDisabledInit,
-                     const double & contactDetectionThreshold);
+                     const double contactDetectionThreshold);
 
   /// @brief initialization for a detection based on a threshold on the measured contact forces or for contacts given by
   /// the controller
@@ -131,9 +131,9 @@ public:
   /// @param forceSensorsToOmit list of force sensors that cannot be used for the contacts detection
   void initDetection(const mc_control::MCController & ctl,
                      const std::string & robotName,
-                     const ContactsManager::ContactsDetection & contactsDetection,
+                     const ContactsManager::ContactsDetection contactsDetection,
                      const std::vector<std::string> & contactsSensorDisabledInit,
-                     const double & contactDetectionThreshold,
+                     const double contactDetectionThreshold,
                      const std::vector<std::string> & forceSensorsToOmit);
 
   /// @brief @copybrief run(const mc_control::MCController &, mc_rtc::Logger &, sva::PTransformd &, sva::MotionVecd &,
@@ -310,7 +310,7 @@ public:
   /// @brief Changes the type of the odometry.
   /// @details Version meant to be called by the observer using the odometry.
   /// @param newOdometryType The new type of odometry to use.
-  void changeOdometryType(const measurements::OdometryType & newOdometryType);
+  void changeOdometryType(const measurements::OdometryType newOdometryType);
 
   /// @brief Add the log entries corresponding to the contact.
   /// @param logger

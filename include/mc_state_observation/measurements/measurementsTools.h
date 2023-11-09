@@ -168,7 +168,7 @@ public:
   ///
   /// @param idx The index of the contact to access
   /// @return ContactWithSensor&
-  inline ContactWithSensorT & contact(const int & idx) { return listContacts_.at(getNameFromIdx(idx)); }
+  inline ContactWithSensorT & contact(const int idx) { return listContacts_.at(getNameFromIdx(idx)); }
 
   /// @brief Get the map of all the contacts
   ///
@@ -182,7 +182,7 @@ public:
   /// @brief Get the name of a contact given its index
   /// @param idx The index of the contact
   /// @return const std::string &
-  inline const std::string & getNameFromIdx(const int & idx) { return insertOrder_.at(idx); }
+  inline const std::string & getNameFromIdx(const int idx) { return insertOrder_.at(idx); }
 
   /// @brief Get the index of a contact given its name
   /// @param name The name of the contact
