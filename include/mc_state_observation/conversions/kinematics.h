@@ -48,11 +48,11 @@ stateObservation::kine::Kinematics fromSva(const sva::PTransformd & pTransform,
 /// in the local frame (A).
 /// @param accIsGlobal If true, the acceleration vectors are expressed in the global frame (B), if false, they are
 /// expressed in the local frame (A).
-stateObservation::kine::Kinematics kinematicsFromSva(const sva::PTransformd & pTransform,
-                                                     const sva::MotionVecd & vel,
-                                                     const sva::MotionVecd & acc,
-                                                     bool velIsGlobal = true,
-                                                     bool accIsGlobal = true);
+stateObservation::kine::Kinematics fromSva(const sva::PTransformd & pTransform,
+                                           const sva::MotionVecd & vel,
+                                           const sva::MotionVecd & acc,
+                                           bool velIsGlobal = true,
+                                           bool accIsGlobal = true);
 
 /// @brief Sets the velocity variables of a frame A within a frame B contained in a MotionVectord object
 /// to the corresponding Kinematics object.
