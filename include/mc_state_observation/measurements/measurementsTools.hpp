@@ -323,12 +323,12 @@ std::string ContactsManager<ContactWithSensorT>::set_to_string(const ContactsSet
   if(contactSet.cbegin() == contactSet.cend()) { return ""; }
   std::ostringstream out;
   out.precision(std::numeric_limits<int>::digits10);
-  out << std::fixed << getNameFromNum(*contactSet.cbegin());
+  out << std::fixed << getNameFromIdx(*contactSet.cbegin());
 
   for(auto it = std::next(contactSet.cbegin()); it != contactSet.cend(); ++it)
   {
     out << ", ";
-    out << std::fixed << getNameFromNum(*it);
+    out << std::fixed << getNameFromIdx(*it);
   }
   return out.str();
 }

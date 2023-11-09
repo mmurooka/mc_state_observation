@@ -70,11 +70,11 @@ protected:
   /// @return ContactWithSensorT &
   inline ContactWithSensorT & addContactToManager(const std::string & forceSensorName, const std::string surface)
   {
-    ContactWithSensorT contact = ContactWithSensorT(num_, forceSensorName, surface);
+    ContactWithSensorT contact = ContactWithSensorT(idx_, forceSensorName, surface);
 
     listContacts_.insert(std::make_pair(forceSensorName, contact));
     insertOrder_.push_back(forceSensorName);
-    num_++;
+    idx_++;
 
     return listContacts_.at(forceSensorName);
   }
@@ -84,11 +84,11 @@ protected:
   /// @return ContactWithSensorT &
   inline ContactWithSensorT & addContactToManager(const std::string & forceSensorName)
   {
-    ContactWithSensorT contact = ContactWithSensorT(num_, forceSensorName);
+    ContactWithSensorT contact = ContactWithSensorT(idx_, forceSensorName);
 
     listContacts_.insert(std::make_pair(forceSensorName, contact));
     insertOrder_.push_back(forceSensorName);
-    num_++;
+    idx_++;
 
     return listContacts_.at(forceSensorName);
   }
@@ -166,9 +166,9 @@ public:
 
   /// @brief Accessor for the a contact associated to a sensor contained in the map
   ///
-  /// @param num The index of the contact to access
+  /// @param idx The index of the contact to access
   /// @return ContactWithSensor&
-  inline ContactWithSensorT & contact(const int & num) { return listContacts_.at(getNameFromNum(num)); }
+  inline ContactWithSensorT & contact(const int & idx) { return listContacts_.at(getNameFromIdx(idx)); }
 
   /// @brief Get the map of all the contacts
   ///
@@ -180,14 +180,14 @@ public:
   inline const std::vector<std::string> & getList() { return insertOrder_; }
 
   /// @brief Get the name of a contact given its index
-  /// @param num_ The index of the contact
+  /// @param idx The index of the contact
   /// @return const std::string &
-  inline const std::string & getNameFromNum(const int & num) { return insertOrder_.at(num); }
+  inline const std::string & getNameFromIdx(const int & idx) { return insertOrder_.at(idx); }
 
   /// @brief Get the index of a contact given its name
   /// @param name The name of the contact
   /// @return const int &
-  inline const int & getNumFromName(const std::string & name) { return listContacts_.at(name).getID(); }
+  inline const int & getIdxFromName(const std::string & name) { return listContacts_.at(name).getID(); }
 
   /// @brief Get the list of the currently set contacts.
   /// @return const std::vector<std::string> &
@@ -204,7 +204,7 @@ protected:
   // List of the contacts used to access their indexes quickly
   std::vector<std::string> insertOrder_;
   // Index generator, incremented everytime a new contact is created
-  int num_ = 0;
+  int idx_ = 0;
 
 protected:
   // method used to detect the contacts
