@@ -80,128 +80,6 @@ private:
   int num_ = 0;
 };
 
-/**
- * Contacts manager for observers implemented in mc_rtc.
- *
- * This contact manager handles the detection of contacts with three different methods, using contact surfaces, contacts
- * directly given by the controller, or a thresholding on the measured contact force.
- *
- * On each iteration, the manager updates the list of current contacts and of removed contacts.
- **/
-
-/// @brief Map of contacts containing the list of all the contacts and functions facilitating their handling.
-/// @details The template allows to define other kinds of contacts and thus add custom parameters to them. Warning! This
-/// class has been tested only on contacts with sensors
-/// @tparam ContactWithSensorT Contacts associated to a sensor.
-template<typename ContactWithSensorT>
-struct MapContacts
-{
-public:
-  MapContacts()
-  {
-    BOOST_ASSERT((std::is_base_of<ContactWithSensor, ContactWithSensorT>::value)
-                 && "The template class for the contacts with sensors must inherit from the ContactWithSensor class");
-  }
-
-public:
-  /// @brief Accessor for the a contact associated to a sensor contained in the map
-  /// @details Version for a contact that is associated to a force sensor but to no surface
-  /// @param name The name of the contact to access
-  /// @return ContactWithSensorT&
-  inline ContactWithSensorT & contact(const std::string & name)
-  {
-    BOOST_ASSERT(checkAlreadyExists(name) && "The requested contact doesn't exist");
-    return listContacts_.at(name);
-  }
-  /// @brief Accessor for the a contact associated to a sensor contained in the map
-  ///
-  /// @param num_ The index of the contact to access
-  /// @return ContactWithSensor&
-  inline ContactWithSensorT & contact(const int & num)
-  {
-    BOOST_ASSERT((num >= 0 && num < num_) && "The requested contact doesn't exist");
-    BOOST_ASSERT(checkAlreadyExists(getNameFromNum(num)) && "The requested contact doesn't exist");
-    return listContacts_.at(getNameFromNum(num));
-  }
-
-  /// @brief Get the map of all the contacts
-  ///
-  /// @return std::unordered_map<std::string, contactsWithSensorT>&
-  inline std::unordered_map<std::string, ContactWithSensorT> & contacts() { return listContacts_; }
-
-  /// @brief Get the list of all the contacts (with and without sensors)
-  ///
-  /// @return const std::vector<std::string> &
-  inline const std::vector<std::string> & getList() { return insertOrder_; }
-
-  /// @brief Get the name of a contact given its index
-  ///
-  /// @param num_ The index of the contact
-  /// @return const std::string &
-  inline const std::string & getNameFromNum(const int & num) { return insertOrder_.at(num); }
-
-  /// @brief Get the index of a contact given its name
-  /// @param name The name of the contact
-  /// @return const int &
-  inline const int & getNumFromName(const std::string & name) { return listContacts_.at(name).getID(); }
-
-  /// @brief Checks if the given contact exists
-  ///
-  /// @param element The name of the contact
-  /// @return bool
-  inline bool hasElement(const std::string & element) { return listContacts_.find(element) != listContacts_.end(); }
-
-  /// @brief Checks that a contact still does not exist, if so, inserts a contact to the map of contacts.
-  /// @details Version for contacts that are detected by a thresholding on a force sensor measurement.
-  /// @param element The name of the contact which corresponds to the name of the sensor.
-  inline void insertContact(const std::string & forceSensorName)
-  {
-    insertElement(forceSensorName);
-
-    num_++;
-  }
-
-  /// @brief Checks that a contact still does not exist, if so, inserts a contact to the map of contacts.
-  /// @details Version for contacts that are associated to both a force sensor and a contact surface. The contact will
-  /// be named with the name of the force sensor.
-  /// @param forceSensorName The name of the force sensor.
-  /// @param surface The name of the surface that will be used also to name the contact.
-  inline void insertContact(const std::string & forceSensorName, const std::string surface)
-  {
-    insertElement(forceSensorName, surface);
-
-    num_++;
-  }
-
-private:
-  /// @brief Inserts a contact to the map of contacts.
-  /// @details Version for contacts that are associated to both a force sensor and a contact surface. The contact will
-  /// be named with the name of the force sensor.
-  /// @param forceSensorName The name of the force sensor.
-  /// @param surface The name of the surface that will be used also to name the contact.
-  inline void insertElement(const std::string & forceSensorName, const std::string surface)
-  {
-    listContacts_.insert(std::make_pair(forceSensorName, ContactWithSensorT(num_, forceSensorName, surface)));
-    insertOrder_.push_back(forceSensorName);
-  }
-  /// @brief Insert a contact to the map of contacts.
-  /// @details Version for contacts that are associated to a force sensor but to no surface.
-  /// @param name The name of the contact (= name of the sensor)
-  inline void insertElement(const std::string & forceSensorName)
-  {
-    listContacts_.insert(std::make_pair(forceSensorName, ContactWithSensorT(num_, forceSensorName)));
-    insertOrder_.push_back(forceSensorName);
-  }
-
-private:
-  // unordered map containing all the contacts
-  std::unordered_map<std::string, ContactWithSensorT> listContacts_;
-  // List of the contacts to access their indexes
-  std::vector<std::string> insertOrder_;
-  // Index generator, incremented everytime a new contact is created
-  int num_ = 0;
-};
-
 /// @brief Structure that implements all the necessary functions to manage the map of contacts. Handles their detection
 /// and updates the list of the detected contacts, newly removed contacts, etc., to apply the appropriate functions on
 /// them.
@@ -229,8 +107,40 @@ public:
   }
 
 protected:
+  /// @brief Inserts a contact to the map of contacts.
+  /// @details Version for contacts that are associated to both a force sensor and a contact surface. The contact will
+  /// be named with the name of the force sensor.
+  /// @param forceSensorName The name of the force sensor.
+  /// @param surface The name of the surface that will be used also to name the contact.
+  /// @return ContactWithSensorT &
+  inline ContactWithSensorT & addContactToManager(const std::string & forceSensorName, const std::string surface)
+  {
+    ContactWithSensorT contact = ContactWithSensorT(num_, forceSensorName, surface);
+
+    listContacts_.insert(std::make_pair(forceSensorName, contact));
+    insertOrder_.push_back(forceSensorName);
+    num_++;
+
+    return listContacts_.at(forceSensorName);
+  }
+  /// @brief Insert a contact to the map of contacts.
+  /// @details Version for contacts that are associated to a force sensor but to no surface.
+  /// @param name The name of the contact (= name of the sensor)
+  /// @return ContactWithSensorT &
+  inline ContactWithSensorT & addContactToManager(const std::string & forceSensorName)
+  {
+    ContactWithSensorT contact = ContactWithSensorT(num_, forceSensorName);
+
+    listContacts_.insert(std::make_pair(forceSensorName, contact));
+    insertOrder_.push_back(forceSensorName);
+    num_++;
+
+    return listContacts_.at(forceSensorName);
+  }
+
   // pointer to the function that will be used for the contact detection depending on the chosen method
   void (ContactsManager::*contactsFinder_)(const mc_control::MCController &, const std::string &) = 0;
+
   /// @brief Updates the list @contactsFound_ of currently set contacts directly from the controller.
   /// @details Called by \ref findContacts(const mc_control::MCController & ctl) if @contactsDetection_ is equal to
   /// "Solver". The contacts are given by the controller directly (then thresholded based on the measured force).
@@ -297,22 +207,32 @@ public:
   ///
   /// @param name The name of the contact to access
   /// @return contactsWithSensorT&
-  inline ContactWithSensorT & contact(const std::string & name) { return mapContacts_.contact(name); }
+  inline ContactWithSensorT & contact(const std::string & name) { return listContacts_.at(name); }
 
   /// @brief Accessor for the a contact associated to a sensor contained in the map
   ///
   /// @param num The index of the contact to access
   /// @return ContactWithSensor&
-  inline ContactWithSensorT & contact(const int & num) { return mapContacts_.contact(num); }
+  inline ContactWithSensorT & contact(const int & num) { return listContacts_.at(getNameFromNum(num)); }
 
   /// @brief Get the map of all the contacts
   ///
   /// @return std::unordered_map<std::string, contactsWithSensorT>&
-  inline std::unordered_map<std::string, ContactWithSensorT> & contacts() { return mapContacts_.contacts(); }
+  inline std::unordered_map<std::string, ContactWithSensorT> & contacts() { return listContacts_; }
 
   /// @brief Get the list of all the contacts.
   /// @return const std::vector<std::string> &
-  inline const std::vector<std::string> & getList() { return mapContacts_.getList(); }
+  inline const std::vector<std::string> & getList() { return insertOrder_; }
+
+  /// @brief Get the name of a contact given its index
+  /// @param num_ The index of the contact
+  /// @return const std::string &
+  inline const std::string & getNameFromNum(const int & num) { return insertOrder_.at(num); }
+
+  /// @brief Get the index of a contact given its name
+  /// @param name The name of the contact
+  /// @return const int &
+  inline const int & getNumFromName(const std::string & name) { return listContacts_.at(name).getID(); }
 
   /// @brief Get the list of the currently set contacts.
   /// @return const std::vector<std::string> &
@@ -322,9 +242,14 @@ public:
 
   inline const ContactsDetection & getContactsDetection() { return contactsDetectionMethod_; }
 
-public:
+protected:
   // map of contacts used by the manager.
-  MapContacts<ContactWithSensorT> mapContacts_;
+  // unordered map containing all the contacts
+  std::unordered_map<std::string, ContactWithSensorT> listContacts_;
+  // List of the contacts used to access their indexes quickly
+  std::vector<std::string> insertOrder_;
+  // Index generator, incremented everytime a new contact is created
+  int num_ = 0;
 
 protected:
   // method used to detect the contacts
