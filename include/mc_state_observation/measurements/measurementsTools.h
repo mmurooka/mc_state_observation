@@ -19,66 +19,21 @@
 
 #include <mc_state_observation/measurements/ContactWithSensor.h>
 #include <mc_state_observation/measurements/IMU.h>
+#include <vector>
 
 namespace mc_state_observation::measurements
 {
 
-/// @brief List of IMUs.
-/// @details Facilitates the handling of IMUs.
-struct MapIMUs
+// allowed odometry types
+enum class OdometryType
 {
-public:
-  /// @brief Get the index of the IMU given its name.
-  /// @param name The name of the IMU
-  /// @return const int &
-  inline const int & getNumFromName(const std::string & name) { return mapIMUs_.find(name)->second.id(); }
-  /// @brief Get the name of the IMU given its index.
-  /// @param num_ The index of the IMU
-  /// @return const std::string &
-  inline const std::string & getNameFromNum(const int & num) { return insertOrder_.at(num); }
-
-  /// @brief Get the list of all the IMUs.
-  /// @return const std::vector<std::string> &
-  inline const std::vector<std::string> & getList() { return insertOrder_; }
-
-  /// @brief Checks if the required IMU exists.
-  /// @param name The name of the IMU
-  /// @return bool
-  inline bool hasElement(const std::string & name) { return checkAlreadyExists(name); }
-
-  /// @brief Inserts an IMU to the map.
-  /// @param name The name of the IMU
-  inline void insertIMU(std::string name)
-  {
-    if(checkAlreadyExists(name)) return;
-    insertOrder_.push_back(name);
-    mapIMUs_.insert(std::make_pair(name, IMU(num_, name)));
-    num_++;
-  }
-
-  /// @brief Accessor for an IMU in the list.
-  /// @param name The name of the IMU
-  /// @return bool
-  inline IMU & operator()(std::string name)
-  {
-    BOOST_ASSERT(checkAlreadyExists(name) && "The requested sensor doesn't exist");
-    return mapIMUs_.at(name);
-  }
-
-private:
-  /// @brief Checks if the required IMU exists.
-  /// @param name The name of the IMU
-  /// @return bool
-  inline bool checkAlreadyExists(const std::string & name) { return mapIMUs_.find(name) != mapIMUs_.end(); }
-
-private:
-  // list of all the IMUs.
-  std::vector<std::string> insertOrder_;
-  // map associating all the IMUs to their names.
-  std::unordered_map<std::string, IMU> mapIMUs_;
-  // Index generator, incremented everytime a new IMU is added
-  int num_ = 0;
+  Odometry6d,
+  Flat,
+  None
 };
+
+// IMUs can be handled using only a vector containing the IMU objects.
+typedef std::vector<IMU> ImuList;
 
 /// @brief Structure that implements all the necessary functions to manage the map of contacts. Handles their detection
 /// and updates the list of the detected contacts, newly removed contacts, etc., to apply the appropriate functions on
@@ -272,14 +227,6 @@ protected:
   std::string observerName_;
 
   bool verbose_ = true;
-};
-
-// allowed odometry types
-enum class OdometryType
-{
-  Odometry6d,
-  Flat,
-  None
 };
 
 } // namespace mc_state_observation::measurements
