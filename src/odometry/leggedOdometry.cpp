@@ -73,7 +73,7 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
                                 if(odometryType_ == measurements::OdometryType::Flat) { return "Flat"; }
                                 else { return "6D"; }
                               },
-                              [this](const std::string & typeOfOdometry) { changeOdometryType(typeOfOdometry); }));
+                              [this](const std::string & typeOfOdometry) { setOdometryType(typeOfOdometry); }));
     logger.addLogEntry(odometryName_ + "_debug_OdometryType",
                        [this]() -> std::string
                        {
@@ -841,7 +841,7 @@ so::kine::Kinematics & LeggedOdometryManager::getAnchorFramePose(const mc_contro
   return worldAnchorPose_;
 }
 
-void LeggedOdometryManager::changeOdometryType(const std::string & newOdometryType)
+void LeggedOdometryManager::setOdometryType(const std::string & newOdometryType)
 {
   OdometryType prevOdometryType = odometryType_;
   if(newOdometryType == "Flat") { odometryType_ = measurements::OdometryType::Flat; }
@@ -853,7 +853,7 @@ void LeggedOdometryManager::changeOdometryType(const std::string & newOdometryTy
   }
 }
 
-void LeggedOdometryManager::changeOdometryType(const OdometryType newOdometryType)
+void LeggedOdometryManager::setOdometryType(const OdometryType newOdometryType)
 {
   odometryType_ = newOdometryType;
 }

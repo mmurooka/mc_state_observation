@@ -305,12 +305,12 @@ public:
 
   /// @brief Changes the type of the odometry
   /// @param newOdometryType The new type of odometry to use.
-  void changeOdometryType(const std::string & newOdometryType);
+  void setOdometryType(const std::string & newOdometryType);
 
   /// @brief Changes the type of the odometry.
   /// @details Version meant to be called by the observer using the odometry.
   /// @param newOdometryType The new type of odometry to use.
-  void changeOdometryType(const measurements::OdometryType newOdometryType);
+  void setOdometryType(const measurements::OdometryType newOdometryType);
 
   /// @brief Add the log entries corresponding to the contact.
   /// @param logger
