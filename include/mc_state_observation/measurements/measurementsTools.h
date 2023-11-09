@@ -183,8 +183,8 @@ private:
   /// @param surface The name of the surface that will be used also to name the contact.
   inline void insertElement(const std::string & forceSensorName, const std::string surface)
   {
-    listContacts_.insert(std::make_pair(surface, ContactWithSensorT(num_, forceSensorName, surface)));
-    insertOrder_.push_back(surface);
+    listContacts_.insert(std::make_pair(forceSensorName, ContactWithSensorT(num_, forceSensorName, surface)));
+    insertOrder_.push_back(forceSensorName);
   }
   /// @brief Insert a contact to the map of contacts.
   /// @details Version for contacts that are associated to a force sensor but to no surface.

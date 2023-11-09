@@ -18,14 +18,16 @@ struct ContactWithSensor : public Contact
 public:
   inline ContactWithSensor() = default;
   // constructor if the contact is not associated to a surface
+  // its name will be the name of the force sensor
   ContactWithSensor(int id, std::string forceSensorName)
   : Contact(id, forceSensorName), forceSensorName_(forceSensorName)
   {
   }
 
   // constructor if the contact is associated to a surface
+  // its name will be the name of the force sensor
   ContactWithSensor(int id, const std::string & forceSensorName, const std::string & surfaceName)
-  : Contact(id, surfaceName, surfaceName), forceSensorName_(forceSensorName)
+  : Contact(id, forceSensorName, surfaceName), forceSensorName_(forceSensorName)
   {
   }
 

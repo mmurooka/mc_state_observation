@@ -64,7 +64,7 @@ void ContactsManager<ContactWithSensorT>::initDetection(const mc_control::MCCont
         const mc_rbdyn::ForceSensor & forceSensor = robot.surfaceForceSensor(surface);
         const std::string & fsName = forceSensor.name();
         mapContacts_.insertContact(fsName, surface);
-        addContactToGui(ctl, surface);
+        addContactToGui(ctl, fsName);
       }
       else // if the surface is not associated to a force sensor, we will fetch the force sensor indirectly attached to
            // the surface
@@ -72,7 +72,7 @@ void ContactsManager<ContactWithSensorT>::initDetection(const mc_control::MCCont
         const mc_rbdyn::ForceSensor & forceSensor = robot.indirectSurfaceForceSensor(surface);
         const std::string & fsName = forceSensor.name();
         mapContacts_.insertContact(fsName, surface);
-        addContactToGui(ctl, surface);
+        addContactToGui(ctl, fsName);
       }
     }
   }
