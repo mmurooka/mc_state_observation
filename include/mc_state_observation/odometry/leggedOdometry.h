@@ -197,6 +197,37 @@ public:
            sva::PTransformd & pose,
            const stateObservation::Matrix3 & tilt);
 
+  /// @brief Returns the pose of the odometry robot's anchor frame based on the current floating base and encoders.
+  /// @details The anchor frame can be obtained using 2 ways:
+  /// - 1: contacts are detected and can be used to compute the anchor frame.
+  /// - 2: no contact is detected, the robot is hanging. If we still need an anchor frame for the tilt estimation we
+  /// arbitrarily use the frame of the bodySensor used by the estimator.
+  /// @param ctl controller
+  /// @param bodySensorName name of the body sensor.
+  stateObservation::kine::Kinematics & getAnchorFramePose(const mc_control::MCController & ctl,
+                                                          const std::string & bodySensorName);
+
+  /// @brief Returns the pose of the odometry robot's anchor frame. If no contact is detected, this version does not
+  /// update the anchor frame.
+  /// @param ctl controller
+  stateObservation::kine::Kinematics & getAnchorFramePose(const mc_control::MCController & ctl);
+
+  /// @brief Changes the type of the odometry
+  /// @param newOdometryType The new type of odometry to use.
+  void setOdometryType(const std::string & newOdometryType);
+
+  /// @brief Changes the type of the odometry.
+  /// @details Version meant to be called by the observer using the odometry.
+  /// @param newOdometryType The new type of odometry to use.
+  void setOdometryType(const measurements::OdometryType newOdometryType);
+
+  /// @brief Getter for the odometry robot used for the estimation.
+  mc_rbdyn::Robot & odometryRobot() { return odometryRobot_->robot("odometryRobot"); }
+
+  /// @brief Getter for the contacts manager.
+  LeggedOdometryContactsManager & contactsManager() { return contactsManager_; }
+
+protected:
   /// @brief Updates the joints configuration of the odometry robot. Has to be called at the beginning of each
   /// iteration.
   /// @param ctl Controller
@@ -282,35 +313,10 @@ public:
   /// @return stateObservation::kine::Kinematics &
   const stateObservation::kine::Kinematics & getCurrentContactKinematics(LoContactWithSensor & contact,
                                                                          const mc_rbdyn::ForceSensor & fs);
-
   /// @brief Select which contacts to use for the orientation odometry
   /// @details The two contacts with the highest measured force are selected. The contacts at hands are ignored because
   /// their orientation is less trustable.
   void selectForOrientationOdometry();
-
-  /// @brief Returns the pose of the odometry robot's anchor frame based on the current floating base and encoders.
-  /// @details The anchor frame can be obtained using 2 ways:
-  /// - 1: contacts are detected and can be used to compute the anchor frame.
-  /// - 2: no contact is detected, the robot is hanging. If we still need an anchor frame for the tilt estimation we
-  /// arbitrarily use the frame of the bodySensor used by the estimator.
-  /// @param ctl controller
-  /// @param bodySensorName name of the body sensor.
-  stateObservation::kine::Kinematics & getAnchorFramePose(const mc_control::MCController & ctl,
-                                                          const std::string & bodySensorName);
-
-  /// @brief Returns the pose of the odometry robot's anchor frame. If no contact is detected, this version does not
-  /// update the anchor frame.
-  /// @param ctl controller
-  stateObservation::kine::Kinematics & getAnchorFramePose(const mc_control::MCController & ctl);
-
-  /// @brief Changes the type of the odometry
-  /// @param newOdometryType The new type of odometry to use.
-  void setOdometryType(const std::string & newOdometryType);
-
-  /// @brief Changes the type of the odometry.
-  /// @details Version meant to be called by the observer using the odometry.
-  /// @param newOdometryType The new type of odometry to use.
-  void setOdometryType(const measurements::OdometryType newOdometryType);
 
   /// @brief Add the log entries corresponding to the contact.
   /// @param logger
@@ -321,12 +327,6 @@ public:
   /// @param logger
   /// @param contactName
   void removeContactLogEntries(mc_rtc::Logger & logger, const LoContactWithSensor & contact);
-
-  /// @brief Getter for the odometry robot used for the estimation.
-  mc_rbdyn::Robot & odometryRobot() { return odometryRobot_->robot("odometryRobot"); }
-
-  /// @brief Getter for the contacts manager.
-  LeggedOdometryContactsManager & contactsManager() { return contactsManager_; }
 
 public:
   // Indicates if the mode of computation of the anchor frame changed. Might me needed by the estimator (ex;
