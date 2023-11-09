@@ -343,7 +343,7 @@ protected:
   std::string robotName_;
 
   // indicates whether we want to update the yaw using this method or not
-  bool withYawEstimation_;
+  bool withYawEstimation_ = true;
   // tracked pose of the floating base
   sva::PTransformd fbPose_ = sva::PTransformd::Identity();
 
