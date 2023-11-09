@@ -110,7 +110,7 @@ public:
   /// @return ContactWithSensorT&
   inline ContactWithSensorT & contact(const std::string & name)
   {
-    BOOST_ASSERT(checkAlreadyExists(name) && "The requested sensor doesn't exist");
+    BOOST_ASSERT(checkAlreadyExists(name) && "The requested contact doesn't exist");
     return listContacts_.at(name);
   }
   /// @brief Accessor for the a contact associated to a sensor contained in the map
@@ -119,8 +119,8 @@ public:
   /// @return ContactWithSensor&
   inline ContactWithSensorT & contact(const int & num)
   {
-    BOOST_ASSERT((num >= 0 && num < num_) && "The requested sensor doesn't exist");
-    BOOST_ASSERT(checkAlreadyExists(getNameFromNum(num)) && "The requested sensor doesn't exist");
+    BOOST_ASSERT((num >= 0 && num < num_) && "The requested contact doesn't exist");
+    BOOST_ASSERT(checkAlreadyExists(getNameFromNum(num)) && "The requested contact doesn't exist");
     return listContacts_.at(getNameFromNum(num));
   }
 
@@ -151,34 +151,32 @@ public:
   /// @return bool
   inline bool hasElement(const std::string & element) { return listContacts_.find(element) != listContacts_.end(); }
 
-  /// @brief Check that a contact still does not exist, if so, insert a contact to the map of contacts.
+  /// @brief Checks that a contact still does not exist, if so, inserts a contact to the map of contacts.
   /// @details Version for contacts that are detected by a thresholding on a force sensor measurement.
   /// @param element The name of the contact which corresponds to the name of the sensor.
   inline void insertContact(const std::string & forceSensorName)
   {
-    if(checkAlreadyExists(forceSensorName)) return;
     insertElement(forceSensorName);
 
     num_++;
   }
 
-  /// @brief Check that a contact still does not exist, if so, insert a contact to the map of contacts.
+  /// @brief Checks that a contact still does not exist, if so, inserts a contact to the map of contacts.
   /// @details Version for contacts that are associated to both a force sensor and a contact surface. The contact will
-  /// be named with the name of the surface.
+  /// be named with the name of the force sensor.
   /// @param forceSensorName The name of the force sensor.
   /// @param surface The name of the surface that will be used also to name the contact.
   inline void insertContact(const std::string & forceSensorName, const std::string surface)
   {
-    if(checkAlreadyExists(forceSensorName, surface)) return;
     insertElement(forceSensorName, surface);
 
     num_++;
   }
 
 private:
-  /// @brief Insert a contact to the map of contacts.
+  /// @brief Inserts a contact to the map of contacts.
   /// @details Version for contacts that are associated to both a force sensor and a contact surface. The contact will
-  /// be named with the name of the surface.
+  /// be named with the name of the force sensor.
   /// @param forceSensorName The name of the force sensor.
   /// @param surface The name of the surface that will be used also to name the contact.
   inline void insertElement(const std::string & forceSensorName, const std::string surface)
@@ -193,34 +191,6 @@ private:
   {
     listContacts_.insert(std::make_pair(forceSensorName, ContactWithSensorT(num_, forceSensorName)));
     insertOrder_.push_back(forceSensorName);
-  }
-
-  /// @brief Check if a contact already exists in the list. If it already exists, checks that the contact remained
-  /// unchanged.
-  /// @details Version for contacts associated to a force sensor and to no surface
-  /// @param name The name of the contact (=name of the force sensor)
-  /// @return bool
-  inline bool checkAlreadyExists(const std::string & forceSensorName)
-  {
-    if(listContacts_.find(forceSensorName) != listContacts_.end()) // the contact already exists
-    {
-      return true;
-    }
-    else { return false; }
-  }
-
-  /// @brief Check if a contact already exists in the list. If it already exists, checks that the contact remained
-  /// unchanged.
-  ///
-  /// @param name The name of the contact
-  /// @return bool
-  inline bool checkAlreadyExists(const std::string & forceSensorName, const std::string & surface)
-  {
-    if(listContacts_.find(surface) != listContacts_.end()) // the contact already exists
-    {
-      if(contact(surface).forceSensorName() == forceSensorName) { return true; }
-    }
-    return false;
   }
 
 private:
