@@ -55,6 +55,12 @@ struct LeggedOdometryManager
 {
 public:
   using ContactsManager = measurements::ContactsManager<LoContactWithSensor>;
+  enum VelocityUpdate
+  {
+    noUpdate,
+    finiteDiff,
+    fromUpstream
+  };
 
 public:
   LeggedOdometryManager() {}
@@ -92,8 +98,7 @@ public:
   /// @param odometryName Name of the odometry, used in logs and in the gui.
   /// @param odometryType Indicates if the desired odometry must be a flat or a 6D odometry.
   /// @param withYawEstimation Indicates if the orientation must be estimated by this odometry.
-  /// @param velUpdatedUpstream Informs whether the 6D velocity was updated by upstream observers
-  /// @param accUpdatedUpstream Informs whether the acceleration was updated by upstream observers
+  /// @param velocityUpdate Indicates if we want to update the velocity and what method it must be updated with.
   /// @param verbose
   /// @param withModeSwitchInGui If true, adds the possiblity to switch between 6d and flat odometry from the gui.
   /// Should be set to false if this feature is implemented in the estimator using this library.
@@ -102,8 +107,7 @@ public:
             const std::string & odometryName,
             measurements::OdometryType odometryType,
             const bool withYawEstimation,
-            const bool velUpdatedUpstream,
-            const bool accUpdatedUpstream,
+            VelocityUpdate velocityUpdate,
             const bool verbose,
             const bool withModeSwitchInGui = false);
 
@@ -136,66 +140,78 @@ public:
                      const double contactDetectionThreshold,
                      const std::vector<std::string> & forceSensorsToOmit);
 
-  /// @brief @copybrief run(const mc_control::MCController &, mc_rtc::Logger &, sva::PTransformd &, sva::MotionVecd &,
-  /// sva::MotionVecd &, stateObservation::Matrix3). This version uses the tilt estimated by the upstream observers.
-  /// @copydetails run(const mc_control::MCController &, mc_rtc::Logger &, sva::PTransformd &, sva::MotionVecd &,
-  /// sva::MotionVecd &, stateObservation::Matrix3)
+  /// @brief @copybrief run(const mc_control::MCController & ctl, mc_rtc::Logger &, sva::PTransformd &, const
+  /// stateObservation::Matrix3 &). This version uses the tilt estimated by the upstream observers.
   /// @param ctl Controller
   /// @param pose The pose of the floating base in the world that we want to update
-  /// @param vel The 6D velocity of the floating base in the world that we want to update
-  /// @param acc The acceleration of the floating base in the world that we want to update
-  void run(const mc_control::MCController & ctl,
-           mc_rtc::Logger & logger,
-           sva::PTransformd & pose,
-           sva::MotionVecd & vel,
-           sva::MotionVecd & acc);
-
-  /// @brief @copybrief run(const mc_control::MCController &, mc_rtc::Logger &, sva::PTransformd &, sva::MotionVecd &,
-  /// stateObservation::Matrix3). This version uses the tilt estimated by the upstream observers.
-  /// @copydetails run(const mc_control::MCController &, mc_rtc::Logger &, sva::PTransformd &, sva::MotionVecd &,
-  /// stateObservation::Matrix3)
-  void run(const mc_control::MCController & ctl,
-           mc_rtc::Logger & logger,
-           sva::PTransformd & pose,
-           sva::MotionVecd & vel);
-
-  /// @brief @copybrief run(const mc_control::MCController &, mc_rtc::Logger &, sva::PTransformd &,
-  /// stateObservation::Matrix3). This version uses the tilt estimated by the upstream observers.
-  /// @copydetails run(const mc_control::MCController &, mc_rtc::Logger &, sva::PTransformd &, stateObservation::Matrix3)
+  /// @param logger Logger
   void run(const mc_control::MCController & ctl, mc_rtc::Logger & logger, sva::PTransformd & pose);
 
   /// @brief Core function runing the odometry.
   /// @param ctl Controller
-  /// @param pose The pose of the floating base in the world that we want to update
-  /// @param vel The 6D velocity of the floating base in the world that we want to update
-  /// @param tilt The floating base's tilt (only the yaw is estimated).
-  void run(const mc_control::MCController & ctl,
-           mc_rtc::Logger & logger,
-           sva::PTransformd & pose,
-           const stateObservation::Matrix3 & tilt,
-           sva::MotionVecd & vel);
-
-  /// @brief Core function runing the odometry.
-  /// @param ctl Controller
-  /// @param pose The pose of the floating base in the world that we want to update
-  /// @param vel The 6D velocity of the floating base in the world that we want to update
-  /// @param acc The acceleration of the floating base in the world that we want to update
-  /// @param tilt The floating base's tilt (only the yaw is estimated).
-  void run(const mc_control::MCController & ctl,
-           mc_rtc::Logger & logger,
-           sva::PTransformd & pose,
-           const stateObservation::Matrix3 & tilt,
-           sva::MotionVecd & vel,
-           sva::MotionVecd & acc);
-
-  /// @brief Core function runing the odometry.
-  /// @param ctl Controller
+  /// @param logger Logger
   /// @param pose The pose of the floating base in the world that we want to update
   /// @param tilt The floating base's tilt (only the yaw is estimated).
   void run(const mc_control::MCController & ctl,
            mc_rtc::Logger & logger,
            sva::PTransformd & pose,
            const stateObservation::Matrix3 & tilt);
+
+  /// @brief @copybrief run(const mc_control::MCController &, mc_rtc::Logger &, sva::PTransformd &, const
+  /// stateObservation::Matrix3 &, sva::MotionVecd &). This version uses the tilt estimated by the upstream observers.
+  /// @param ctl Controller
+  /// @param pose The pose of the floating base in the world that we want to update
+  /// @param logger Logger
+  /// @param vel The 6D velocity of the floating base in the world that we want to update. \velocityUpdate_ must be
+  /// different from noUpdate, otherwise, it will not be updated.
+  void run(const mc_control::MCController & ctl,
+           mc_rtc::Logger & logger,
+           sva::PTransformd & pose,
+           sva::MotionVecd & vel);
+
+  /// @brief Core function runing the odometry.
+  /// @param ctl Controller
+  /// @param logger Logger
+  /// @param pose The pose of the floating base in the world that we want to update
+  /// @param tilt The floating base's tilt (only the yaw is estimated).
+  /// @param vel The 6D velocity of the floating base in the world that we want to update. \velocityUpdate_ must be
+  /// different from noUpdate, otherwise, it will not be updated.
+  void run(const mc_control::MCController & ctl,
+           mc_rtc::Logger & logger,
+           sva::PTransformd & pose,
+           const stateObservation::Matrix3 & tilt,
+           sva::MotionVecd & vel);
+
+  /// @brief @copybrief run(const mc_control::MCController & ctl, mc_rtc::Logger &,  sva::PTransformd &, const
+  /// stateObservation::Matrix3 &, sva::MotionVecd &, sva::MotionVecd &) run(const mc_control::MCController &,
+  /// mc_rtc::Logger &, sva::PTransformd &, sva::MotionVecd &, sva::MotionVecd &, stateObservation::Matrix3). This
+  /// version uses the tilt estimated by the upstream observers.
+  /// @param ctl Controller
+  /// @param logger Logger
+  /// @param pose The pose of the floating base in the world that we want to update
+  /// @param vel The 6D velocity of the floating base in the world that we want to update. \velocityUpdate_ must be
+  /// different from noUpdate, otherwise, it will not be updated.
+  /// @param acc The acceleration of the floating base in the world that we want to update
+  void run(const mc_control::MCController & ctl,
+           mc_rtc::Logger & logger,
+           sva::PTransformd & pose,
+           sva::MotionVecd & vel,
+           sva::MotionVecd & acc);
+
+  /// @brief Core function runing the odometry.
+  /// @param ctl Controller
+  /// @param logger Logger
+  /// @param pose The pose of the floating base in the world that we want to update
+  /// @param tilt The floating base's tilt (only the yaw is estimated).
+  /// @param vel The 6D velocity of the floating base in the world that we want to update. \velocityUpdate_ must be
+  /// different from noUpdate, otherwise, it will not be updated.
+  /// @param acc The acceleration of the floating base in the world that we want to update
+  void run(const mc_control::MCController & ctl,
+           mc_rtc::Logger & logger,
+           sva::PTransformd & pose,
+           const stateObservation::Matrix3 & tilt,
+           sva::MotionVecd & vel,
+           sva::MotionVecd & acc);
 
   /// @brief Returns the pose of the odometry robot's anchor frame based on the current floating base and encoders.
   /// @details The anchor frame can be obtained using 2 ways:
@@ -228,13 +244,14 @@ public:
   LeggedOdometryContactsManager & contactsManager() { return contactsManager_; }
 
 private:
-  /// @brief @copybrief run(const mc_control::MCController &, mc_rtc::Logger &, sva::PTransformd &, sva::MotionVecd &,
-  /// sva::MotionVecd &, stateObservation::Matrix3). This version uses the tilt estimated by the upstream observers.
-  /// @copydetails run(const mc_control::MCController &, mc_rtc::Logger &, sva::PTransformd &, sva::MotionVecd &,
-  /// sva::MotionVecd &, stateObservation::Matrix3)
+  /// @brief Core function runing the odometry.
   /// @param ctl Controller
+  /// @param logger Logger
   /// @param pose The pose of the floating base in the world that we want to update
-  /// @param vel The 6D velocity of the floating base in the world that we want to update
+  /// @param tilt The floating base's tilt, estimated either by the estimator using this library or by an upstream
+  /// estimator.
+  /// @param vel The 6D velocity of the floating base in the world that we want to update. \velocityUpdate_ must be
+  /// different from noUpdate, otherwise, it will not be updated.
   /// @param acc The acceleration of the floating base in the world that we want to update
   void runPvt(const mc_control::MCController & ctl,
               mc_rtc::Logger & logger,
@@ -248,12 +265,11 @@ private:
   /// observer) and acceleration update only performs a transformation from the real robot to our newly estimated
   /// robot. If you want to update the acceleration of the floating base, you need to add an observer computing them
   /// beforehand.
-  /// @param ctl Controller
   /// @param pose The pose of the floating base in the world that we want to update
-  /// @param vel The 6D velocity of the floating base in the world that we want to update.
+  /// @param vel The 6D velocity of the floating base in the world that we want to update. \velocityUpdate_ must be
+  /// different from noUpdate, otherwise, it will not be updated.
   /// @param acc The acceleration of the floating base in the world that we want to update. This acceleration must
   /// come from an upstream observer.
-  /// @param logger logger
   void updateFbKinematicsPvt(sva::PTransformd & pose, sva::MotionVecd * vel = nullptr, sva::MotionVecd * acc = nullptr);
 
 protected:
@@ -265,14 +281,15 @@ protected:
   /// @brief Updates the pose of the contacts and estimates the floating base from them.
   /// @param ctl Controller.
   /// @param logger Logger.
-  /// @param updateVels Indicates if the 6D velocity of the floating base must be updated
-  /// @param updateAccs Indicates if the acceleration of the floating base must be updated
   /// @param tilt The floating base's tilt (only the yaw is estimated).
+  /// @param vel The 6D velocity of the floating base in the world that we want to update. \velocityUpdate_ must be
+  /// different from noUpdate, otherwise, it will not be updated.
+  /// @param acc The floating base's tilt (only the yaw is estimated).
   void updateFbAndContacts(const mc_control::MCController & ctl,
                            mc_rtc::Logger & logger,
-                           const bool updateVels,
-                           const bool updateAccs,
-                           const stateObservation::Matrix3 & tilt);
+                           const stateObservation::Matrix3 & tilt,
+                           sva::MotionVecd * vel = nullptr,
+                           sva::MotionVecd * acc = nullptr);
 
   /// @brief If the contacts respect the conditions, computes the pose of the floating base for each set contact.
   /// @details Combines the reference pose of the contact in the world and the transformation from the contact to the
@@ -291,17 +308,18 @@ protected:
                          double & sumForces_orientation);
 
   /// @brief Updates the floating base kinematics given as argument by the observer.
-  /// @details Must be called after \ref updateFbAndContacts(const mc_control::MCController & ctl, mc_rtc::Logger &
-  /// logger, const bool updateVels, const bool updateAccs).Beware, only the pose is updated by the odometry, the
-  /// 6D velocity (except if not updated by an upstream observer) and acceleration update only performs a
-  /// transformation from the real robot to our newly estimated robot. If you want to update the acceleration of
-  /// the floating base, you need to add an observer computing them beforehand.
+  /// @details Must be called after \ref updateFbAndContacts(const mc_control::MCController & ctl, mc_rtc::Logger &,
+  /// const stateObservation::Matrix3 &, sva::MotionVecd *, sva::MotionVecd *).
+  /// Beware, only the pose is updated by the odometry. The 6D velocity (except if not updated by an upstream observer)
+  /// is obtained using finite differences or by expressing the one given in input in the new robot frame. The
+  /// acceleration can only be updated if estimated by an upstream estimator.
   /// @param ctl Controller.
-  /// @param updateVels If true, the velocity of the floating base of the odometry robot is updated from the one of
-  /// the real robot.
-  /// @param updateAccs If true, the acceleration of the floating base of the odometry robot is updated from the one
-  /// of the real robot. This acceleration must be computed by an upstream observer..
-  void updateOdometryRobot(const mc_control::MCController & ctl, const bool updateVels, const bool updateAccs);
+  /// @param vel The 6D velocity of the floating base in the world that we want to update. \velocityUpdate_ must be
+  /// different from noUpdate, otherwise, it will not be updated.
+  /// @param acc The floating base's tilt (only the yaw is estimated).
+  void updateOdometryRobot(const mc_control::MCController & ctl,
+                           sva::MotionVecd * vel = nullptr,
+                           sva::MotionVecd * acc = nullptr);
 
   /// @brief Computes the reference kinematics of the newly set contact in the world.
   /// @param contact The new contact
@@ -337,6 +355,8 @@ public:
   using OdometryType = measurements::OdometryType;
   measurements::OdometryType odometryType_;
 
+  VelocityUpdate velocityUpdate_ = noUpdate;
+
 protected:
   // Name of the odometry, used in logs and in the gui.
   std::string odometryName_;
@@ -355,13 +375,6 @@ protected:
   std::shared_ptr<mc_rbdyn::Robots> odometryRobot_;
   // pose of the anchor frame of the robot in the world
   stateObservation::kine::Kinematics worldAnchorPose_;
-
-  // Indicates whether the velocity is updated by an upstream estimator. If yes, it is expressed in the newly obtained
-  // floating base frame. Otherwise, it is computed by finite differences.
-  bool velUpdatedUpstream_ = false;
-  // Indicates whether the acceleration is updated by an upstream estimator. If yes, it is expressed in the newly
-  // obtained floating base frame. Otherwise, it is not updated.
-  bool accUpdatedUpstream_ = false;
 };
 
 } // namespace mc_state_observation::odometry

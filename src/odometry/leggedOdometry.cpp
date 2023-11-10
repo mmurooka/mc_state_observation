@@ -1,4 +1,3 @@
-#include "mc_state_observation/measurements/measurementsTools.h"
 #include <mc_state_observation/conversions/kinematics.h>
 
 #include <mc_state_observation/odometry/leggedOdometry.h>
@@ -17,17 +16,16 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
                                  const std::string & odometryName,
                                  OdometryType odometryType,
                                  const bool withYawEstimation,
-                                 const bool velUpdatedUpstream,
-                                 const bool accUpdatedUpstream,
+                                 VelocityUpdate velocityUpdate,
                                  const bool verbose,
                                  const bool withModeSwitchInGui)
+
 {
   robotName_ = robotName;
   odometryType_ = odometryType;
   withYawEstimation_ = withYawEstimation;
+  velocityUpdate_ = velocityUpdate;
   odometryName_ = odometryName;
-  velUpdatedUpstream_ = velUpdatedUpstream;
-  accUpdatedUpstream_ = accUpdatedUpstream;
   const auto & robot = ctl.robot(robotName);
   odometryRobot_ = mc_rbdyn::Robots::make();
   odometryRobot_->robotCopy(robot, "odometryRobot");
@@ -204,15 +202,15 @@ void LeggedOdometryManager::runPvt(const mc_control::MCController & ctl,
   contactsManager().updateContacts(ctl, robotName_);
 
   // updates the contacts and the resulting floating base kinematics
-  if(tilt != nullptr)
+  if(tilt != nullptr) { updateFbAndContacts(ctl, logger, *tilt, vel, acc); }
+  else
   {
     // the tilt must come from another estimator so we will use the real robot for the orientation
     const auto & realRobot = ctl.realRobot(robotName_);
     so::Matrix3 realRobotOri = realRobot.posW().rotation().transpose();
 
-    updateFbAndContacts(ctl, logger, true, true, realRobotOri);
+    updateFbAndContacts(ctl, logger, realRobotOri, vel, acc);
   }
-  else { updateFbAndContacts(ctl, logger, true, true, *tilt); }
 
   // updates the floating base kinematics in the observer
   updateFbKinematicsPvt(pose, vel, acc);
@@ -223,7 +221,8 @@ void LeggedOdometryManager::updateFbKinematicsPvt(sva::PTransformd & pose, sva::
   pose.rotation() = odometryRobot().posW().rotation();
   pose.translation() = odometryRobot().posW().translation();
 
-  // we express the velocity and acceleration computed by the previous obervers in our newly estimated frame
+  // we express the velocity and acceleration computed by the previous obervers in our newly estimated frame.
+  // even if the velocity is estimated, it will be updated only if
   if(vel != nullptr)
   {
     vel->linear() = odometryRobot().velW().linear();
@@ -287,9 +286,9 @@ void LeggedOdometryManager::getFbFromContacts(const mc_control::MCController & c
 
 void LeggedOdometryManager::updateFbAndContacts(const mc_control::MCController & ctl,
                                                 mc_rtc::Logger & logger,
-                                                const bool updateVels,
-                                                const bool updateAccs,
-                                                const stateObservation::Matrix3 & tilt)
+                                                const stateObservation::Matrix3 & tilt,
+                                                sva::MotionVecd * vel,
+                                                sva::MotionVecd * acc)
 {
   // If the position and orientation of the floating base can be updated using contacts (that were already set on the
   // previous iteration), they are updated, else we keep the previous estimation. Then we estimate the pose of new
@@ -376,7 +375,7 @@ void LeggedOdometryManager::updateFbAndContacts(const mc_control::MCController &
   }
 
   // update of the pose of the floating base of the odometry robot in the world frame before creating the new contacts
-  updateOdometryRobot(ctl, updateVels, updateAccs);
+  updateOdometryRobot(ctl, vel, acc);
 
   // computation of the reference kinematics of the newly set contacts in the world.
   for(const int & foundContactIndex : contactsManager().contactsFound())
@@ -401,34 +400,33 @@ void LeggedOdometryManager::updateFbAndContacts(const mc_control::MCController &
 }
 
 void LeggedOdometryManager::updateOdometryRobot(const mc_control::MCController & ctl,
-                                                const bool updateVels,
-                                                const bool updateAccs)
+                                                sva::MotionVecd * vel,
+                                                sva::MotionVecd * acc)
 {
   const auto & realRobot = ctl.realRobot(robotName_);
 
   // new estimated orientation of the floating base.
   so::kine::Orientation newOri(so::Matrix3(fbPose_.rotation().transpose()));
 
-  if(updateAccs)
+  // if an acceleration was already estimated, we express it in the new estimated robot
+  if(acc != nullptr)
   {
-    if(accUpdatedUpstream_)
-    {
-      // realRobot.posW().rotation() is the transpose of R
-      so::Vector3 realLocalLinAcc = realRobot.posW().rotation() * realRobot.accW().linear();
-      so::Vector3 realLocalAngAcc = realRobot.posW().rotation() * realRobot.accW().angular();
-      sva::MotionVecd acc;
+    // realRobot.posW().rotation() is the transpose of R
+    so::Vector3 realLocalLinAcc = realRobot.posW().rotation() * realRobot.accW().linear();
+    so::Vector3 realLocalAngAcc = realRobot.posW().rotation() * realRobot.accW().angular();
+    sva::MotionVecd acc;
 
-      acc.linear() = newOri * realLocalLinAcc;
-      acc.angular() = newOri * realLocalAngAcc;
+    acc.linear() = newOri * realLocalLinAcc;
+    acc.angular() = newOri * realLocalAngAcc;
 
-      odometryRobot().accW(acc);
-    }
-    else { mc_rtc::log::error("The acceleration must be already updated upstream."); }
+    odometryRobot().accW(acc);
   }
 
-  if(updateVels)
+  // if a velocity was already estimated, we express it in the new estimated robot. Otherwise we estimate it with
+  // finite differences
+  if(vel != nullptr)
   {
-    if(velUpdatedUpstream_)
+    if(velocityUpdate_ == fromUpstream)
     {
       // realRobot.posW().rotation() is the transpose of R
       so::Vector3 realLocalLinVel = realRobot.posW().rotation() * realRobot.velW().linear();
@@ -440,7 +438,7 @@ void LeggedOdometryManager::updateOdometryRobot(const mc_control::MCController &
       vel.angular() = newOri * realLocalAngVel;
       odometryRobot().velW(vel);
     }
-    else
+    if(velocityUpdate_ == finiteDiff)
     {
       sva::MotionVecd vel;
 
@@ -456,8 +454,8 @@ void LeggedOdometryManager::updateOdometryRobot(const mc_control::MCController &
 
   odometryRobot().forwardKinematics();
 
-  if(updateVels) { odometryRobot().forwardVelocity(); }
-  if(updateAccs) { odometryRobot().forwardAcceleration(); }
+  odometryRobot().forwardVelocity();
+  if(acc != nullptr) { odometryRobot().forwardAcceleration(); }
 }
 
 void LeggedOdometryManager::setNewContact(LoContactWithSensor & contact, const mc_rbdyn::Robot & measurementsRobot)
@@ -465,6 +463,7 @@ void LeggedOdometryManager::setNewContact(LoContactWithSensor & contact, const m
   const mc_rbdyn::ForceSensor & forceSensor = measurementsRobot.forceSensor(contact.forceSensorName());
   // If the contact is not detected using surfaces, we must consider that the frame of the sensor is the one of the
   // surface).
+
   if(contactsManager_.getContactsDetection() == ContactsManager::ContactsDetection::Sensors)
   {
     so::kine::Kinematics worldNewContactKineOdometryRobot;

@@ -23,7 +23,7 @@ void ContactsManager<ContactWithSensorT>::initDetection(const mc_control::MCCont
                                                         const std::vector<std::string> & contactsSensorDisabledInit,
                                                         double contactDetectionThreshold)
 {
-
+  contactsDetectionMethod_ = contactsDetection;
   contactsFinder_ = &ContactsManager<ContactWithSensorT>::findContactsFromSurfaces;
 
   contactDetectionThreshold_ = contactDetectionThreshold;
@@ -91,6 +91,8 @@ void ContactsManager<ContactWithSensorT>::initDetection(const mc_control::MCCont
                                                         double contactDetectionThreshold,
                                                         const std::vector<std::string> & forceSensorsToOmit)
 {
+  contactsDetectionMethod_ = contactsDetection;
+  std::cout << "hudehdie" << getContactsDetection() << std::endl;
   if(contactsDetection == Solver) { contactsFinder_ = &ContactsManager<ContactWithSensorT>::findContactsFromSolver; }
   if(contactsDetection == Sensors) { contactsFinder_ = &ContactsManager<ContactWithSensorT>::findContactsFromSensors; }
 
