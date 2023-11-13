@@ -206,11 +206,11 @@ void ContactsManager<ContactWithSensorT>::findContactsFromSolver(const mc_contro
     if(r1.name() == measRobot.name())
     {
 
-      if(r2.mb().joint(0).type() == rbd::Joint::Fixed) { insert_contact(contact.r1Surface()->name()); }
+      if(r2.mb().nrDof() == 0) { insert_contact(contact.r1Surface()->name()); }
     }
     else if(r2.name() == measRobot.name())
     {
-      if(r1.mb().joint(0).type() == rbd::Joint::Fixed) { insert_contact(contact.r1Surface()->name()); }
+      if(r1.mb().nrDof() == 0) { insert_contact(contact.r1Surface()->name()); }
     }
   }
 }
