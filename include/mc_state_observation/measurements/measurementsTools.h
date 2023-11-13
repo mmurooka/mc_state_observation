@@ -53,12 +53,8 @@ public:
   };
   typedef std::set<int> ContactsSet;
 
-public:
-  ContactsManager()
-  {
-    static_assert(std::is_base_of_v<ContactWithSensor, ContactWithSensorT>,
-                  "The template class for the contacts with sensors must inherit from the ContactWithSensor class");
-  }
+  static_assert(std::is_base_of_v<ContactWithSensor, ContactWithSensorT>,
+                "The template class for the contacts with sensors must inherit from the ContactWithSensor class");
 
 protected:
   /// @brief Inserts a contact to the map of contacts.
