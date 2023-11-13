@@ -171,72 +171,46 @@ void ContactsManager<ContactWithSensorT>::findContactsFromSolver(const mc_contro
   const auto & measRobot = ctl.robot(robotName);
 
   contactsFound_.clear();
-  for(const auto & contact : ctl.solver().contacts())
+  auto insert_contact = [this, &measRobot](const std::string & surfaceName)
   {
-    if(ctl.robots().robot(contact.r1Index()).name() == measRobot.name())
+    if(measRobot.surfaceHasForceSensor(surfaceName))
     {
-      if(ctl.robots().robot(contact.r2Index()).mb().joint(0).type() == rbd::Joint::Fixed)
+      const auto & fs = measRobot.surfaceForceSensor(surfaceName);
+      addContactToManager(fs.name(), surfaceName);
+      ContactWithSensor & contactWS = contact(surfaceName);
+      contactWS.forceNorm_ = fs.wrenchWithoutGravity(measRobot).force().norm();
+      if(contactWS.forceNorm_ > contactDetectionThreshold_)
       {
-        const std::string & surfaceName = contact.r1Surface()->name();
-        if(measRobot.surfaceHasForceSensor(contact.r1Surface()->name()))
-        {
-          const auto & fs = measRobot.surfaceForceSensor(surfaceName);
-
-          ContactWithSensorT & contactWS = addContactToManager(fs.name(), surfaceName);
-          contactWS.forceNorm_ = fs.wrenchWithoutGravity(measRobot).force().norm();
-          if(contactWS.forceNorm_ > contactDetectionThreshold_)
-          {
-            // the contact is added to the map of contacts using the name of the associated sensor
-            contactsFound_.insert(contactWS.id());
-          }
-        }
-        else
-        {
-          const auto & ifs = measRobot.indirectSurfaceForceSensor(surfaceName);
-
-          ContactWithSensorT & contactWS = addContactToManager(ifs.name(), surfaceName);
-          contactWS.forceNorm_ = ifs.wrenchWithoutGravity(measRobot).force().norm();
-          if(contactWS.forceNorm_ > contactDetectionThreshold_)
-          {
-            // the contact is added to the map of contacts using the name of the associated sensor
-
-            contactsFound_.insert(contactWS.id());
-          }
-        }
+        // the contact is added to the map of contacts using the name of the associated sensor
+        contactsFound_.insert(contactWS.id());
       }
     }
-    else if(ctl.robots().robot(contact.r2Index()).name() == measRobot.name())
+    else
     {
-      if(ctl.robots().robot(contact.r1Index()).mb().joint(0).type() == rbd::Joint::Fixed)
+      const auto & ifs = measRobot.indirectSurfaceForceSensor(surfaceName);
+      addContactToManager(ifs.name(), surfaceName);
+      ContactWithSensor & contactWS = contact(surfaceName);
+      contactWS.forceNorm_ = ifs.wrenchWithoutGravity(measRobot).force().norm();
+      if(contactWS.forceNorm_ > contactDetectionThreshold_)
       {
-        const std::string & surfaceName = contact.r2Surface()->name();
-        if(measRobot.surfaceHasForceSensor(contact.r2Surface()->name()))
-        {
-          const auto & fs = measRobot.surfaceForceSensor(surfaceName);
+        // the contact is added to the map of contacts using the name of the associated sensor
 
-          ContactWithSensorT & contactWS = addContactToManager(fs.name(), surfaceName);
-          contactWS.forceNorm_ = fs.wrenchWithoutGravity(measRobot).force().norm();
-          if(contactWS.forceNorm_ > contactDetectionThreshold_)
-          {
-
-            // the contact is added to the map of contacts using the name of the associated surface
-            contactsFound_.insert(contactWS.id());
-          }
-        }
-        else
-        {
-          const auto & ifs = measRobot.indirectSurfaceForceSensor(surfaceName);
-
-          ContactWithSensorT & contactWS = addContactToManager(ifs.name(), surfaceName);
-          contactWS.forceNorm_ = ifs.wrenchWithoutGravity(measRobot).force().norm();
-          if(contactWS.forceNorm_ > contactDetectionThreshold_)
-          {
-            // the contact is added to the map of contacts using the name of the associated sensor
-
-            contactsFound_.insert(contactWS.id());
-          }
-        }
+        contactsFound_.insert(contactWS.id());
       }
+    }
+  };
+  for(const auto & contact : ctl.solver().contacts())
+  {
+
+    const auto & r1 = ctl.robots().robot(contact.r1Index());
+    const auto & r2 = ctl.robots().robot(contact.r2Index());
+    if(r1.name() == measRobot.name())
+    {
+      if(r2.mb().joint(0).type() == rbd::Joint::Fixed) { insert_contact(contact.r1Surface()->name()); }
+    }
+    else if(r2.name() == measRobot.name())
+    {
+      if(r1.mb().joint(0).type() == rbd::Joint::Fixed) { insert_contact(contact.r2Surface()->name()); }
     }
   }
 }
