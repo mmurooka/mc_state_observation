@@ -1,5 +1,5 @@
 #pragma once
-#include "mc_state_observation/measurements/measurementsTools.h"
+#include <mc_state_observation/measurements/ContactsManager.h>
 
 namespace mc_state_observation::measurements
 {

@@ -1,6 +1,7 @@
 #pragma once
 
-#include <mc_state_observation/measurements/measurementsTools.h>
+#include <mc_state_observation/measurements/ContactsManager.h>
+#include <mc_state_observation/measurements/measurements.h>
 
 #include <state-observation/dynamics-estimators/kinetics-observer.hpp>
 

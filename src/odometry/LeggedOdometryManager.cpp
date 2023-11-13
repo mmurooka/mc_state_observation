@@ -1,6 +1,6 @@
 #include <mc_state_observation/conversions/kinematics.h>
 
-#include <mc_state_observation/odometry/leggedOdometry.h>
+#include <mc_state_observation/odometry/LeggedOdometryManager.h>
 
 namespace so = stateObservation;
 

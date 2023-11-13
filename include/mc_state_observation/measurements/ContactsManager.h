@@ -1,40 +1,10 @@
-/**
- * \file      measurementTools.h
- * \author    Arnaud Demont
- * \date       2023
- * \brief      Library for an easened handling of contacts and sensors in general.
- *
- * \details
- *
- *
- */
-
 #pragma once
-
 #include <mc_control/MCController.h>
-#include <mc_observers/Observer.h>
-#include <mc_rbdyn/Robot.h>
-#include <mc_rtc/log/Logger.h>
-#include <mc_rtc/logging.h>
-
 #include <mc_state_observation/measurements/ContactWithSensor.h>
-#include <mc_state_observation/measurements/IMU.h>
-#include <vector>
+#include <set>
 
 namespace mc_state_observation::measurements
 {
-
-// allowed odometry types
-enum class OdometryType
-{
-  Odometry6d,
-  Flat,
-  None
-};
-
-// IMUs can be handled using only a vector containing the IMU objects.
-typedef std::vector<IMU> ImuList;
-
 /// @brief Structure that implements all the necessary functions to manage the map of contacts. Handles their detection
 /// and updates the list of the detected contacts, newly removed contacts, etc., to apply the appropriate functions on
 /// them.
@@ -223,7 +193,6 @@ protected:
 
   bool verbose_ = true;
 };
-
 } // namespace mc_state_observation::measurements
 
-#include <mc_state_observation/measurements/measurementsTools.hpp>
+#include <mc_state_observation/measurements/ContactsManager.hpp>
