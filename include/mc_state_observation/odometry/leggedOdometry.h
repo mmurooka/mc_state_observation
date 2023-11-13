@@ -28,13 +28,7 @@ namespace mc_state_observation::odometry
 // the associated sensor
 class LoContactWithSensor : public measurements::ContactWithSensor
 {
-public:
-  LoContactWithSensor(int id, std::string forceSensorName) : measurements::ContactWithSensor(id, forceSensorName) {}
-
-  LoContactWithSensor(int id, const std::string & forceSensorName, const std::string & surfaceName)
-  : measurements::ContactWithSensor(id, forceSensorName, surfaceName)
-  {
-  }
+  using measurements::ContactWithSensor::ContactWithSensor;
 
 public:
   // reference of the contact in the world
