@@ -227,7 +227,6 @@ void ContactsManager<ContactWithSensorT>::findContactsFromSurfaces(const mc_cont
   {
     const std::string & fsName = contact.second.forceSensorName();
     const mc_rbdyn::ForceSensor forceSensor = measRobot.forceSensor(fsName);
-
     contact.second.forceNorm_ = forceSensor.wrenchWithoutGravity(measRobot).force().norm();
     if(contact.second.forceNorm_ > contactDetectionThreshold_)
     {
@@ -241,21 +240,7 @@ template<typename ContactWithSensorT>
 void ContactsManager<ContactWithSensorT>::findContactsFromSensors(const mc_control::MCController & ctl,
                                                                   const std::string & robotName)
 {
-  const auto & measRobot = ctl.robot(robotName);
-
-  contactsFound_.clear();
-
-  for(auto & contact : contacts())
-  {
-    const std::string & fsName = contact.second.forceSensorName();
-    const mc_rbdyn::ForceSensor forceSensor = measRobot.forceSensor(fsName);
-    contact.second.forceNorm_ = forceSensor.wrenchWithoutGravity(measRobot).force().norm();
-    if(contact.second.forceNorm_ > contactDetectionThreshold_)
-    {
-      // the contact is added to the map of contacts using the name of the associated sensor
-      contactsFound_.insert(contact.second.id());
-    }
-  }
+  findContactsFromSurfaces(ctl, robotName);
 }
 
 template<typename ContactWithSensorT>
