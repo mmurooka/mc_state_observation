@@ -214,7 +214,7 @@ public:
            sva::MotionVecd & acc);
 
   /// @brief Returns the pose of the odometry robot's anchor frame based on the current floating base and encoders.
-  /// @details The anchor frame can be obtained using 2 ways:
+  /// @details The anchor frame can can from 2 sources:
   /// - 1: contacts are detected and can be used to compute the anchor frame.
   /// - 2: no contact is detected, the robot is hanging. If we still need an anchor frame for the tilt estimation we
   /// arbitrarily use the frame of the bodySensor used by the estimator.
@@ -222,11 +222,6 @@ public:
   /// @param bodySensorName name of the body sensor.
   stateObservation::kine::Kinematics & getAnchorFramePose(const mc_control::MCController & ctl,
                                                           const std::string & bodySensorName);
-
-  /// @brief Returns the pose of the odometry robot's anchor frame. If no contact is detected, this version does not
-  /// update the anchor frame.
-  /// @param ctl controller
-  stateObservation::kine::Kinematics & getAnchorFramePose(const mc_control::MCController & ctl);
 
   /// @brief Changes the type of the odometry
   /// @param newOdometryType The new type of odometry to use.
