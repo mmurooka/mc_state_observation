@@ -87,8 +87,8 @@ stateObservation::kine::Kinematics & setVelocitiesAndAccelerations(stateObservat
 /// @brief Converts a Kinematics object to the corresponding PTransformd (position + orientation) object
 sva::PTransformd pTransformFromKinematics(const stateObservation::kine::Kinematics & kine);
 
-void addToLogger(const stateObservation::kine::Kinematics & kine, mc_rtc::Logger & logger, const std::string & prefix);
+void addToLogger(mc_rtc::Logger & logger, const stateObservation::kine::Kinematics & kine, const std::string & prefix);
 
-void removeFromLogger(mc_rtc::Logger & logger, const std::string & prefix);
+void removeFromLogger(mc_rtc::Logger & logger, const stateObservation::kine::Kinematics & kine);
 
 } // namespace mc_state_observation::conversions::kinematics

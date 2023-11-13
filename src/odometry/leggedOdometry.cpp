@@ -564,10 +564,10 @@ void LeggedOdometryManager::selectForOrientationOdometry()
 void LeggedOdometryManager::addContactLogEntries(mc_rtc::Logger & logger, const LoContactWithSensor & contact)
 {
   const std::string & contactName = contact.name();
-  conversions::kinematics::addToLogger(contact.worldRefKine_, logger, odometryName_ + "_" + contactName + "_refPose");
-  conversions::kinematics::addToLogger(contact.currentWorldFbPose_, logger,
+  conversions::kinematics::addToLogger(logger, contact.worldRefKine_, odometryName_ + "_" + contactName + "_refPose");
+  conversions::kinematics::addToLogger(logger, contact.currentWorldFbPose_,
                                        odometryName_ + "_" + contactName + "_currentWorldFbPose");
-  conversions::kinematics::addToLogger(contact.currentWorldKine_, logger,
+  conversions::kinematics::addToLogger(logger, contact.currentWorldKine_,
                                        odometryName_ + "_" + contactName + "_currentWorldContactKine");
 }
 
@@ -576,9 +576,9 @@ void LeggedOdometryManager::removeContactLogEntries(mc_rtc::Logger & logger, con
   const std::string & contactName = contact.name();
   logger.removeLogEntry(odometryName_ + "_" + contactName + "_ref_position");
   logger.removeLogEntry(odometryName_ + "_" + contactName + "_ref_orientation");
-  conversions::kinematics::removeFromLogger(logger, odometryName_ + "_" + contactName + "_refPose");
-  conversions::kinematics::removeFromLogger(logger, odometryName_ + "_" + contactName + "_currentWorldFbPose");
-  conversions::kinematics::removeFromLogger(logger, odometryName_ + "_" + contactName + "_currentWorldContactKine");
+  conversions::kinematics::removeFromLogger(logger, contact.worldRefKine_);
+  conversions::kinematics::removeFromLogger(logger, contact.currentWorldFbPose_);
+  conversions::kinematics::removeFromLogger(logger, contact.currentWorldKine_);
 }
 
 so::kine::Kinematics & LeggedOdometryManager::getAnchorFramePose(const mc_control::MCController & ctl)
