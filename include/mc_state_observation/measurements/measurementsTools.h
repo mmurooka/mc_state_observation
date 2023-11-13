@@ -38,8 +38,7 @@ typedef std::vector<IMU> ImuList;
 /// @brief Structure that implements all the necessary functions to manage the map of contacts. Handles their detection
 /// and updates the list of the detected contacts, newly removed contacts, etc., to apply the appropriate functions on
 /// them.
-/// @details The template allows to define other kinds of contacts and thus add custom parameters to them. Warning! This
-/// class has been tested only on contacts with sensors
+/// @details The template allows to define other kinds of contacts and thus add custom parameters to them.
 /// @tparam ContactWithSensorT Contacts associated to a sensor.
 template<typename ContactWithSensorT>
 struct ContactsManager
