@@ -101,10 +101,10 @@ public:
             const std::string & robotName,
             const std::string & odometryName,
             measurements::OdometryType odometryType,
-            const bool withYawEstimation,
+            bool withYawEstimation,
             VelocityUpdate velocityUpdate,
-            const bool verbose,
-            const bool withModeSwitchInGui = false);
+            bool verbose,
+            bool withModeSwitchInGui = false);
 
   /// @brief Initialization for a detection based on contact surfaces
   /// @param ctl Controller

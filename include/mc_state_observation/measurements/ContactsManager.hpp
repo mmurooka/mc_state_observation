@@ -9,7 +9,7 @@ namespace mc_state_observation::measurements
 ///////////////////////////////////////////////////////////////////////
 
 template<typename ContactWithSensorT>
-void ContactsManager<ContactWithSensorT>::init(const std::string & observerName, const bool verbose)
+void ContactsManager<ContactWithSensorT>::init(const std::string & observerName, bool verbose)
 {
   observerName_ = observerName;
   verbose_ = verbose;

@@ -15,10 +15,10 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
                                  const std::string & robotName,
                                  const std::string & odometryName,
                                  OdometryType odometryType,
-                                 const bool withYawEstimation,
+                                 bool withYawEstimation,
                                  VelocityUpdate velocityUpdate,
-                                 const bool verbose,
-                                 const bool withModeSwitchInGui)
+                                 bool verbose,
+                                 bool withModeSwitchInGui)
 
 {
   robotName_ = robotName;

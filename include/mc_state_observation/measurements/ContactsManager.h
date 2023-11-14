@@ -88,7 +88,7 @@ protected:
 
 public:
   // initialization of the odometry
-  void init(const std::string & observerName, const bool verbose = true);
+  void init(const std::string & observerName, bool verbose = true);
 
   /// @brief Initialization for a detection based on contact surfaces
   /// @param ctl Controller
