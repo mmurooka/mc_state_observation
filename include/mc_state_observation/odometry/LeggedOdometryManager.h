@@ -131,42 +131,14 @@ protected:
   };
 
 public:
+  using ContactsManagerConfiguration = ContactsManager::ContactsManagerConfiguration;
   /// @brief Initializer for the odometry manager.
   /// @details Version for the contact detection using a thresholding on the contact force sensors measurements or by
   /// direct input from the solver.
   /// @param ctl Controller
   /// @param odomConfig Desired configuraion of the odometry
   /// @param verbose
-  void init(const mc_control::MCController & ctl, Configuration odomConfig, bool verbose);
-
-  /// @brief Initialization for a detection based on contact surfaces
-  /// @param ctl Controller
-  /// @param robotName name of the robot
-  /// @param contactsDetection mean of detection for the contacts
-  /// @param surfacesForContactDetection list of possible contact surfaces
-  /// @param contactsSensorDisabledInit list of the force sensors that must be disabled on initialization.
-  /// @param contactDetectionThreshold threshold on the measured force for the contact detection
-  void initDetection(const mc_control::MCController & ctl,
-                     const std::string & robotName,
-                     const ContactsManager::ContactsDetection contactsDetection,
-                     const std::vector<std::string> & surfacesForContactDetection,
-                     const std::vector<std::string> & contactsSensorDisabledInit,
-                     const double contactDetectionThreshold);
-
-  /// @brief initialization for a detection based on a threshold on the measured contact forces or for contacts given by
-  /// the controller
-  /// @param ctl Controller
-  /// @param robotName name of the robot
-  /// @param contactsDetection mean of detection for the contacts
-  /// @param contactsSensorDisabledInit list of the force sensors that must be disabled on initialization.
-  /// @param contactDetectionThreshold threshold on the measured force for the contact detection
-  /// @param forceSensorsToOmit list of force sensors that cannot be used for the contacts detection
-  void initDetection(const mc_control::MCController & ctl,
-                     const std::string & robotName,
-                     const ContactsManager::ContactsDetection contactsDetection,
-                     const std::vector<std::string> & contactsSensorDisabledInit,
-                     const double contactDetectionThreshold,
-                     const std::vector<std::string> & forceSensorsToOmit);
+  void init(const mc_control::MCController & ctl, Configuration odomConfig, ContactsManagerConfiguration contactsConf);
 
   /// @brief @copybrief run(const mc_control::MCController & ctl, mc_rtc::Logger &, sva::PTransformd &, const
   /// stateObservation::Matrix3 &). This version uses the tilt estimated by the upstream observers.

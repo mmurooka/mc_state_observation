@@ -26,6 +26,108 @@ public:
   static_assert(std::is_base_of_v<ContactWithSensor, ContactWithSensorT>,
                 "The template class for the contacts with sensors must inherit from the ContactWithSensor class");
 
+  template<class ConfigurationType>
+  struct ContactsManagerConfigurationPrvt
+  {
+  public:
+    ContactsManagerConfigurationPrvt(const std::string & observerName) : observerName_(observerName) {}
+
+    ConfigurationType & contactDetectionThreshold(double contactDetectionThreshold)
+    {
+      contactDetectionThreshold_ = contactDetectionThreshold;
+      return static_cast<ConfigurationType &>(*this);
+    }
+    ConfigurationType & verbose(bool verbose)
+    {
+      verbose_ = verbose;
+      return static_cast<ConfigurationType &>(*this);
+    }
+
+  public:
+    std::string observerName_;
+
+    double contactDetectionThreshold_ = 0.11;
+    bool verbose_ = true;
+  };
+
+  struct ContactsManagerSurfacesConfiguration
+  : public ContactsManagerConfigurationPrvt<ContactsManagerSurfacesConfiguration>
+  {
+  public:
+    ContactsManagerSurfacesConfiguration(const std::string & observerName,
+                                         const std::vector<std::string> & surfacesForContactDetection)
+    : ContactsManagerConfigurationPrvt<ContactsManagerSurfacesConfiguration>(observerName),
+      surfacesForContactDetection_(surfacesForContactDetection)
+    {
+    }
+
+    ContactsManagerSurfacesConfiguration & contactSensorsDisabledInit(
+        const std::vector<std::string> & contactSensorsDisabledsInit)
+    {
+      contactSensorsDisabledInit_ = contactSensorsDisabledsInit;
+      return *this;
+    }
+
+  public:
+    // list of admissible contact surfaces for the detection
+    std::vector<std::string> surfacesForContactDetection_;
+    // list of sensors that must not be used from the start of the observer
+    std::vector<std::string> contactSensorsDisabledInit_ = std::vector<std::string>();
+  };
+
+  struct ContactsManagerSensorsConfiguration
+  : public ContactsManagerConfigurationPrvt<ContactsManagerSensorsConfiguration>
+  {
+  public:
+    ContactsManagerSensorsConfiguration(const std::string & observerName)
+    : ContactsManagerConfigurationPrvt<ContactsManagerSensorsConfiguration>(observerName)
+    {
+    }
+
+    ContactsManagerSensorsConfiguration & forceSensorsToOmit(const std::vector<std::string> & forceSensorsToOmit)
+    {
+      forceSensorsToOmit_ = forceSensorsToOmit;
+      return *this;
+    }
+    ContactsManagerSensorsConfiguration & contactSensorsDisabledInit(
+        const std::vector<std::string> & contactSensorsDisabledsInit)
+    {
+      contactSensorsDisabledInit_ = contactSensorsDisabledsInit;
+      return *this;
+    }
+
+  public:
+    // force sensors that must not be used for the contacts detection (ex: hands when holding an object)
+    std::vector<std::string> forceSensorsToOmit_;
+    // list of sensors that must not be used from the start of the observer
+    std::vector<std::string> contactSensorsDisabledInit_ = std::vector<std::string>();
+  };
+
+  struct ContactsManagerSolverConfiguration
+  : public ContactsManagerConfigurationPrvt<ContactsManagerSolverConfiguration>
+  {
+  public:
+    ContactsManagerSolverConfiguration(const std::string & observerName)
+    : ContactsManagerConfigurationPrvt<ContactsManagerSolverConfiguration>(observerName)
+    {
+    }
+  };
+
+  using ContactsManagerConfiguration = std::variant<ContactsManager::ContactsManagerSolverConfiguration,
+                                                    ContactsManager::ContactsManagerSurfacesConfiguration,
+                                                    ContactsManager::ContactsManagerSensorsConfiguration>;
+
+private:
+  void init_manager(const mc_control::MCController & ctl,
+                    const std::string & robotName,
+                    const ContactsManagerSurfacesConfiguration & conf);
+  void init_manager(const mc_control::MCController & ctl,
+                    const std::string & robotName,
+                    const ContactsManagerSensorsConfiguration & conf);
+  void init_manager(const mc_control::MCController & ctl,
+                    const std::string & robotName,
+                    const ContactsManagerSolverConfiguration & conf);
+
 protected:
   /// @brief Inserts a contact to the map of contacts.
   /// @details Version for contacts that are associated to both a force sensor and a contact surface. The contact will
@@ -88,36 +190,7 @@ protected:
 
 public:
   // initialization of the odometry
-  void init(const std::string & observerName, bool verbose = true);
-
-  /// @brief Initialization for a detection based on contact surfaces
-  /// @param ctl Controller
-  /// @param robotName name of the robot
-  /// @param contactsDetection mean of detection for the contacts
-  /// @param surfacesForContactDetection list of possible contact surfaces
-  /// @param contactsSensorDisabledInit list of the force sensors that must be disabled on initialization.
-  /// @param contactDetectionThreshold threshold on the measured force for the contact detection
-  void initDetection(const mc_control::MCController & ctl,
-                     const std::string & robotName,
-                     ContactsDetection contactsDetection,
-                     const std::vector<std::string> & surfacesForContactDetection,
-                     const std::vector<std::string> & contactsSensorDisabledInit,
-                     double contactDetectionThreshold);
-
-  /// @brief initialization for a detection based on a threshold on the measured contact forces or for contacts given by
-  /// the controller
-  /// @param ctl Controller
-  /// @param robotName name of the robot
-  /// @param contactsDetection mean of detection for the contacts
-  /// @param contactsSensorDisabledInit list of the force sensors that must be disabled on initialization.
-  /// @param contactDetectionThreshold threshold on the measured force for the contact detection
-  /// @param forceSensorsToOmit list of force sensors that cannot be used for the contacts detection
-  void initDetection(const mc_control::MCController & ctl,
-                     const std::string & robotName,
-                     ContactsDetection contactsDetection,
-                     const std::vector<std::string> & contactsSensorDisabledInit,
-                     double contactDetectionThreshold,
-                     const std::vector<std::string> & forceSensorsToOmit);
+  void init(const mc_control::MCController & ctl, const std::string & robotName, ContactsManagerConfiguration conf);
 
   /// @brief Updates the list of currently set contacts and returns it.
   /// @return std::set<FoundContactsListType> &
@@ -185,8 +258,6 @@ protected:
 
   // list of surfaces used for contacts detection if @contactsDetection_ is set to "Surfaces"
   std::vector<std::string> surfacesForContactDetection_;
-  // list of sensors that must not be used from the start of the observer
-  std::vector<std::string> contactsSensorDisabledInit_;
 
   // name of the observer using this contacts manager.
   std::string observerName_;

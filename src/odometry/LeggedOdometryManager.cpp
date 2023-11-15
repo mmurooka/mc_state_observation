@@ -11,7 +11,9 @@ namespace mc_state_observation::odometry
 /// -------------------------Legged Odometry---------------------------
 ///////////////////////////////////////////////////////////////////////
 
-void LeggedOdometryManager::init(const mc_control::MCController & ctl, Configuration odomConfig, const bool verbose)
+void LeggedOdometryManager::init(const mc_control::MCController & ctl,
+                                 Configuration odomConfig,
+                                 ContactsManagerConfiguration contactsConf)
 
 {
   robotName_ = odomConfig.robotName_;
@@ -25,7 +27,8 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl, Configura
 
   fbPose_.translation() = robot.posW().translation();
   fbPose_.rotation() = robot.posW().rotation();
-  contactsManager_.init(odometryName_, verbose);
+
+  contactsManager_.init(ctl, robotName_, contactsConf);
 
   if(!ctl.datastore().has("KinematicAnchorFrame::" + ctl.robot(robotName_).name()))
   {
@@ -82,28 +85,6 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl, Configura
                          return "default";
                        });
   }
-}
-
-void LeggedOdometryManager::initDetection(const mc_control::MCController & ctl,
-                                          const std::string & robotName,
-                                          const ContactsManager::ContactsDetection contactsDetection,
-                                          const std::vector<std::string> & surfacesForContactDetection,
-                                          const std::vector<std::string> & contactsSensorDisabledInit,
-                                          const double contactsDetectionThreshold)
-{
-  contactsManager_.initDetection(ctl, robotName, contactsDetection, surfacesForContactDetection,
-                                 contactsSensorDisabledInit, contactsDetectionThreshold);
-}
-
-void LeggedOdometryManager::initDetection(const mc_control::MCController & ctl,
-                                          const std::string & robotName,
-                                          const ContactsManager::ContactsDetection contactsDetection,
-                                          const std::vector<std::string> & contactsSensorDisabledInit,
-                                          const double contactsDetectionThreshold,
-                                          const std::vector<std::string> & forceSensorsToOmit)
-{
-  contactsManager_.initDetection(ctl, robotName, contactsDetection, contactsSensorDisabledInit,
-                                 contactsDetectionThreshold, forceSensorsToOmit);
 }
 
 void LeggedOdometryManager::updateJointsConfiguration(const mc_control::MCController & ctl)
