@@ -11,30 +11,23 @@ namespace mc_state_observation::odometry
 /// -------------------------Legged Odometry---------------------------
 ///////////////////////////////////////////////////////////////////////
 
-void LeggedOdometryManager::init(const mc_control::MCController & ctl,
-                                 const std::string & robotName,
-                                 const std::string & odometryName,
-                                 OdometryType odometryType,
-                                 bool withYawEstimation,
-                                 VelocityUpdate velocityUpdate,
-                                 bool verbose,
-                                 bool withModeSwitchInGui)
+void LeggedOdometryManager::init(const mc_control::MCController & ctl, Configuration odomConfig, const bool verbose)
 
 {
-  robotName_ = robotName;
-  odometryType_ = odometryType;
-  withYawEstimation_ = withYawEstimation;
-  velocityUpdate_ = velocityUpdate;
-  odometryName_ = odometryName;
-  const auto & robot = ctl.robot(robotName);
+  robotName_ = odomConfig.robotName_;
+  odometryType_ = odomConfig.odometryType_;
+  withYawEstimation_ = odomConfig.withYaw_;
+  velocityUpdate_ = odomConfig.velocityUpdate_;
+  odometryName_ = odomConfig.odometryName_;
+  const auto & robot = ctl.robot(robotName_);
   odometryRobot_ = mc_rbdyn::Robots::make();
   odometryRobot_->robotCopy(robot, "odometryRobot");
 
   fbPose_.translation() = robot.posW().translation();
   fbPose_.rotation() = robot.posW().rotation();
-  contactsManager_.init(odometryName, verbose);
+  contactsManager_.init(odometryName_, verbose);
 
-  if(!ctl.datastore().has("KinematicAnchorFrame::" + ctl.robot(robotName).name()))
+  if(!ctl.datastore().has("KinematicAnchorFrame::" + ctl.robot(robotName_).name()))
   {
     double leftFootRatio = robot.indirectSurfaceForceSensor("LeftFootCenter").force().z()
                            / (robot.indirectSurfaceForceSensor("LeftFootCenter").force().z()
@@ -47,8 +40,8 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
   else
   {
     worldAnchorPose_ = conversions::kinematics::fromSva(
-        ctl.datastore().call<sva::PTransformd>("KinematicAnchorFrame::" + ctl.robot(robotName).name(),
-                                               ctl.robot(robotName)),
+        ctl.datastore().call<sva::PTransformd>("KinematicAnchorFrame::" + ctl.robot(robotName_).name(),
+                                               ctl.robot(robotName_)),
         so::kine::Kinematics::Flags::pose);
   }
 
@@ -61,7 +54,7 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
 
   logger.addLogEntry(odometryName_ + "_odometryRobot_accW",
                      [this]() -> sva::MotionVecd { return odometryRobot().accW(); });
-  if(withModeSwitchInGui)
+  if(odomConfig.withModeSwitchInGui_)
   {
     ctl.gui()->addElement({odometryName_, "Odometry"},
                           mc_rtc::gui::ComboInput(

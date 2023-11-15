@@ -60,6 +60,52 @@ public:
 public:
   LeggedOdometryManager() {}
 
+public:
+  ////////////////////////////////////////////////////////////////////
+  /// ------------------------Configuration---------------------------
+  ////////////////////////////////////////////////////////////////////
+  struct Configuration
+  {
+    Configuration(const std::string & robotName,
+                  const std::string & odometryName,
+                  measurements::OdometryType odometryType)
+    : robotName_(robotName), odometryName_(odometryName), odometryType_(odometryType)
+    {
+    }
+
+    // Name of the robot
+    std::string robotName_;
+    // Name of the odometry, used in logs and in the gui.
+    std::string odometryName_;
+    // Desired kind of odometry (6D or flat)
+    measurements::OdometryType odometryType_;
+
+    // Indicates if the orientation must be estimated by this odometry.
+    bool withYaw_ = false;
+    // If true, adds the possiblity to switch between 6d and flat odometry from the gui.
+    // Should be set to false if this feature is implemented in the estimator using this library.
+    bool withModeSwitchInGui_ = false;
+    // Indicates if we want to update the velocity and what method it must be updated with.
+    VelocityUpdate velocityUpdate_ = noUpdate;
+
+  public:
+    Configuration & withModeSwitchInGui(bool withModeSwitchInGui)
+    {
+      withModeSwitchInGui_ = withModeSwitchInGui;
+      return *this;
+    }
+    Configuration & withYawEstimation(bool withYaw)
+    {
+      withYaw_ = withYaw;
+      return *this;
+    }
+    Configuration & velocityUpdate(VelocityUpdate velocityUpdate)
+    {
+      velocityUpdate_ = velocityUpdate;
+      return *this;
+    }
+  };
+
 protected:
   ///////////////////////////////////////////////////////////////////////
   /// ------------------------Contacts Manager---------------------------
@@ -89,22 +135,9 @@ public:
   /// @details Version for the contact detection using a thresholding on the contact force sensors measurements or by
   /// direct input from the solver.
   /// @param ctl Controller
-  /// @param robotName Name of the robot
-  /// @param odometryName Name of the odometry, used in logs and in the gui.
-  /// @param odometryType Indicates if the desired odometry must be a flat or a 6D odometry.
-  /// @param withYawEstimation Indicates if the orientation must be estimated by this odometry.
-  /// @param velocityUpdate Indicates if we want to update the velocity and what method it must be updated with.
+  /// @param odomConfig Desired configuraion of the odometry
   /// @param verbose
-  /// @param withModeSwitchInGui If true, adds the possiblity to switch between 6d and flat odometry from the gui.
-  /// Should be set to false if this feature is implemented in the estimator using this library.
-  void init(const mc_control::MCController & ctl,
-            const std::string & robotName,
-            const std::string & odometryName,
-            measurements::OdometryType odometryType,
-            bool withYawEstimation,
-            VelocityUpdate velocityUpdate,
-            bool verbose,
-            bool withModeSwitchInGui = false);
+  void init(const mc_control::MCController & ctl, Configuration odomConfig, bool verbose);
 
   /// @brief Initialization for a detection based on contact surfaces
   /// @param ctl Controller
