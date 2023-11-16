@@ -6,6 +6,9 @@ namespace mc_state_observation::measurements
 {
 namespace internal
 {
+
+/// @brief Configuration structure that helps setting up the parameters of a ContactsManager.
+/// @details The configuration is used once passed in the ContactManager's init function
 template<class ConfigurationType>
 struct ContactsManagerConfigurationPrvt
 {
@@ -31,6 +34,9 @@ public:
 };
 } // namespace internal
 
+/// @brief Configuration structure that helps setting up the parameters of a ContactsManager whose contacts detection
+/// method is based on contact surfaces.
+/// @details The configuration is used once passed in the ContactManager's init function
 struct ContactsManagerSurfacesConfiguration
 : public internal::ContactsManagerConfigurationPrvt<ContactsManagerSurfacesConfiguration>
 {
@@ -55,6 +61,9 @@ public:
   std::vector<std::string> contactSensorsDisabledInit_ = std::vector<std::string>();
 };
 
+/// @brief Configuration structure that helps setting up the parameters of a ContactsManager whose contacts detection
+/// method is based on the force sensor measurements.
+/// @details The configuration is used once passed in the ContactManager's init function
 struct ContactsManagerSensorsConfiguration
 : public internal::ContactsManagerConfigurationPrvt<ContactsManagerSensorsConfiguration>
 {
@@ -83,6 +92,9 @@ public:
   std::vector<std::string> contactSensorsDisabledInit_ = std::vector<std::string>();
 };
 
+/// @brief Configuration structure that helps setting up the parameters of a ContactsManager whose contacts detection
+/// method is based on the solver.
+/// @details The configuration is used once passed in the ContactManager's init function
 struct ContactsManagerSolverConfiguration
 : public internal::ContactsManagerConfigurationPrvt<ContactsManagerSolverConfiguration>
 {

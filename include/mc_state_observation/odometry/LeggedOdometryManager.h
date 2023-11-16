@@ -50,6 +50,32 @@ struct LeggedOdometryManager
 {
 public:
   using ContactsManager = measurements::ContactsManager<LoContactWithSensor>;
+
+protected:
+  ///////////////////////////////////////////////////////////////////////
+  /// ------------------------Contacts Manager---------------------------
+  ///////////////////////////////////////////////////////////////////////
+
+  /// @brief Adaptation of the structure ContactsManager to the legged odometry, using personalized contacts classes.
+  struct LeggedOdometryContactsManager : public ContactsManager
+  {
+  protected:
+    // comparison function that sorts the contacts based on their measured force.
+    struct sortByForce
+    {
+      inline bool operator()(const LoContactWithSensor & contact1, const LoContactWithSensor & contact2) const
+      {
+        return (contact1.forceNorm_ < contact2.forceNorm_);
+      }
+    };
+
+  public:
+    // list of contacts used for the orientation odometry. At most two contacts can be used for this estimation, and
+    // contacts at hands are not considered. The contacts with the highest measured force are used.
+    std::set<std::reference_wrapper<LoContactWithSensor>, sortByForce> oriOdometryContacts_;
+  };
+
+public:
   enum VelocityUpdate
   {
     noUpdate,
@@ -57,20 +83,32 @@ public:
     fromUpstream
   };
 
-public:
-  LeggedOdometryManager() {}
+private:
+  // map allowing to get the VelocityUpdate value associated to the given string
+  inline static std::unordered_map<std::string, VelocityUpdate> mapStrVelocityUpdate_ = {{"finiteDiff", finiteDiff},
+                                                                                         {"fromUpstream", fromUpstream},
+                                                                                         {"noUpdate", noUpdate}};
+  // map allowing to get the OdometryType value associated to the given string.
+  inline static std::unordered_map<std::string, measurements::OdometryType> mapStrOdometryType_ = {
+      {"Odometry6d", measurements::OdometryType::Odometry6d},
+      {"Flat", measurements::OdometryType::Flat}};
 
 public:
   ////////////////////////////////////////////////////////////////////
   /// ------------------------Configuration---------------------------
   ////////////////////////////////////////////////////////////////////
+
+  /// @brief Configuration structure that helps setting up the odometry parameters
+  /// @details The configuration is used once passed in the @ref init(const mc_control::MCController &, Configuration,
+  /// ContactsManagerConfiguration) function
   struct Configuration
   {
     Configuration(const std::string & robotName,
                   const std::string & odometryName,
-                  measurements::OdometryType odometryType)
-    : robotName_(robotName), odometryName_(odometryName), odometryType_(odometryType)
+                  const std::string & odometryTypeString)
+    : robotName_(robotName), odometryName_(odometryName)
     {
+      LeggedOdometryManager::stringToOdometryType(odometryTypeString, odometryType_);
     }
 
     // Name of the robot
@@ -99,35 +137,27 @@ public:
       withYaw_ = withYaw;
       return *this;
     }
+
+    /// @brief Sets the velocity update method used in the odometry.
+    /// @details Allows to set the velocity update method directly from a string, most likely obtained from a
+    /// configuration file.
+    /// @param velocityUpdate The method to be used.
     Configuration & velocityUpdate(VelocityUpdate velocityUpdate)
     {
       velocityUpdate_ = velocityUpdate;
       return *this;
     }
-  };
 
-protected:
-  ///////////////////////////////////////////////////////////////////////
-  /// ------------------------Contacts Manager---------------------------
-  ///////////////////////////////////////////////////////////////////////
-
-  /// @brief Adaptation of the structure ContactsManager to the legged odometry, using personalized contacts classes.
-  struct LeggedOdometryContactsManager : public ContactsManager
-  {
-  protected:
-    // comparison function that sorts the contacts based on their measured force.
-    struct sortByForce
+    /// @brief Sets the velocity update method used in the odometry.
+    /// @details Allows to set the velocity update method directly from a string, most likely obtained from a
+    /// configuration file.
+    /// @param str The string naming the desired velocity update method
+    /// @param odometryType The VelocityUpdate we want to modify
+    Configuration & velocityUpdate(const std::string & str)
     {
-      inline bool operator()(const LoContactWithSensor & contact1, const LoContactWithSensor & contact2) const
-      {
-        return (contact1.forceNorm_ < contact2.forceNorm_);
-      }
-    };
-
-  public:
-    // list of contacts used for the orientation odometry. At most two contacts can be used for this estimation, and
-    // contacts at hands are not considered. The contacts with the highest measured force are used.
-    std::set<std::reference_wrapper<LoContactWithSensor>, sortByForce> oriOdometryContacts_;
+      LeggedOdometryManager::stringToVelocityUpdate(str, velocityUpdate_);
+      return *this;
+    }
   };
 
 public:
@@ -238,6 +268,37 @@ public:
   /// @brief Getter for the contacts manager.
   LeggedOdometryContactsManager & contactsManager() { return contactsManager_; }
 
+  /// @brief Gives the given VelocityUpdate the value corresponding to the given string.
+  /// @details Allows to set the velocity update method directly from a string, most likely obtained from a
+  /// configuration file.
+  /// @param str The string naming the desired velocity update method
+  /// @param odometryType The VelocityUpdate we want to modify
+  inline static void stringToVelocityUpdate(const std::string & str, VelocityUpdate & velUpdate)
+  {
+    if(mapStrVelocityUpdate_.count(str) == 0)
+    {
+      mc_rtc::log::error_and_throw<std::runtime_error>(
+          "Velocity update method not allowed. Please pick among : [fromUpstream, finiteDiff, noUpdate].");
+    }
+    velUpdate = mapStrVelocityUpdate_.at(str);
+  }
+
+  /// @brief Gives the given OdometryType the value corresponding to the given string.
+  /// @details Allows to set the odometry type directly from a string, most likely obtained from a configuration file.
+  /// This function is similar to @ref measurements::stringToOdometryType(const std::string &,
+  /// measurements::OdometryType &) but does not allow the type None.
+  /// @param str The string naming the desired odometry type
+  /// @param odometryType The OdometryType we want to modify
+  inline static void stringToOdometryType(const std::string & str, measurements::OdometryType & odometryType)
+  {
+    if(mapStrOdometryType_.count(str) == 0)
+    {
+      mc_rtc::log::error_and_throw<std::runtime_error>(
+          "Odometry method not allowed. Please pick among : [Odometry6d, Flat].");
+    }
+    odometryType = mapStrOdometryType_.at(str);
+  }
+
 private:
   /// @brief Core function runing the odometry.
   /// @param ctl Controller
@@ -267,7 +328,6 @@ private:
   /// come from an upstream observer.
   void updateFbKinematicsPvt(sva::PTransformd & pose, sva::MotionVecd * vel = nullptr, sva::MotionVecd * acc = nullptr);
 
-protected:
   /// @brief Updates the joints configuration of the odometry robot. Has to be called at the beginning of each
   /// iteration.
   /// @param ctl Controller
@@ -350,6 +410,7 @@ public:
   using OdometryType = measurements::OdometryType;
   measurements::OdometryType odometryType_;
 
+  // indicates if the velocity has to be updated, if yes, how it must be updated
   VelocityUpdate velocityUpdate_ = noUpdate;
 
 protected:
@@ -363,7 +424,6 @@ protected:
   // tracked pose of the floating base
   sva::PTransformd fbPose_ = sva::PTransformd::Identity();
 
-protected:
   // contacts manager used by this odometry manager
   LeggedOdometryContactsManager contactsManager_;
   // odometry robot that is updated by the legged odometry and can then update the real robot if required.

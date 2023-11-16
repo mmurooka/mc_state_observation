@@ -17,6 +17,7 @@ template<typename ContactWithSensorT>
 struct ContactsManager
 {
 public:
+  // allowed contact detection methods
   enum ContactsDetection
   {
     Solver,
@@ -32,6 +33,13 @@ public:
 
   static_assert(std::is_base_of_v<ContactWithSensor, ContactWithSensorT>,
                 "The template class for the contacts with sensors must inherit from the ContactWithSensor class");
+
+private:
+  // map allowing to get the ContactsDetection value associated to the given string
+  const std::unordered_map<std::string, ContactsDetection> mapStrContactsDetection = {{"Solver", Solver},
+                                                                                      {"Surfaces", Surfaces},
+                                                                                      {"Sensors", Sensors},
+                                                                                      {"Undefined", Undefined}};
 
 protected:
   /// @brief Inserts a contact to the map of contacts.
@@ -94,7 +102,7 @@ protected:
   std::string set_to_string(const ContactsSet & contactSet);
 
 public:
-  // initialization of the odometry
+  // initialization of the contacts manager
   void init(const mc_control::MCController & ctl, const std::string & robotName, ContactsManagerConfiguration conf);
 
   /// @brief Updates the list of currently set contacts and returns it.
@@ -140,7 +148,21 @@ public:
 
   inline const ContactsDetection & getContactsDetection() { return contactsDetectionMethod_; }
 
-private:
+  /// @brief Sets the contacts detection method used in the odometry.
+  /// @details Allows to set the contacts detection method directly from a string, most likely obtained from a
+  /// configuration file.
+  /// @param str The string naming the method to be used.
+  inline ContactsDetection stringToContactsDetection(const std::string & str)
+  {
+    if(mapStrContactsDetection.count(str) == 0)
+    {
+      mc_rtc::log::error_and_throw<std::runtime_error>(
+          "Contacts detection type not allowed. Please pick among : [Surfaces, Sensors, Solver] or "
+          "initialize a list of surfaces with the variable surfacesForContactDetection");
+    }
+    return mapStrContactsDetection.at(str);
+  }
+
 private:
   /// @brief Initializer for a contacts detection based on contact surfaces
   /// @param ctl The controller
@@ -175,6 +197,7 @@ protected:
 
   // method used to detect the contacts
   ContactsDetection contactsDetectionMethod_ = Undefined;
+  // threshold for the contacts detection
   double contactDetectionThreshold_;
 
   // list of the current contacts
