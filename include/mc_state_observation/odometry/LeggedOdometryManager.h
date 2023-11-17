@@ -108,6 +108,12 @@ public:
     : robotName_(robotName), odometryName_(odometryName)
     {
       odometryType_ = measurements::stringToOdometryType(odometryTypeString, odometryName);
+      if(odometryType_ != measurements::OdometryType::Flat && odometryType_ != measurements::OdometryType::Odometry6d)
+      {
+        mc_rtc::log::error_and_throw<std::runtime_error>(
+            "Odometry type not allowed. Please pick among : [Odometry6d, Flat] or use the other Configuration "
+            "constructor for an estimator that can run without odometry.");
+      }
     }
 
     /// @brief Configuration's constructor
