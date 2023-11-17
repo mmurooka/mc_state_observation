@@ -169,7 +169,7 @@ public:
     /// @param str The string naming the desired velocity update method
     inline Configuration & velocityUpdate(const std::string & str) noexcept
     {
-      velocityUpdate_ = LeggedOdometryManager::stringToVelocityUpdate(odometryName_, str);
+      velocityUpdate_ = LeggedOdometryManager::stringToVelocityUpdate(str, odometryName_);
       return *this;
     }
   };
