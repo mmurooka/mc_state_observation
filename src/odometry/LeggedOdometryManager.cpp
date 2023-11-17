@@ -57,13 +57,12 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
 
   auto & logger = (const_cast<mc_control::MCController &>(ctl)).logger();
   logger.addLogEntry(odometryName_ + "_odometryRobot_posW",
-                     [this]() -> sva::PTransformd { return odometryRobot().posW(); });
+                     [this]() -> const sva::PTransformd & { return odometryRobot().posW(); });
 
   logger.addLogEntry(odometryName_ + "_odometryRobot_velW",
-                     [this]() -> sva::MotionVecd { return odometryRobot().velW(); });
+                     [this]() -> const sva::MotionVecd & { return odometryRobot().velW(); });
 
-  logger.addLogEntry(odometryName_ + "_odometryRobot_accW",
-                     [this]() -> sva::MotionVecd { return odometryRobot().accW(); });
+  logger.addLogEntry(odometryName_ + "_odometryRobot_accW", [this]() { return odometryRobot().accW(); });
   if(odomConfig.withModeSwitchInGui_)
   {
     ctl.gui()->addElement({odometryName_, "Odometry"},
@@ -84,9 +83,9 @@ void LeggedOdometryManager::updateJointsConfiguration(const mc_control::MCContro
 {
   const auto & realRobot = ctl.realRobot(robotName_);
 
-  std::vector<double> q0 = odometryRobot().mbc().q[0];
-  odometryRobot().mbc().q = realRobot.mbc().q;
-  odometryRobot().mbc().q[0] = q0;
+  // Copy the real configuration except for the floating base
+  const auto & realQ = realRobot.mbc().q;
+  std::copy(std::next(realQ.begin()), realQ.end(), std::next(odometryRobot().mbc().q.begin()));
 
   odometryRobot().forwardKinematics();
 }
