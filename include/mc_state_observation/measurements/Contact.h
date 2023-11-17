@@ -2,6 +2,7 @@
 #include <boost/assert.hpp>
 #include <Eigen/Core>
 #include <string>
+#include <string_view>
 
 namespace mc_state_observation::measurements
 {
@@ -14,33 +15,29 @@ struct Contact
 protected:
   inline Contact() = default;
   // constructor if the contact is not associated to a surface
-  inline Contact(int id, std::string name)
-  {
-    id_ = id;
-    name_ = name;
-  }
+  inline Contact(int id, std::string_view name) : id_(id), name_(name) {}
   // constructor if the contact is associated to a surface
-  inline Contact(int id, std::string name, std::string surface) : Contact(id, name) { setSurfaceName(surface); }
-  inline bool operator<(const Contact & contact2) const noexcept { return (id() < contact2.id_); }
+  inline Contact(int id, std::string name, std::string surface) : Contact(id, name) { setSurface(surface); }
+  inline bool operator<(const Contact & rhs) const noexcept { return (id() < rhs.id_); }
 
 public:
-  inline void resetContact()
+  inline void resetContact() noexcept
   {
     wasAlreadySet_ = false;
     isSet_ = false;
   }
 
   // getters
-  inline const int & id() const noexcept { return id_; }
+  inline int id() const noexcept { return id_; }
   inline const std::string & name() const noexcept { return name_; }
-  const std::string & surfaceName() const
+  const std::string & surface() const
   {
     BOOST_ASSERT(!surface_.empty() && "The contact was created without a surface.");
     return surface_;
   }
 
   // getters
-  void setSurfaceName(std::string surfaceName) { surface_ = surfaceName; }
+  void setSurface(std::string_view surfaceName) { surface_ = surfaceName; }
 
 public:
   int id_;

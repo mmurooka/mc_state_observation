@@ -456,7 +456,7 @@ void LeggedOdometryManager::setNewContact(LoContactWithSensor & contact, const m
   }
   else // the kinematics of the contact are directly the ones of the surface
   {
-    sva::PTransformd worldSurfacePoseOdometryRobot = odometryRobot().surfacePose(contact.surfaceName());
+    sva::PTransformd worldSurfacePoseOdometryRobot = odometryRobot().surfacePose(contact.surface());
 
     contact.worldRefKine_.position = worldSurfacePoseOdometryRobot.translation();
     contact.worldRefKine_.orientation = so::Matrix3(worldSurfacePoseOdometryRobot.rotation().transpose());
@@ -489,7 +489,7 @@ const so::kine::Kinematics & LeggedOdometryManager::getCurrentContactKinematics(
   else // the kinematics of the contact are the ones of the associated surface
   {
     // the kinematics of the contacts are the ones of the surface, but we must transport the measured wrench
-    sva::PTransformd worldSurfacePoseOdometryRobot = odometryRobot().surfacePose(contact.surfaceName());
+    sva::PTransformd worldSurfacePoseOdometryRobot = odometryRobot().surfacePose(contact.surface());
     contact.currentWorldKine_ =
         conversions::kinematics::fromSva(worldSurfacePoseOdometryRobot, so::kine::Kinematics::Flags::pose);
 
