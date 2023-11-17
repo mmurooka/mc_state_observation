@@ -88,10 +88,6 @@ private:
   inline static std::unordered_map<std::string, VelocityUpdate> mapStrVelocityUpdate_ = {{"finiteDiff", finiteDiff},
                                                                                          {"fromUpstream", fromUpstream},
                                                                                          {"noUpdate", noUpdate}};
-  // map allowing to get the OdometryType value associated to the given string.
-  inline static std::unordered_map<std::string, measurements::OdometryType> mapStrOdometryType_ = {
-      {"Odometry6d", measurements::OdometryType::Odometry6d},
-      {"Flat", measurements::OdometryType::Flat}};
 
 public:
   ////////////////////////////////////////////////////////////////////
@@ -103,12 +99,24 @@ public:
   /// ContactsManagerConfiguration) function
   struct Configuration
   {
+    /// @brief Configuration's constructor
+    /// @details This version allows to set the odometry type directly from a string, most likely obtained from a
+    /// configuration file.
     Configuration(const std::string & robotName,
                   const std::string & odometryName,
                   const std::string & odometryTypeString)
     : robotName_(robotName), odometryName_(odometryName)
     {
-      LeggedOdometryManager::stringToOdometryType(odometryTypeString, odometryType_);
+      odometryType_ = measurements::stringToOdometryType(odometryTypeString, odometryName);
+    }
+
+    /// @brief Configuration's constructor
+    /// @details This versions allows to initialize the type of odometry directly with an OdometryType object.
+    Configuration(const std::string & robotName,
+                  const std::string & odometryName,
+                  measurements::OdometryType odometryType)
+    : robotName_(robotName), odometryName_(odometryName), odometryType_(odometryType)
+    {
     }
 
     // Name of the robot
@@ -152,10 +160,9 @@ public:
     /// @details Allows to set the velocity update method directly from a string, most likely obtained from a
     /// configuration file.
     /// @param str The string naming the desired velocity update method
-    /// @param odometryType The VelocityUpdate we want to modify
     Configuration & velocityUpdate(const std::string & str)
     {
-      LeggedOdometryManager::stringToVelocityUpdate(str, velocityUpdate_);
+      velocityUpdate_ = LeggedOdometryManager::stringToVelocityUpdate(str);
       return *this;
     }
   };
@@ -254,13 +261,9 @@ public:
                                                           const std::string & bodySensorName);
 
   /// @brief Changes the type of the odometry
-  /// @param newOdometryType The new type of odometry to use.
-  void setOdometryType(const std::string & newOdometryType);
-
-  /// @brief Changes the type of the odometry.
-  /// @details Version meant to be called by the observer using the odometry.
-  /// @param newOdometryType The new type of odometry to use.
-  void setOdometryType(const measurements::OdometryType newOdometryType);
+  /// @details Version meant to be called by the observer using the odometry during the run through the gui.
+  /// @param newOdometryType The string naming the new type of odometry to use.
+  void setOdometryType(measurements::OdometryType newOdometryType);
 
   /// @brief Getter for the odometry robot used for the estimation.
   mc_rbdyn::Robot & odometryRobot() { return odometryRobot_->robot("odometryRobot"); }
@@ -268,35 +271,18 @@ public:
   /// @brief Getter for the contacts manager.
   LeggedOdometryContactsManager & contactsManager() { return contactsManager_; }
 
-  /// @brief Gives the given VelocityUpdate the value corresponding to the given string.
+  /// @brief Returns a VelocityUpdate object corresponding to the given string.
   /// @details Allows to set the velocity update method directly from a string, most likely obtained from a
   /// configuration file.
   /// @param str The string naming the desired velocity update method
-  /// @param odometryType The VelocityUpdate we want to modify
-  inline static void stringToVelocityUpdate(const std::string & str, VelocityUpdate & velUpdate)
+  inline static VelocityUpdate stringToVelocityUpdate(const std::string & str)
   {
     if(mapStrVelocityUpdate_.count(str) == 0)
     {
       mc_rtc::log::error_and_throw<std::runtime_error>(
           "Velocity update method not allowed. Please pick among : [fromUpstream, finiteDiff, noUpdate].");
     }
-    velUpdate = mapStrVelocityUpdate_.at(str);
-  }
-
-  /// @brief Gives the given OdometryType the value corresponding to the given string.
-  /// @details Allows to set the odometry type directly from a string, most likely obtained from a configuration file.
-  /// This function is similar to @ref measurements::stringToOdometryType(const std::string &,
-  /// measurements::OdometryType &) but does not allow the type None.
-  /// @param str The string naming the desired odometry type
-  /// @param odometryType The OdometryType we want to modify
-  inline static void stringToOdometryType(const std::string & str, measurements::OdometryType & odometryType)
-  {
-    if(mapStrOdometryType_.count(str) == 0)
-    {
-      mc_rtc::log::error_and_throw<std::runtime_error>(
-          "Odometry method not allowed. Please pick among : [Odometry6d, Flat].");
-    }
-    odometryType = mapStrOdometryType_.at(str);
+    return mapStrVelocityUpdate_.at(str);
   }
 
 private:
