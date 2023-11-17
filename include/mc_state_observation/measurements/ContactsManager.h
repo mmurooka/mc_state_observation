@@ -46,7 +46,7 @@ protected:
   /// @param forceSensorName The name of the force sensor.
   /// @param surface The name of the surface that will be used also to name the contact.
   /// @return ContactT &
-  inline ContactT & addContactToManager(const std::string & forceSensorName, const std::string surface)
+  inline ContactT & addContactToManager(const std::string & forceSensorName, const std::string & surface)
   {
     const auto [it, inserted] = listContacts_.insert({forceSensorName, ContactT(idx_, forceSensorName, surface)});
     if(!inserted) { return (*it).second; }
@@ -122,11 +122,6 @@ public:
   /// @param idx The index of the contact
   /// @return const std::string &
   inline const std::string & getNameFromIdx(const int idx) { return insertOrder_.at(idx); }
-
-  /// @brief Get the index of a contact given its name
-  /// @param name The name of the contact
-  /// @return const int &
-  inline const int & getIdxFromName(const std::string & name) { return listContacts_.at(name).getID(); }
 
   /// @brief Get the list of the currently set contacts.
   /// @return const std::vector<std::string> &
