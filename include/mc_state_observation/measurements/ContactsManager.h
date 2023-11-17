@@ -135,15 +135,12 @@ public:
   /// @details Allows to set the contacts detection method directly from a string, most likely obtained from a
   /// configuration file.
   /// @param str The string naming the method to be used.
-  inline ContactsDetection stringToContactsDetection(const std::string & str)
+  inline static ContactsDetection stringToContactsDetection(const std::string & str, const std::string & observerName)
   {
-    if(strToContactsDetection.count(str) == 0)
-    {
-      mc_rtc::log::error_and_throw<std::runtime_error>(
-          "Contacts detection type not allowed. Please pick among : [Surfaces, Sensors, Solver] or "
-          "initialize a list of surfaces with the variable surfacesForContactDetection");
-    }
-    return strToContactsDetection.at(str);
+    auto it = strToContactsDetection.find(str);
+    if(it != strToContactsDetection.end()) { return it->second; }
+    mc_rtc::log::error_and_throw<std::runtime_error>("[{}]: No known ContactsDetection value for {}", observerName,
+                                                     str);
   }
 
 private:
@@ -151,23 +148,23 @@ private:
   /// @param ctl The controller
   /// @param robotName Name of the robot
   /// @param conf Configuration of the contacts manager
-  void init_manager(const mc_control::MCController & ctl,
-                    const std::string & robotName,
-                    const ContactsManagerSurfacesConfiguration & conf);
+  inline void init_manager(const mc_control::MCController & ctl,
+                           const std::string & robotName,
+                           const ContactsManagerSurfacesConfiguration & conf);
   /// @brief Initializer for a contacts detection based on force sensors
   /// @param ctl The controller
   /// @param robotName Name of the robot
   /// @param conf Configuration of the contacts manager
-  void init_manager(const mc_control::MCController & ctl,
-                    const std::string & robotName,
-                    const ContactsManagerSensorsConfiguration & conf);
+  inline void init_manager(const mc_control::MCController & ctl,
+                           const std::string & robotName,
+                           const ContactsManagerSensorsConfiguration & conf);
   /// @brief Initializer for a contacts detection based on the solver's contacts
   /// @param ctl The controller
   /// @param robotName Name of the robot
   /// @param conf Configuration of the contacts manager
-  void init_manager(const mc_control::MCController & ctl,
-                    const std::string & robotName,
-                    const ContactsManagerSolverConfiguration & conf);
+  inline void init_manager(const mc_control::MCController & ctl,
+                           const std::string & robotName,
+                           const ContactsManagerSolverConfiguration & conf);
 
 protected:
   // map of contacts used by the manager.

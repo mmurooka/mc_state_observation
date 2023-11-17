@@ -63,7 +63,7 @@ protected:
     // comparison function that sorts the contacts based on their measured force.
     struct sortByForce
     {
-      inline bool operator()(const LoContactWithSensor & contact1, const LoContactWithSensor & contact2) const
+      inline bool operator()(const LoContactWithSensor & contact1, const LoContactWithSensor & contact2) const noexcept
       {
         return (contact1.forceNorm_ < contact2.forceNorm_);
       }
@@ -76,18 +76,19 @@ protected:
   };
 
 public:
-  enum VelocityUpdate
+  enum class VelocityUpdate
   {
-    noUpdate,
-    finiteDiff,
-    fromUpstream
+    NoUpdate,
+    FiniteDiff,
+    FromUpstream
   };
 
 private:
   // map allowing to get the VelocityUpdate value associated to the given string
-  inline static std::unordered_map<std::string, VelocityUpdate> mapStrVelocityUpdate_ = {{"finiteDiff", finiteDiff},
-                                                                                         {"fromUpstream", fromUpstream},
-                                                                                         {"noUpdate", noUpdate}};
+  inline static const std::unordered_map<std::string, VelocityUpdate> strToVelocityUpdate_ = {
+      {"FiniteDiff", VelocityUpdate::FiniteDiff},
+      {"FromUpstream", VelocityUpdate::FromUpstream},
+      {"NoUpdate", VelocityUpdate::NoUpdate}};
 
 public:
   ////////////////////////////////////////////////////////////////////
@@ -102,9 +103,9 @@ public:
     /// @brief Configuration's constructor
     /// @details This version allows to set the odometry type directly from a string, most likely obtained from a
     /// configuration file.
-    Configuration(const std::string & robotName,
-                  const std::string & odometryName,
-                  const std::string & odometryTypeString)
+    inline Configuration(const std::string & robotName,
+                         const std::string & odometryName,
+                         const std::string & odometryTypeString) noexcept
     : robotName_(robotName), odometryName_(odometryName)
     {
       odometryType_ = measurements::stringToOdometryType(odometryTypeString, odometryName);
@@ -118,9 +119,9 @@ public:
 
     /// @brief Configuration's constructor
     /// @details This versions allows to initialize the type of odometry directly with an OdometryType object.
-    Configuration(const std::string & robotName,
-                  const std::string & odometryName,
-                  measurements::OdometryType odometryType)
+    inline Configuration(const std::string & robotName,
+                         const std::string & odometryName,
+                         measurements::OdometryType odometryType) noexcept
     : robotName_(robotName), odometryName_(odometryName), odometryType_(odometryType)
     {
     }
@@ -133,20 +134,20 @@ public:
     measurements::OdometryType odometryType_;
 
     // Indicates if the orientation must be estimated by this odometry.
-    bool withYaw_ = false;
+    bool withYaw_ = true;
     // If true, adds the possiblity to switch between 6d and flat odometry from the gui.
     // Should be set to false if this feature is implemented in the estimator using this library.
     bool withModeSwitchInGui_ = false;
     // Indicates if we want to update the velocity and what method it must be updated with.
-    VelocityUpdate velocityUpdate_ = noUpdate;
+    VelocityUpdate velocityUpdate_ = LeggedOdometryManager::VelocityUpdate::NoUpdate;
 
   public:
-    Configuration & withModeSwitchInGui(bool withModeSwitchInGui)
+    inline Configuration & withModeSwitchInGui(bool withModeSwitchInGui) noexcept
     {
       withModeSwitchInGui_ = withModeSwitchInGui;
       return *this;
     }
-    Configuration & withYawEstimation(bool withYaw)
+    inline Configuration & withYawEstimation(bool withYaw) noexcept
     {
       withYaw_ = withYaw;
       return *this;
@@ -156,7 +157,7 @@ public:
     /// @details Allows to set the velocity update method directly from a string, most likely obtained from a
     /// configuration file.
     /// @param velocityUpdate The method to be used.
-    Configuration & velocityUpdate(VelocityUpdate velocityUpdate)
+    inline Configuration & velocityUpdate(VelocityUpdate velocityUpdate) noexcept
     {
       velocityUpdate_ = velocityUpdate;
       return *this;
@@ -166,9 +167,9 @@ public:
     /// @details Allows to set the velocity update method directly from a string, most likely obtained from a
     /// configuration file.
     /// @param str The string naming the desired velocity update method
-    Configuration & velocityUpdate(const std::string & str)
+    inline Configuration & velocityUpdate(const std::string & str) noexcept
     {
-      velocityUpdate_ = LeggedOdometryManager::stringToVelocityUpdate(str);
+      velocityUpdate_ = LeggedOdometryManager::stringToVelocityUpdate(odometryName_, str);
       return *this;
     }
   };
@@ -181,7 +182,9 @@ public:
   /// @param ctl Controller
   /// @param odomConfig Desired configuraion of the odometry
   /// @param verbose
-  void init(const mc_control::MCController & ctl, Configuration odomConfig, ContactsManagerConfiguration contactsConf);
+  void init(const mc_control::MCController & ctl,
+            const Configuration & odomConfig,
+            const ContactsManagerConfiguration & contactsConf);
 
   /// @brief @copybrief run(const mc_control::MCController & ctl, mc_rtc::Logger &, sva::PTransformd &, const
   /// stateObservation::Matrix3 &). This version uses the tilt estimated by the upstream observers.
@@ -272,23 +275,20 @@ public:
   void setOdometryType(measurements::OdometryType newOdometryType);
 
   /// @brief Getter for the odometry robot used for the estimation.
-  mc_rbdyn::Robot & odometryRobot() { return odometryRobot_->robot("odometryRobot"); }
+  inline mc_rbdyn::Robot & odometryRobot() { return odometryRobot_->robot("odometryRobot"); }
 
   /// @brief Getter for the contacts manager.
-  LeggedOdometryContactsManager & contactsManager() { return contactsManager_; }
+  inline LeggedOdometryContactsManager & contactsManager() { return contactsManager_; }
 
   /// @brief Returns a VelocityUpdate object corresponding to the given string.
   /// @details Allows to set the velocity update method directly from a string, most likely obtained from a
   /// configuration file.
   /// @param str The string naming the desired velocity update method
-  inline static VelocityUpdate stringToVelocityUpdate(const std::string & str)
+  inline static VelocityUpdate stringToVelocityUpdate(const std::string & str, const std::string & odometryName)
   {
-    if(mapStrVelocityUpdate_.count(str) == 0)
-    {
-      mc_rtc::log::error_and_throw<std::runtime_error>(
-          "Velocity update method not allowed. Please pick among : [fromUpstream, finiteDiff, noUpdate].");
-    }
-    return mapStrVelocityUpdate_.at(str);
+    auto it = strToVelocityUpdate_.find(str);
+    if(it != strToVelocityUpdate_.end()) { return it->second; }
+    mc_rtc::log::error_and_throw<std::runtime_error>("[{}]: No known VelocityUpdate value for {}", odometryName, str);
   }
 
 private:
@@ -393,7 +393,7 @@ public:
   measurements::OdometryType odometryType_;
 
   // indicates if the velocity has to be updated, if yes, how it must be updated
-  VelocityUpdate velocityUpdate_ = noUpdate;
+  VelocityUpdate velocityUpdate_;
 
 protected:
   // Name of the odometry, used in logs and in the gui.
@@ -402,7 +402,7 @@ protected:
   std::string robotName_;
 
   // indicates whether we want to update the yaw using this method or not
-  bool withYawEstimation_ = true;
+  bool withYawEstimation_;
   // tracked pose of the floating base
   sva::PTransformd fbPose_ = sva::PTransformd::Identity();
 

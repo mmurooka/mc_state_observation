@@ -23,7 +23,7 @@ inline static const std::unordered_map<std::string, OdometryType> strToOdometryT
     {"Flat", OdometryType::Flat},
     {"None", OdometryType::None}};
 // map allowing to get the string value associated to the given OdometryType object
-inline static const std::unordered_map<OdometryType, std::string> odometryTypToeStr_ = {
+inline static const std::unordered_map<OdometryType, std::string> odometryTypToStr_ = {
     {OdometryType::Odometry6d, "Odometry6d"},
     {OdometryType::Flat, "Flat"},
     {OdometryType::None, "None"}};
@@ -35,11 +35,11 @@ inline static const std::unordered_map<OdometryType, std::string> odometryTypToe
 /// @param str The string naming the desired odometry
 /// @param observerName The name of the observer
 /// @return OdometryType
-inline OdometryType stringToOdometryType(const std::string & str, const std::string & observerName)
+inline static OdometryType stringToOdometryType(const std::string & str, const std::string & observerName)
 {
   auto it = internal::strToOdometryType_.find(str);
   if(it != internal::strToOdometryType_.end()) { return it->second; }
-  mc_rtc::log::error_and_throw<std::runtime_error>("[{}]:No known OdometryType value for {}", observerName, str);
+  mc_rtc::log::error_and_throw<std::runtime_error>("[{}]: No known OdometryType value for {}", observerName, str);
 }
 
 /// @brief Returns an OdometryType object corresponding to the given string
@@ -47,7 +47,7 @@ inline OdometryType stringToOdometryType(const std::string & str, const std::str
 /// the given string is valid, for example coming from a ComboInput.
 /// @param str The string naming the desired odometry
 /// @return OdometryType
-inline OdometryType stringToOdometryType(const std::string & str)
+inline static OdometryType stringToOdometryType(const std::string & str)
 {
   return internal::strToOdometryType_.at(str);
 }
@@ -57,9 +57,9 @@ inline OdometryType stringToOdometryType(const std::string & str)
 /// type is valid.
 /// @param odometryType The current odometry type
 /// @return std::string
-inline std::string odometryTypeToSstring(OdometryType odometryType)
+inline static std::string odometryTypeToSstring(OdometryType odometryType)
 {
-  return internal::odometryTypToeStr_.at(odometryType);
+  return internal::odometryTypToStr_.at(odometryType);
 }
 
 // IMUs can be handled using only a vector containing the IMU objects.

@@ -13,8 +13,8 @@ namespace mc_state_observation::odometry
 ///////////////////////////////////////////////////////////////////////
 
 void LeggedOdometryManager::init(const mc_control::MCController & ctl,
-                                 Configuration odomConfig,
-                                 ContactsManagerConfiguration contactsConf)
+                                 const Configuration & odomConfig,
+                                 const ContactsManagerConfiguration & contactsConf)
 
 {
   robotName_ = odomConfig.robotName_;
@@ -348,7 +348,7 @@ void LeggedOdometryManager::updateOdometryRobot(const mc_control::MCController &
   // finite differences
   if(vel != nullptr)
   {
-    if(velocityUpdate_ == fromUpstream)
+    if(velocityUpdate_ == VelocityUpdate::FromUpstream)
     {
       // realRobot.posW().rotation() is the transpose of R
       so::Vector3 realLocalLinVel = realRobot.posW().rotation() * realRobot.velW().linear();
@@ -360,7 +360,7 @@ void LeggedOdometryManager::updateOdometryRobot(const mc_control::MCController &
       vel.angular() = newOri * realLocalAngVel;
       odometryRobot().velW(vel);
     }
-    if(velocityUpdate_ == finiteDiff)
+    if(velocityUpdate_ == VelocityUpdate::FiniteDiff)
     {
       sva::MotionVecd vel;
 
