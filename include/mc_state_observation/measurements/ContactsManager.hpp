@@ -112,23 +112,6 @@ void ContactsManager<ContactWithSensorT>::init_manager(const mc_control::MCContr
 }
 
 template<typename ContactWithSensorT>
-void ContactsManager<ContactWithSensorT>::addContactToGui(const mc_control::MCController & ctl,
-                                                          const std::string & name)
-{
-  ctl.gui()->addElement(
-      {observerName_, "Contacts"},
-      mc_rtc::gui::Checkbox(
-          name + " : " + (contact(name).isSet_ ? "Contact is set" : "Contact is not set") + ": Use wrench sensor: ",
-          [this, name]() { return contact(name).sensorEnabled_; },
-          [this, name]()
-          {
-            contact(name).sensorEnabled_ = !contact(name).sensorEnabled_;
-            std::cout << std::endl
-                      << "Enable / disable :" + name + " " + std::to_string(contact(name).sensorEnabled_) << std::endl;
-          }));
-}
-
-template<typename ContactWithSensorT>
 const std::set<int> & ContactsManager<ContactWithSensorT>::updateContacts(const mc_control::MCController & ctl,
                                                                           const std::string & robotName)
 {
