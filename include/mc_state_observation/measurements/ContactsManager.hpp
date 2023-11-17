@@ -8,24 +8,24 @@ namespace mc_state_observation::measurements
 /// ------------------------------Contacts-----------------------------
 ///////////////////////////////////////////////////////////////////////
 
-template<typename ContactWithSensorT>
-void ContactsManager<ContactWithSensorT>::init(const mc_control::MCController & ctl,
-                                               const std::string & robotName,
-                                               ContactsManagerConfiguration conf)
+template<typename ContactT>
+void ContactsManager<ContactT>::init(const mc_control::MCController & ctl,
+                                     const std::string & robotName,
+                                     Configuration conf)
 {
   std::visit([this, &ctl, &robotName](const auto & c) { init_manager(ctl, robotName, c); }, conf);
 }
 
-template<typename ContactWithSensorT>
-void ContactsManager<ContactWithSensorT>::init_manager(const mc_control::MCController & ctl,
-                                                       const std::string & robotName,
-                                                       const ContactsManagerSurfacesConfiguration & conf)
+template<typename ContactT>
+void ContactsManager<ContactT>::init_manager(const mc_control::MCController & ctl,
+                                             const std::string & robotName,
+                                             const ContactsManagerSurfacesConfiguration & conf)
 {
   observerName_ = conf.observerName_;
   verbose_ = conf.verbose_;
 
   contactsDetectionMethod_ = Surfaces;
-  contactsFinder_ = &ContactsManager<ContactWithSensorT>::findContactsFromSurfaces;
+  contactsFinder_ = &ContactsManager<ContactT>::findContactsFromSurfaces;
 
   contactDetectionThreshold_ = conf.contactDetectionThreshold_;
   surfacesForContactDetection_ = conf.surfacesForContactDetection_;
@@ -47,7 +47,6 @@ void ContactsManager<ContactWithSensorT>::init_manager(const mc_control::MCContr
       const mc_rbdyn::ForceSensor & forceSensor = robot.surfaceForceSensor(surface);
       const std::string & fsName = forceSensor.name();
       addContactToManager(fsName, surface);
-      addContactToGui(ctl, fsName);
     }
     else // if the surface is not associated to a force sensor, we will fetch the force sensor indirectly attached to
          // the surface
@@ -55,7 +54,6 @@ void ContactsManager<ContactWithSensorT>::init_manager(const mc_control::MCContr
       const mc_rbdyn::ForceSensor & forceSensor = robot.indirectSurfaceForceSensor(surface);
       const std::string & fsName = forceSensor.name();
       addContactToManager(fsName, surface);
-      addContactToGui(ctl, fsName);
     }
   }
 
@@ -64,16 +62,16 @@ void ContactsManager<ContactWithSensorT>::init_manager(const mc_control::MCContr
     contact(contactSensorDisabledInit).sensorEnabled_ = false;
   }
 }
-template<typename ContactWithSensorT>
-void ContactsManager<ContactWithSensorT>::init_manager(const mc_control::MCController & ctl,
-                                                       const std::string & robotName,
-                                                       const ContactsManagerSensorsConfiguration & conf)
+template<typename ContactT>
+void ContactsManager<ContactT>::init_manager(const mc_control::MCController & ctl,
+                                             const std::string & robotName,
+                                             const ContactsManagerSensorsConfiguration & conf)
 {
   observerName_ = conf.observerName_;
   verbose_ = conf.verbose_;
 
   contactsDetectionMethod_ = Sensors;
-  contactsFinder_ = &ContactsManager<ContactWithSensorT>::findContactsFromSensors;
+  contactsFinder_ = &ContactsManager<ContactT>::findContactsFromSensors;
 
   contactDetectionThreshold_ = conf.contactDetectionThreshold_;
 
@@ -89,7 +87,6 @@ void ContactsManager<ContactWithSensorT>::init_manager(const mc_control::MCContr
     const std::string & fsName = forceSensor.name();
 
     addContactToManager(fsName);
-    addContactToGui(ctl, fsName);
   }
 
   for(auto const & contactSensorDisabledInit : conf.contactSensorsDisabledInit_)
@@ -97,23 +94,23 @@ void ContactsManager<ContactWithSensorT>::init_manager(const mc_control::MCContr
     contact(contactSensorDisabledInit).sensorEnabled_ = false;
   }
 }
-template<typename ContactWithSensorT>
-void ContactsManager<ContactWithSensorT>::init_manager(const mc_control::MCController &,
-                                                       const std::string &,
-                                                       const ContactsManagerSolverConfiguration & conf)
+template<typename ContactT>
+void ContactsManager<ContactT>::init_manager(const mc_control::MCController &,
+                                             const std::string &,
+                                             const ContactsManagerSolverConfiguration & conf)
 {
   observerName_ = conf.observerName_;
   verbose_ = conf.verbose_;
 
   contactsDetectionMethod_ = Solver;
-  contactsFinder_ = &ContactsManager<ContactWithSensorT>::findContactsFromSolver;
+  contactsFinder_ = &ContactsManager<ContactT>::findContactsFromSolver;
 
   contactDetectionThreshold_ = conf.contactDetectionThreshold_;
 }
 
-template<typename ContactWithSensorT>
-const std::set<int> & ContactsManager<ContactWithSensorT>::updateContacts(const mc_control::MCController & ctl,
-                                                                          const std::string & robotName)
+template<typename ContactT>
+const std::set<int> & ContactsManager<ContactT>::updateContacts(const mc_control::MCController & ctl,
+                                                                const std::string & robotName)
 {
   // Detection of the contacts depending on the configured mode
   (this->*contactsFinder_)(ctl, robotName);
@@ -122,9 +119,9 @@ const std::set<int> & ContactsManager<ContactWithSensorT>::updateContacts(const 
   return contactsFound_; // list of currently set contacts
 }
 
-template<typename ContactWithSensorT>
-void ContactsManager<ContactWithSensorT>::findContactsFromSolver(const mc_control::MCController & ctl,
-                                                                 const std::string & robotName)
+template<typename ContactT>
+void ContactsManager<ContactT>::findContactsFromSolver(const mc_control::MCController & ctl,
+                                                       const std::string & robotName)
 {
   const auto & measRobot = ctl.robot(robotName);
 
@@ -173,9 +170,9 @@ void ContactsManager<ContactWithSensorT>::findContactsFromSolver(const mc_contro
   }
 }
 
-template<typename ContactWithSensorT>
-void ContactsManager<ContactWithSensorT>::findContactsFromSurfaces(const mc_control::MCController & ctl,
-                                                                   const std::string & robotName)
+template<typename ContactT>
+void ContactsManager<ContactT>::findContactsFromSurfaces(const mc_control::MCController & ctl,
+                                                         const std::string & robotName)
 {
   const auto & measRobot = ctl.robot(robotName);
 
@@ -194,15 +191,15 @@ void ContactsManager<ContactWithSensorT>::findContactsFromSurfaces(const mc_cont
   }
 }
 
-template<typename ContactWithSensorT>
-void ContactsManager<ContactWithSensorT>::findContactsFromSensors(const mc_control::MCController & ctl,
-                                                                  const std::string & robotName)
+template<typename ContactT>
+void ContactsManager<ContactT>::findContactsFromSensors(const mc_control::MCController & ctl,
+                                                        const std::string & robotName)
 {
   findContactsFromSurfaces(ctl, robotName);
 }
 
-template<typename ContactWithSensorT>
-void ContactsManager<ContactWithSensorT>::updateContacts()
+template<typename ContactT>
+void ContactsManager<ContactT>::updateContacts()
 {
   /** Debugging output **/
   if(verbose_ && contactsFound_ != oldContacts_)
@@ -231,8 +228,8 @@ void ContactsManager<ContactWithSensorT>::updateContacts()
   oldContacts_ = contactsFound_;
 }
 
-template<typename ContactWithSensorT>
-std::string ContactsManager<ContactWithSensorT>::set_to_string(const ContactsSet & contactSet)
+template<typename ContactT>
+std::string ContactsManager<ContactT>::set_to_string(const ContactsSet & contactSet)
 {
   if(contactSet.cbegin() == contactSet.cend()) { return ""; }
   std::ostringstream out;

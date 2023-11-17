@@ -168,7 +168,7 @@ public:
   };
 
 public:
-  using ContactsManagerConfiguration = ContactsManager::ContactsManagerConfiguration;
+  using ContactsManagerConfiguration = ContactsManager::Configuration;
   /// @brief Initializer for the odometry manager.
   /// @details Version for the contact detection using a thresholding on the contact force sensors measurements or by
   /// direct input from the solver.
