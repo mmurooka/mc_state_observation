@@ -680,7 +680,8 @@ void LeggedOdometryManager::setOdometryType(OdometryType newOdometryType)
   odometryType_ = newOdometryType;
   if(odometryType_ != prevOdometryType)
   {
-    mc_rtc::log::info("[{}]: Odometry mode changed to: {}", odometryName_, newOdometryType);
+    mc_rtc::log::info("[{}]: Odometry mode changed to: {}", odometryName_,
+                      measurements::odometryTypeToSstring(newOdometryType));
   }
 }
 
