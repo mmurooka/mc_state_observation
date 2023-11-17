@@ -1,3 +1,5 @@
+set(PROJECT_USE_CMAKE_EXPORT TRUE)
+
 cmake_minimum_required(VERSION 3.10)
 
 set(PROJECT_NAME mc_state_observation)

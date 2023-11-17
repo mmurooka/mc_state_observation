@@ -1,5 +1,12 @@
-add_library(mc_state_observation SHARED conversions/kinematics.cpp
-                                        odometry/LeggedOdometryManager.cpp)
+set(mc_state_observation_SRC conversions/kinematics.cpp
+                             odometry/LeggedOdometryManager.cpp)
+set(mc_state_observation_HDR
+    ${CMAKE_SOURCE_DIR}/include/mc_state_observation/conversions/kinematics.h
+    ${CMAKE_SOURCE_DIR}/include/mc_state_observation/odometry/LeggedOdometryManager.h
+)
+add_library(mc_state_observation SHARED ${mc_state_observation_SRC}
+                                        ${mc_state_observation_HDR})
+
 target_link_libraries(
   mc_state_observation PUBLIC SpaceVecAlg::SpaceVecAlg
                               state-observation::state-observation)
