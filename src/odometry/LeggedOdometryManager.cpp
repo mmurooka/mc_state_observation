@@ -1,3 +1,4 @@
+#include <mc_rtc/logging.h>
 #include "mc_state_observation/measurements/measurements.h"
 #include <mc_state_observation/conversions/kinematics.h>
 
@@ -33,6 +34,11 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
 
   if(!ctl.datastore().has("KinematicAnchorFrame::" + ctl.robot(robotName_).name()))
   {
+    if(!robot.hasSurface("LeftFootCenter") || !robot.hasSurface("RightFootCenter"))
+    {
+      mc_rtc::log::error_and_throw("The surfaces used to compute the anchor frame don't exist in this robot.");
+    }
+
     double leftFootRatio = robot.indirectSurfaceForceSensor("LeftFootCenter").force().z()
                            / (robot.indirectSurfaceForceSensor("LeftFootCenter").force().z()
                               + robot.indirectSurfaceForceSensor("RightFootCenter").force().z());
