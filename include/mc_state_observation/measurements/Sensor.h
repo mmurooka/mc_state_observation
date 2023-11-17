@@ -15,10 +15,10 @@ protected:
   inline Sensor() = default;
   inline Sensor(int id, std::string name) : id_(id), name_(name) {}
 
-  inline bool operator<(const Sensor & contact2) const noexcept { return (id() < contact2.id_); }
+  inline bool operator<(const Sensor & rhs) const noexcept { return (id() < rhs.id_); }
 
 public:
-  inline const int & id() const noexcept { return id_; }
+  inline int id() const noexcept { return id_; }
   inline const std::string & name() const noexcept { return name_; }
 
 protected:
