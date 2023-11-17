@@ -200,7 +200,7 @@ void ContactsManager<ContactWithSensorT>::findContactsFromSurfaces(const mc_cont
 
   for(auto & contact : contacts())
   {
-    const std::string & fsName = contact.second.forceSensorName();
+    const std::string & fsName = contact.second.forceSensor();
     const mc_rbdyn::ForceSensor forceSensor = measRobot.forceSensor(fsName);
     contact.second.forceNorm_ = forceSensor.wrenchWithoutGravity(measRobot).force().norm();
     if(contact.second.forceNorm_ > contactDetectionThreshold_)

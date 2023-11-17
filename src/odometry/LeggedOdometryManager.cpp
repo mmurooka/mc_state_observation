@@ -421,7 +421,7 @@ void LeggedOdometryManager::updateOdometryRobot(const mc_control::MCController &
 
 void LeggedOdometryManager::setNewContact(LoContactWithSensor & contact, const mc_rbdyn::Robot & measurementsRobot)
 {
-  const mc_rbdyn::ForceSensor & forceSensor = measurementsRobot.forceSensor(contact.forceSensorName());
+  const mc_rbdyn::ForceSensor & forceSensor = measurementsRobot.forceSensor(contact.forceSensor());
   // If the contact is not detected using surfaces, we must consider that the frame of the sensor is the one of the
   // surface).
 

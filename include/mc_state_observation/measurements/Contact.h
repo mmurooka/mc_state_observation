@@ -17,7 +17,7 @@ protected:
   // constructor if the contact is not associated to a surface
   inline Contact(int id, std::string_view name) : id_(id), name_(name) {}
   // constructor if the contact is associated to a surface
-  inline Contact(int id, std::string name, std::string surface) : Contact(id, name) { setSurface(surface); }
+  inline Contact(int id, std::string_view name, std::string_view surface) : Contact(id, name) { setSurface(surface); }
   inline bool operator<(const Contact & rhs) const noexcept { return (id() < rhs.id_); }
 
 public:

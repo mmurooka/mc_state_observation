@@ -19,25 +19,25 @@ public:
   inline ContactWithSensor() = default;
   // constructor if the contact is not associated to a surface
   // its name will be the name of the force sensor
-  ContactWithSensor(int id, std::string forceSensorName)
-  : Contact(id, forceSensorName), forceSensorName_(forceSensorName)
+  ContactWithSensor(int id, std::string_view forceSensorName)
+  : Contact(id, forceSensorName), forceSensor_(forceSensorName)
   {
   }
 
   // constructor if the contact is associated to a surface
   // its name will be the name of the force sensor
-  ContactWithSensor(int id, const std::string & forceSensorName, const std::string & surfaceName)
-  : Contact(id, forceSensorName, surfaceName), forceSensorName_(forceSensorName)
+  ContactWithSensor(int id, std::string_view forceSensorName, std::string_view surfaceName)
+  : Contact(id, forceSensorName, surfaceName), forceSensor_(forceSensorName)
   {
   }
 
-  inline void resetContact()
+  inline void resetContact() noexcept
   {
     Contact::resetContact();
     sensorWasEnabled_ = false;
   }
 
-  const std::string & forceSensorName() const noexcept { return forceSensorName_; }
+  const std::string & forceSensor() const noexcept { return forceSensor_; }
 
 public:
   Eigen::Matrix<double, 6, 1> wrenchInCentroid_ = Eigen::Matrix<double, 6, 1>::Zero(); // for logs
@@ -52,6 +52,6 @@ public:
   Eigen::Matrix<double, 6, 1> contactWrenchVector_;
 
 protected:
-  std::string forceSensorName_;
+  std::string forceSensor_;
 };
 } // namespace mc_state_observation::measurements
