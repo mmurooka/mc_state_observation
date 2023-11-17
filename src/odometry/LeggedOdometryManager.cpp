@@ -1,3 +1,4 @@
+#include "mc_state_observation/measurements/measurements.h"
 #include <mc_state_observation/conversions/kinematics.h>
 
 #include <mc_state_observation/odometry/LeggedOdometryManager.h>
@@ -61,29 +62,15 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
   {
     ctl.gui()->addElement({odometryName_, "Odometry"},
                           mc_rtc::gui::ComboInput(
-                              "Choose from list", {"6D", "Flat"},
-                              [this]() -> std::string
-                              {
-                                if(odometryType_ == measurements::OdometryType::Flat) { return "Flat"; }
-                                else { return "6D"; }
-                              },
-                              [this](const std::string & typeOfOdometry) { setOdometryType(typeOfOdometry); }));
+                              "Choose from list",
+                              {measurements::odometryTypeToSstring(measurements::OdometryType::Odometry6d),
+                               measurements::odometryTypeToSstring(measurements::OdometryType::Flat)},
+                              [this]() -> std::string { return measurements::odometryTypeToSstring(odometryType_); },
+                              [this](const std::string & typeOfOdometry)
+                              { setOdometryType(measurements::stringToOdometryType(typeOfOdometry)); }));
+
     logger.addLogEntry(odometryName_ + "_debug_OdometryType",
-                       [this]() -> std::string
-                       {
-                         switch(odometryType_)
-                         {
-                           case measurements::OdometryType::Flat:
-                             return "Flat";
-                             break;
-                           case measurements::OdometryType::Odometry6d:
-                             return "6D";
-                             break;
-                           default:
-                             break;
-                         }
-                         return "default";
-                       });
+                       [this]() -> std::string { return measurements::odometryTypeToSstring(odometryType_); });
   }
 }
 
@@ -686,20 +673,15 @@ so::kine::Kinematics & LeggedOdometryManager::getAnchorFramePose(const mc_contro
   return worldAnchorPose_;
 }
 
-void LeggedOdometryManager::setOdometryType(const std::string & newOdometryType)
+void LeggedOdometryManager::setOdometryType(OdometryType newOdometryType)
 {
-  OdometryType prevOdometryType = odometryType_;
-  if(newOdometryType == "Flat") { odometryType_ = measurements::OdometryType::Flat; }
-  else if(newOdometryType == "6D") { odometryType_ = measurements::OdometryType::Odometry6d; }
 
+  OdometryType prevOdometryType = odometryType_;
+  odometryType_ = newOdometryType;
   if(odometryType_ != prevOdometryType)
   {
-    mc_rtc::log::info("[{}]: Odometry mode changed to: {}", odometryType_, newOdometryType);
+    mc_rtc::log::info("[{}]: Odometry mode changed to: {}", odometryName_, newOdometryType);
   }
 }
 
-void LeggedOdometryManager::setOdometryType(const OdometryType newOdometryType)
-{
-  odometryType_ = newOdometryType;
-}
 } // namespace mc_state_observation::odometry
