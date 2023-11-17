@@ -109,12 +109,47 @@ void ContactsManager<ContactT>::init_manager(const mc_control::MCController &,
 }
 
 template<typename ContactT>
+template<typename OnNewContact, typename OnMaintainedContact, typename OnRemovedContact>
 const std::set<int> & ContactsManager<ContactT>::updateContacts(const mc_control::MCController & ctl,
-                                                                const std::string & robotName)
+                                                                const std::string & robotName,
+                                                                OnNewContact & onNewContact,
+                                                                OnMaintainedContact & onMaintainedContact,
+                                                                OnRemovedContact & onRemovedContact)
 {
   // Detection of the contacts depending on the configured mode
   (this->*contactsFinder_)(ctl, robotName);
-  updateContacts();
+
+  /** Debugging output **/
+  if(verbose_ && contactsFound_ != oldContacts_)
+    mc_rtc::log::info("[{}] Contacts changed: {}", observerName_, set_to_string(contactsFound_));
+
+  for(const auto & foundContact : contactsFound_)
+  {
+    if(oldContacts_.find(foundContact)
+       != oldContacts_.end()) // checks if the contact was already set on the last iteration
+    {
+      contact(foundContact).wasAlreadySet_ = true;
+      onMaintainedContact(contact(foundContact));
+    }
+    else // the contact was not set on the last iteration
+    {
+      contact(foundContact).wasAlreadySet_ = false;
+      contact(foundContact).isSet_ = true;
+      onNewContact(contact(foundContact));
+    }
+  }
+  // List of the contact that were set on last iteration but are not set anymore on the current one
+  removedContacts_.clear();
+  std::set_difference(oldContacts_.begin(), oldContacts_.end(), contactsFound_.begin(), contactsFound_.end(),
+                      std::inserter(removedContacts_, removedContacts_.end()));
+
+  for(const auto & removedContact : removedContacts_)
+  {
+    contact(removedContact).resetContact();
+    onRemovedContact(contact(removedContact));
+  }
+  // update the list of previously set contacts
+  oldContacts_ = contactsFound_;
 
   return contactsFound_; // list of currently set contacts
 }
@@ -196,36 +231,6 @@ void ContactsManager<ContactT>::findContactsFromSensors(const mc_control::MCCont
                                                         const std::string & robotName)
 {
   findContactsFromSurfaces(ctl, robotName);
-}
-
-template<typename ContactT>
-void ContactsManager<ContactT>::updateContacts()
-{
-  /** Debugging output **/
-  if(verbose_ && contactsFound_ != oldContacts_)
-    mc_rtc::log::info("[{}] Contacts changed: {}", observerName_, set_to_string(contactsFound_));
-
-  for(const auto & foundContact : contactsFound_)
-  {
-    if(oldContacts_.find(foundContact)
-       != oldContacts_.end()) // checks if the contact was already set on the last iteration
-    {
-      contact(foundContact).wasAlreadySet_ = true;
-    }
-    else // the contact was not set on the last iteration
-    {
-      contact(foundContact).wasAlreadySet_ = false;
-      contact(foundContact).isSet_ = true;
-    }
-  }
-  // List of the contact that were set on last iteration but are not set anymore on the current one
-  removedContacts_.clear();
-  std::set_difference(oldContacts_.begin(), oldContacts_.end(), contactsFound_.begin(), contactsFound_.end(),
-                      std::inserter(removedContacts_, removedContacts_.end()));
-
-  for(const auto & removedContact : removedContacts_) { contact(removedContact).resetContact(); }
-  // update the list of previously set contacts
-  oldContacts_ = contactsFound_;
 }
 
 template<typename ContactT>

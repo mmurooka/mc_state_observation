@@ -79,8 +79,6 @@ protected:
   /// "Sensors". The contacts are not required to be given by the controller (the detection is based on a
   /// thresholding of the measured force).
   void findContactsFromSensors(const mc_control::MCController & ctl, const std::string & robotName);
-  /// @brief Updates the list of contacts to inform whether they are newly set, removed, etc.
-  void updateContacts();
 
   /// @brief Returns the desired list of contacts as a string object
   std::string set_to_string(const ContactsSet & contactSet);
@@ -89,9 +87,15 @@ public:
   // initialization of the contacts manager
   void init(const mc_control::MCController & ctl, const std::string & robotName, Configuration conf);
 
-  /// @brief Updates the list of currently set contacts and returns it.
+  /// @brief Updates the list of contacts to inform whether they are newly set, removed, etc., and execute actions
+  /// accordingly
   /// @return std::set<FoundContactsListType> &
-  const ContactsSet & updateContacts(const mc_control::MCController & ctl, const std::string & robotName);
+  template<typename OnNewContact, typename OnMaintainedContact, typename OnRemovedContact>
+  const ContactsSet & updateContacts(const mc_control::MCController & ctl,
+                                     const std::string & robotName,
+                                     OnNewContact & onNewContact,
+                                     OnMaintainedContact & onMaintainedContact,
+                                     OnRemovedContact & onRemovedContactt);
 
   /// @brief Accessor for the a contact associated to a sensor contained in the map
   ///

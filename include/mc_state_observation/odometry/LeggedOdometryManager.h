@@ -332,22 +332,6 @@ private:
                            sva::MotionVecd * vel = nullptr,
                            sva::MotionVecd * acc = nullptr);
 
-  /// @brief If the contacts respect the conditions, computes the pose of the floating base for each set contact.
-  /// @details Combines the reference pose of the contact in the world and the transformation from the contact to the
-  /// frame.
-  /// @param ctl Controller.
-  /// @param posUpdatable Indicates if the position can be updated using contacts
-  /// @param oriUpdatable Indicates if the orientation can be updated using contacts
-  /// @param sumForces_position Sum of the measured force of all the contacts that will be used for the position
-  /// estimation
-  /// @param sumForces_orientation Sum of the measured force of all the contacts that will be used for the orientation
-  /// estimation
-  void getFbFromContacts(const mc_control::MCController & ctl,
-                         bool & posUpdatable,
-                         bool & oriUpdatable,
-                         double & sumForces_position,
-                         double & sumForces_orientation);
-
   /// @brief Updates the floating base kinematics given as argument by the observer.
   /// @details Must be called after \ref updateFbAndContacts(const mc_control::MCController & ctl, mc_rtc::Logger &,
   /// const stateObservation::Matrix3 &, sva::MotionVecd *, sva::MotionVecd *).
@@ -373,10 +357,16 @@ private:
   /// @return stateObservation::kine::Kinematics &
   const stateObservation::kine::Kinematics & getCurrentContactKinematics(LoContactWithSensor & contact,
                                                                          const mc_rbdyn::ForceSensor & fs);
-  /// @brief Select which contacts to use for the orientation odometry
+  /// @brief Selects which contacts to use for the orientation odometry and computes the orientation of the floating
+  /// base for each of them
   /// @details The two contacts with the highest measured force are selected. The contacts at hands are ignored because
   /// their orientation is less trustable.
-  void selectForOrientationOdometry();
+  /// @param oriUpdatable Indicates that contacts can be used to estimated the orientation.
+  /// @param sumForcesOrientation Sum of the forces measured at the contacts used for the orientation estimation
+  /// @param worldFbPose Current estimate of the pose of the floating base in the world.
+  void selectForOrientationOdometry(bool & oriUpdatable,
+                                    double & sumForcesOrientation,
+                                    const stateObservation::kine::Kinematics & worldFbPose);
 
   /// @brief Add the log entries corresponding to the contact.
   /// @param logger
