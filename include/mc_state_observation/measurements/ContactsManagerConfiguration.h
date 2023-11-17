@@ -13,14 +13,14 @@ template<class ConfigurationType>
 struct ContactsManagerConfigurationPrvt
 {
 public:
-  ContactsManagerConfigurationPrvt(const std::string & observerName) : observerName_(observerName) {}
+  inline ContactsManagerConfigurationPrvt(const std::string & observerName) noexcept : observerName_(observerName) {}
 
-  ConfigurationType & contactDetectionThreshold(double contactDetectionThreshold)
+  inline ConfigurationType & contactDetectionThreshold(double contactDetectionThreshold) noexcept
   {
     contactDetectionThreshold_ = contactDetectionThreshold;
     return static_cast<ConfigurationType &>(*this);
   }
-  ConfigurationType & verbose(bool verbose)
+  inline ConfigurationType & verbose(bool verbose) noexcept
   {
     verbose_ = verbose;
     return static_cast<ConfigurationType &>(*this);
@@ -41,15 +41,15 @@ struct ContactsManagerSurfacesConfiguration
 : public internal::ContactsManagerConfigurationPrvt<ContactsManagerSurfacesConfiguration>
 {
 public:
-  ContactsManagerSurfacesConfiguration(const std::string & observerName,
-                                       const std::vector<std::string> & surfacesForContactDetection)
+  inline ContactsManagerSurfacesConfiguration(const std::string & observerName,
+                                              const std::vector<std::string> & surfacesForContactDetection) noexcept
   : ContactsManagerConfigurationPrvt<ContactsManagerSurfacesConfiguration>(observerName),
     surfacesForContactDetection_(surfacesForContactDetection)
   {
   }
 
-  ContactsManagerSurfacesConfiguration & contactSensorsDisabledInit(
-      const std::vector<std::string> & contactSensorsDisabledsInit)
+  inline ContactsManagerSurfacesConfiguration & contactSensorsDisabledInit(
+      const std::vector<std::string> & contactSensorsDisabledsInit) noexcept
   {
     contactSensorsDisabledInit_ = contactSensorsDisabledsInit;
     return *this;
@@ -68,18 +68,19 @@ struct ContactsManagerSensorsConfiguration
 : public internal::ContactsManagerConfigurationPrvt<ContactsManagerSensorsConfiguration>
 {
 
-  ContactsManagerSensorsConfiguration(const std::string & observerName)
+  inline ContactsManagerSensorsConfiguration(const std::string & observerName) noexcept
   : ContactsManagerConfigurationPrvt<ContactsManagerSensorsConfiguration>(observerName)
   {
   }
 
-  ContactsManagerSensorsConfiguration & forceSensorsToOmit(const std::vector<std::string> & forceSensorsToOmit)
+  inline ContactsManagerSensorsConfiguration & forceSensorsToOmit(
+      const std::vector<std::string> & forceSensorsToOmit) noexcept
   {
     forceSensorsToOmit_ = forceSensorsToOmit;
     return *this;
   }
-  ContactsManagerSensorsConfiguration & contactSensorsDisabledInit(
-      const std::vector<std::string> & contactSensorsDisabledsInit)
+  inline ContactsManagerSensorsConfiguration & contactSensorsDisabledInit(
+      const std::vector<std::string> & contactSensorsDisabledsInit) noexcept
   {
     contactSensorsDisabledInit_ = contactSensorsDisabledsInit;
     return *this;
@@ -99,7 +100,7 @@ struct ContactsManagerSolverConfiguration
 : public internal::ContactsManagerConfigurationPrvt<ContactsManagerSolverConfiguration>
 {
 public:
-  ContactsManagerSolverConfiguration(const std::string & observerName)
+  inline ContactsManagerSolverConfiguration(const std::string & observerName) noexcept
   : ContactsManagerConfigurationPrvt<ContactsManagerSolverConfiguration>(observerName)
   {
   }
