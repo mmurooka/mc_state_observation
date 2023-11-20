@@ -34,22 +34,15 @@ public:
   inline void resetContact() noexcept
   {
     Contact::resetContact();
-    sensorWasEnabled_ = false;
+    sensorEnabled_ = false;
   }
 
   const std::string & forceSensor() const noexcept { return forceSensor_; }
 
 public:
-  Eigen::Matrix<double, 6, 1> wrenchInCentroid_ = Eigen::Matrix<double, 6, 1>::Zero(); // for logs
   double forceNorm_ = 0.0;
   // the sensor measurement has to be used by the observer
   bool sensorEnabled_ = true;
-  // allows to know if the contact's measurements have to be added during the update.
-  bool sensorWasEnabled_ = false;
-
-  // measured contact wrench, expressed in the frame of the contact. Not automatically computed so must be explicitely
-  // computed and called.
-  Eigen::Matrix<double, 6, 1> contactWrenchVector_;
 
 protected:
   std::string forceSensor_;
