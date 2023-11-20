@@ -29,6 +29,7 @@ public:
 
   inline int id() const noexcept { return id_; }
   inline const std::string & name() const noexcept { return name_; }
+  inline bool isSet() { return isSet_; }
   inline bool wasAlreadySet() { return wasAlreadySet_; }
   inline const std::string & surface() const
   {
@@ -37,6 +38,7 @@ public:
   }
 
   inline void setSurface(std::string_view surfaceName) { surface_ = surfaceName; }
+  inline void isSet(bool isSet) { isSet_ = isSet; }
   inline void wasAlreadySet(bool wasAlreadySet) { wasAlreadySet_ = wasAlreadySet; }
 
 protected:

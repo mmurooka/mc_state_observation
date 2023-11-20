@@ -118,13 +118,13 @@ void ContactsManager<ContactT>::updateContacts(const mc_control::MCController & 
     if(oldContacts_.find(foundContact)
        != oldContacts_.end()) // checks if the contact was already set on the last iteration
     {
-      contact(foundContact).wasAlreadySet_ = true;
+      contact(foundContact).wasAlreadySet(true);
       onMaintainedContact(contact(foundContact));
     }
     else // the contact was not set on the last iteration
     {
-      contact(foundContact).wasAlreadySet_ = false;
-      contact(foundContact).isSet_ = true;
+      contact(foundContact).wasAlreadySet(false);
+      contact(foundContact).isSet(true);
       onNewContact(contact(foundContact));
     }
   }
@@ -192,7 +192,7 @@ void ContactsManager<ContactT>::findContactsFromSurfaces(const mc_control::MCCon
   {
     const std::string & fsName = contact.second.forceSensor();
     const mc_rbdyn::ForceSensor & forceSensor = measRobot.forceSensor(fsName);
-    contact.second.forceNorm() = forceSensor.wrenchWithoutGravity(measRobot).force().norm();
+    contact.second.forceNorm(forceSensor.wrenchWithoutGravity(measRobot).force().norm());
     if(contact.second.forceNorm() > contactDetectionThreshold_)
     {
       //  the contact is added to the map of contacts using the name of the associated surface
