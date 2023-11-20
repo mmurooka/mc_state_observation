@@ -236,7 +236,7 @@ void LeggedOdometryManager::updateFbAndContacts(const mc_control::MCController &
     // indicates that we can compute the position of the floating base using the contacts
     posUpdatable = true;
 
-    sumForces_position += maintainedContact.forceNorm_;
+    sumForces_position += maintainedContact.forceNorm();
 
     // kinematics of the contact obtained from the floating base
     const so::kine::Kinematics & worldContactKine =
@@ -248,7 +248,7 @@ void LeggedOdometryManager::updateFbAndContacts(const mc_control::MCController &
         maintainedContact.worldRefKine_.position() + (worldFbPose.position() - worldContactKine.position());
 
     // we add the position of the floating base estimated from the one of the contact to the sum
-    totalFbPosition += maintainedContact.currentWorldFbPose_.position() * maintainedContact.forceNorm_;
+    totalFbPosition += maintainedContact.currentWorldFbPose_.position() * maintainedContact.forceNorm();
   };
 
   auto onRemovedContact = [this, &logger](LoContactWithSensor & removedContact)
@@ -284,7 +284,7 @@ void LeggedOdometryManager::updateFbAndContacts(const mc_control::MCController &
       const auto & R1 = contact1.currentWorldFbPose_.orientation.toMatrix3();
       const auto & R2 = contact2.currentWorldFbPose_.orientation.toMatrix3();
 
-      double u = contact1.forceNorm_ / sumForces_orientation;
+      double u = contact1.forceNorm() / sumForces_orientation;
 
       so::Matrix3 diffRot = R1.transpose() * R2;
 
@@ -316,8 +316,8 @@ void LeggedOdometryManager::updateFbAndContacts(const mc_control::MCController &
   // function as it is used at the beginning of the iteration and we need to compute this at the end
   for(const int & foundContactIndex : contactsManager().contactsFound())
   {
-    if(!contactsManager().contact(foundContactIndex).wasAlreadySet_) // the contact was not set so we will
-                                                                     // compute its kinematics
+    if(!contactsManager().contact(foundContactIndex).wasAlreadySet()) // the contact was not set so we will
+                                                                      // compute its kinematics
     {
       LoContactWithSensor & foundContact = contactsManager_.contact(foundContactIndex);
 
@@ -461,7 +461,7 @@ const so::kine::Kinematics & LeggedOdometryManager::getCurrentContactKinematics(
 
     so::kine::Kinematics contactSensorKine = contact.currentWorldKine_.getInverse() * worldSensorKineOdometryRobot;
     // expressing the force measurement in the frame of the surface
-    contact.forceNorm_ = (contactSensorKine.orientation * fs.wrenchWithoutGravity(odometryRobot()).force()).norm();
+    contact.forceNorm((contactSensorKine.orientation * fs.wrenchWithoutGravity(odometryRobot()).force()).norm());
   }
 
   return contact.currentWorldKine_;
@@ -479,7 +479,7 @@ void LeggedOdometryManager::selectForOrientationOdometry(bool & oriUpdatable,
     {
       LoContactWithSensor & contact = contactsManager_.contact(*it);
       if(contact.name().find("Hand") == std::string::npos
-         && contact.wasAlreadySet_) // we don't use hands for the orientation odometry
+         && contact.wasAlreadySet()) // we don't use hands for the orientation odometry
       {
         contact.useForOrientation_ = true;
         contactsManager_.oriOdometryContacts_.insert(contact);
@@ -499,7 +499,7 @@ void LeggedOdometryManager::selectForOrientationOdometry(bool & oriUpdatable,
       // the orientation can be computed using contacts
       oriUpdatable = true;
 
-      sumForcesOrientation += oriOdomContact.forceNorm_;
+      sumForcesOrientation += oriOdomContact.forceNorm();
 
       so::Matrix3 contactFrameOri_odometryRobot =
           oriOdomContact.currentWorldKine_.orientation.toMatrix3().transpose() * worldFbPose.orientation.toMatrix3();
@@ -551,7 +551,7 @@ so::kine::Kinematics & LeggedOdometryManager::getAnchorFramePose(const mc_contro
   {
     if(contactsManager()
            .contact(setContactIndex)
-           .wasAlreadySet_) // the contact already exists so we will use it to estimate the floating base pose
+           .wasAlreadySet()) // the contact already exists so we will use it to estimate the floating base pose
     {
       posUpdatable = true;
 
@@ -559,15 +559,15 @@ so::kine::Kinematics & LeggedOdometryManager::getAnchorFramePose(const mc_contro
       const so::kine::Kinematics & worldContactKine =
           getCurrentContactKinematics(setContact, robot.forceSensor(setContact.name()));
 
-      sumForces_position += setContact.forceNorm_;
+      sumForces_position += setContact.forceNorm();
       // force weighted sum of the estimated floating base positions
-      totalAnchorPosition += worldContactKine.position() * setContact.forceNorm_;
+      totalAnchorPosition += worldContactKine.position() * setContact.forceNorm();
 
       if(withYawEstimation_ && setContact.useForOrientation_)
       {
         oriUpdatable = true;
 
-        sumForces_orientation += setContact.forceNorm_;
+        sumForces_orientation += setContact.forceNorm();
       }
     }
   }
@@ -624,7 +624,7 @@ so::kine::Kinematics & LeggedOdometryManager::getAnchorFramePose(const mc_contro
 
       double u;
 
-      u = contact1.forceNorm_ / sumForces_orientation;
+      u = contact1.forceNorm() / sumForces_orientation;
 
       so::Matrix3 diffRot = R1.transpose() * R2;
 

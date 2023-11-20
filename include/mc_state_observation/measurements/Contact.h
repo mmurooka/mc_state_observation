@@ -27,26 +27,24 @@ public:
     isSet_ = false;
   }
 
-  // getters
   inline int id() const noexcept { return id_; }
   inline const std::string & name() const noexcept { return name_; }
-  const std::string & surface() const
+  inline bool wasAlreadySet() { return wasAlreadySet_; }
+  inline const std::string & surface() const
   {
     BOOST_ASSERT(!surface_.empty() && "The contact was created without a surface.");
     return surface_;
   }
 
-  // getters
-  void setSurface(std::string_view surfaceName) { surface_ = surfaceName; }
+  inline void setSurface(std::string_view surfaceName) { surface_ = surfaceName; }
+  inline void wasAlreadySet(bool wasAlreadySet) { wasAlreadySet_ = wasAlreadySet; }
 
-public:
+protected:
   int id_;
   std::string name_;
 
   bool isSet_ = false;
   bool wasAlreadySet_ = false;
-
-protected:
   std::string surface_;
 };
 } // namespace mc_state_observation::measurements

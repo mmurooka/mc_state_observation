@@ -65,7 +65,7 @@ protected:
     {
       inline bool operator()(const LoContactWithSensor & contact1, const LoContactWithSensor & contact2) const noexcept
       {
-        return (contact1.forceNorm_ < contact2.forceNorm_);
+        return (contact1.forceNorm() < contact2.forceNorm());
       }
     };
 
@@ -141,7 +141,6 @@ public:
     // Indicates if we want to update the velocity and what method it must be updated with.
     VelocityUpdate velocityUpdate_ = LeggedOdometryManager::VelocityUpdate::NoUpdate;
 
-  public:
     inline Configuration & withModeSwitchInGui(bool withModeSwitchInGui) noexcept
     {
       withModeSwitchInGui_ = withModeSwitchInGui;
@@ -174,7 +173,6 @@ public:
     }
   };
 
-public:
   using ContactsManagerConfiguration = ContactsManager::Configuration;
   /// @brief Initializer for the odometry manager.
   /// @details Version for the contact detection using a thresholding on the contact force sensors measurements or by

@@ -91,11 +91,11 @@ public:
   /// accordingly
   /// @return std::set<FoundContactsListType> &
   template<typename OnNewContact, typename OnMaintainedContact, typename OnRemovedContact>
-  const ContactsSet & updateContacts(const mc_control::MCController & ctl,
-                                     const std::string & robotName,
-                                     OnNewContact & onNewContact,
-                                     OnMaintainedContact & onMaintainedContact,
-                                     OnRemovedContact & onRemovedContactt);
+  void updateContacts(const mc_control::MCController & ctl,
+                      const std::string & robotName,
+                      OnNewContact & onNewContact,
+                      OnMaintainedContact & onMaintainedContact,
+                      OnRemovedContact & onRemovedContactt);
 
   /// @brief Accessor for the a contact associated to a sensor contained in the map
   ///

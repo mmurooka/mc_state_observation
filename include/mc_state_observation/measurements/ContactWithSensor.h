@@ -31,12 +31,13 @@ public:
   {
   }
 
-  const std::string & forceSensor() const noexcept { return forceSensor_; }
+  inline void forceNorm(double forceNorm) { forceNorm_ = forceNorm; }
 
-public:
-  double forceNorm_ = 0.0;
+  inline const std::string & forceSensor() const noexcept { return forceSensor_; }
+  inline double forceNorm() const noexcept { return forceNorm_; }
 
 protected:
   std::string forceSensor_;
+  double forceNorm_ = 0.0;
 };
 } // namespace mc_state_observation::measurements

@@ -12,7 +12,6 @@ namespace internal
 template<class ConfigurationType>
 struct ContactsManagerConfigurationPrvt
 {
-public:
   inline ContactsManagerConfigurationPrvt(const std::string & observerName) noexcept : observerName_(observerName) {}
 
   inline ConfigurationType & contactDetectionThreshold(double contactDetectionThreshold) noexcept
@@ -26,7 +25,6 @@ public:
     return static_cast<ConfigurationType &>(*this);
   }
 
-public:
   std::string observerName_;
 
   double contactDetectionThreshold_ = 0.11;
@@ -40,7 +38,6 @@ public:
 struct ContactsManagerSurfacesConfiguration
 : public internal::ContactsManagerConfigurationPrvt<ContactsManagerSurfacesConfiguration>
 {
-public:
   inline ContactsManagerSurfacesConfiguration(const std::string & observerName,
                                               const std::vector<std::string> & surfacesForContactDetection) noexcept
   : ContactsManagerConfigurationPrvt<ContactsManagerSurfacesConfiguration>(observerName),
@@ -71,7 +68,6 @@ struct ContactsManagerSensorsConfiguration
     return *this;
   }
 
-public:
   // force sensors that must not be used for the contacts detection (ex: hands when holding an object)
   std::vector<std::string> forceSensorsToOmit_;
 };
@@ -82,7 +78,6 @@ public:
 struct ContactsManagerSolverConfiguration
 : public internal::ContactsManagerConfigurationPrvt<ContactsManagerSolverConfiguration>
 {
-public:
   inline ContactsManagerSolverConfiguration(const std::string & observerName) noexcept
   : ContactsManagerConfigurationPrvt<ContactsManagerSolverConfiguration>(observerName)
   {
