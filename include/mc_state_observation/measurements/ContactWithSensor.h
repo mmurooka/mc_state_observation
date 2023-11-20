@@ -31,18 +31,10 @@ public:
   {
   }
 
-  inline void resetContact() noexcept
-  {
-    Contact::resetContact();
-    sensorEnabled_ = false;
-  }
-
   const std::string & forceSensor() const noexcept { return forceSensor_; }
 
 public:
   double forceNorm_ = 0.0;
-  // the sensor measurement has to be used by the observer
-  bool sensorEnabled_ = true;
 
 protected:
   std::string forceSensor_;

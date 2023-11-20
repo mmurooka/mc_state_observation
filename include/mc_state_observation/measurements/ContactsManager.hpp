@@ -56,11 +56,6 @@ void ContactsManager<ContactT>::init_manager(const mc_control::MCController & ct
       addContactToManager(fsName, surface);
     }
   }
-
-  for(auto const & contactSensorDisabledInit : conf.contactSensorsDisabledInit_)
-  {
-    contact(contactSensorDisabledInit).sensorEnabled_ = false;
-  }
 }
 template<typename ContactT>
 void ContactsManager<ContactT>::init_manager(const mc_control::MCController & ctl,
@@ -87,11 +82,6 @@ void ContactsManager<ContactT>::init_manager(const mc_control::MCController & ct
     const std::string & fsName = forceSensor.name();
 
     addContactToManager(fsName);
-  }
-
-  for(auto const & contactSensorDisabledInit : conf.contactSensorsDisabledInit_)
-  {
-    contact(contactSensorDisabledInit).sensorEnabled_ = false;
   }
 }
 template<typename ContactT>

@@ -48,17 +48,8 @@ public:
   {
   }
 
-  inline ContactsManagerSurfacesConfiguration & contactSensorsDisabledInit(
-      const std::vector<std::string> & contactSensorsDisabledsInit) noexcept
-  {
-    contactSensorsDisabledInit_ = contactSensorsDisabledsInit;
-    return *this;
-  }
-
   // list of admissible contact surfaces for the detection
   std::vector<std::string> surfacesForContactDetection_;
-  // list of sensors that must not be used from the start of the observer
-  std::vector<std::string> contactSensorsDisabledInit_ = std::vector<std::string>();
 };
 
 /// @brief Configuration structure that helps setting up the parameters of a ContactsManager whose contacts detection
@@ -79,18 +70,10 @@ struct ContactsManagerSensorsConfiguration
     forceSensorsToOmit_ = forceSensorsToOmit;
     return *this;
   }
-  inline ContactsManagerSensorsConfiguration & contactSensorsDisabledInit(
-      const std::vector<std::string> & contactSensorsDisabledsInit) noexcept
-  {
-    contactSensorsDisabledInit_ = contactSensorsDisabledsInit;
-    return *this;
-  }
 
 public:
   // force sensors that must not be used for the contacts detection (ex: hands when holding an object)
   std::vector<std::string> forceSensorsToOmit_;
-  // list of sensors that must not be used from the start of the observer
-  std::vector<std::string> contactSensorsDisabledInit_ = std::vector<std::string>();
 };
 
 /// @brief Configuration structure that helps setting up the parameters of a ContactsManager whose contacts detection
