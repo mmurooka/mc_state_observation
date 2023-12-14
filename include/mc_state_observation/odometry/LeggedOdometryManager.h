@@ -174,6 +174,9 @@ public:
   };
 
   using ContactsManagerConfiguration = ContactsManager::Configuration;
+
+  inline LeggedOdometryManager(const std::string & odometryName) { odometryName_ = odometryName; }
+
   /// @brief Initializer for the odometry manager.
   /// @details Version for the contact detection using a thresholding on the contact force sensors measurements or by
   /// direct input from the solver.
