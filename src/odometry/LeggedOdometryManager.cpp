@@ -19,13 +19,20 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
 
 {
   robotName_ = odomConfig.robotName_;
+  const auto & robot = ctl.robot(robotName_);
+
+  if(!robot.hasBody("Body"))
+  {
+    mc_rtc::log::error_and_throw<std::runtime_error>("This robot does not have a floating base");
+  }
+
+  odometryRobot_ = mc_rbdyn::Robots::make();
+  odometryRobot_->robotCopy(robot, "odometryRobot");
+
   odometryType_ = odomConfig.odometryType_;
   withYawEstimation_ = odomConfig.withYaw_;
   velocityUpdate_ = odomConfig.velocityUpdate_;
   odometryName_ = odomConfig.odometryName_;
-  const auto & robot = ctl.robot(robotName_);
-  odometryRobot_ = mc_rbdyn::Robots::make();
-  odometryRobot_->robotCopy(robot, "odometryRobot");
 
   fbPose_.translation() = robot.posW().translation();
   fbPose_.rotation() = robot.posW().rotation();
@@ -665,6 +672,7 @@ void LeggedOdometryManager::setOdometryType(OdometryType newOdometryType)
 
   OdometryType prevOdometryType = odometryType_;
   odometryType_ = newOdometryType;
+
   if(odometryType_ != prevOdometryType)
   {
     mc_rtc::log::info("[{}]: Odometry mode changed to: {}", odometryName_,
