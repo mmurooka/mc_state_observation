@@ -9,23 +9,28 @@ namespace mc_state_observation::measurements
 ///////////////////////////////////////////////////////////////////////
 
 template<typename ContactT>
+template<typename OnAddedContact>
 void ContactsManager<ContactT>::init(const mc_control::MCController & ctl,
                                      const std::string & robotName,
-                                     Configuration conf)
+                                     Configuration conf,
+                                     OnAddedContact onAddedContact)
 {
-  std::visit([this, &ctl, &robotName](const auto & c) { init_manager(ctl, robotName, c); }, conf);
+  std::visit([this, &ctl, &robotName, onAddedContact](const auto & c)
+             { init_manager(ctl, robotName, c, onAddedContact); },
+             conf);
 }
 
 template<typename ContactT>
+template<typename OnAddedContact>
 void ContactsManager<ContactT>::init_manager(const mc_control::MCController & ctl,
                                              const std::string & robotName,
-                                             const ContactsManagerSurfacesConfiguration & conf)
+                                             const ContactsManagerSurfacesConfiguration & conf,
+                                             OnAddedContact onAddedContact)
 {
   observerName_ = conf.observerName_;
   verbose_ = conf.verbose_;
 
   contactsDetectionMethod_ = Surfaces;
-  contactsFinder_ = &ContactsManager<ContactT>::findContactsFromSurfaces;
 
   contactDetectionThreshold_ = conf.contactDetectionThreshold_;
   surfacesForContactDetection_ = conf.surfacesForContactDetection_;
@@ -46,27 +51,28 @@ void ContactsManager<ContactT>::init_manager(const mc_control::MCController & ct
     {
       const mc_rbdyn::ForceSensor & forceSensor = robot.surfaceForceSensor(surface);
       const std::string & fsName = forceSensor.name();
-      addContactToManager(fsName, surface);
+      addContactToManager(fsName, surface, onAddedContact);
     }
     else // if the surface is not associated to a force sensor, we will fetch the force sensor indirectly attached to
          // the surface
     {
       const mc_rbdyn::ForceSensor & forceSensor = robot.indirectSurfaceForceSensor(surface);
       const std::string & fsName = forceSensor.name();
-      addContactToManager(fsName, surface);
+      addContactToManager(fsName, surface, onAddedContact);
     }
   }
 }
 template<typename ContactT>
+template<typename OnAddedContact>
 void ContactsManager<ContactT>::init_manager(const mc_control::MCController & ctl,
                                              const std::string & robotName,
-                                             const ContactsManagerSensorsConfiguration & conf)
+                                             const ContactsManagerSensorsConfiguration & conf,
+                                             OnAddedContact onAddedContact)
 {
   observerName_ = conf.observerName_;
   verbose_ = conf.verbose_;
 
   contactsDetectionMethod_ = Sensors;
-  contactsFinder_ = &ContactsManager<ContactT>::findContactsFromSensors;
 
   contactDetectionThreshold_ = conf.contactDetectionThreshold_;
 
@@ -81,33 +87,47 @@ void ContactsManager<ContactT>::init_manager(const mc_control::MCController & ct
     }
     const std::string & fsName = forceSensor.name();
 
-    addContactToManager(fsName);
+    addContactToManager(fsName, onAddedContact);
   }
 }
+
 template<typename ContactT>
+template<typename OnAddedContact>
 void ContactsManager<ContactT>::init_manager(const mc_control::MCController &,
                                              const std::string &,
-                                             const ContactsManagerSolverConfiguration & conf)
+                                             const ContactsManagerSolverConfiguration & conf,
+                                             OnAddedContact)
 {
   observerName_ = conf.observerName_;
   verbose_ = conf.verbose_;
 
   contactsDetectionMethod_ = Solver;
-  contactsFinder_ = &ContactsManager<ContactT>::findContactsFromSolver;
 
   contactDetectionThreshold_ = conf.contactDetectionThreshold_;
 }
 
 template<typename ContactT>
-template<typename OnNewContact, typename OnMaintainedContact, typename OnRemovedContact>
+template<typename OnNewContact, typename OnMaintainedContact, typename OnRemovedContact, typename OnAddedContact>
 void ContactsManager<ContactT>::updateContacts(const mc_control::MCController & ctl,
                                                const std::string & robotName,
-                                               OnNewContact & onNewContact,
-                                               OnMaintainedContact & onMaintainedContact,
-                                               OnRemovedContact & onRemovedContact)
+                                               OnNewContact onNewContact,
+                                               OnMaintainedContact onMaintainedContact,
+                                               OnRemovedContact onRemovedContact,
+                                               OnAddedContact onAddedContact)
 {
   // Detection of the contacts depending on the configured mode
-  (this->*contactsFinder_)(ctl, robotName);
+  switch(contactsDetectionMethod_)
+  {
+    case Surfaces:
+      findContactsFromSurfaces(ctl, robotName);
+      break;
+    case Sensors:
+      findContactsFromSensors(ctl, robotName);
+      break;
+    case Solver:
+      findContactsFromSolver(ctl, robotName, onAddedContact);
+      break;
+  }
 
   /** Debugging output **/
   if(verbose_ && contactsFound_ != oldContacts_)
@@ -143,18 +163,39 @@ void ContactsManager<ContactT>::updateContacts(const mc_control::MCController & 
 }
 
 template<typename ContactT>
+template<typename OnAddedContact>
+inline ContactT & ContactsManager<ContactT>::addContactToManager(const std::string & forceSensorName,
+                                                                 const std::string & surface,
+                                                                 OnAddedContact onAddedContact)
+{
+  const auto [it, inserted] = listContacts_.insert({forceSensorName, ContactT(idx_, forceSensorName, surface)});
+
+  ContactT & contact = (*it).second;
+  if(!inserted) { return contact; }
+  insertOrder_.push_back(forceSensorName);
+
+  if constexpr(!std::is_same_v<OnAddedContact, std::nullptr_t>) { onAddedContact(contact); }
+  idx_++;
+
+  return contact;
+}
+
+template<typename ContactT>
+template<typename OnAddedContact>
 void ContactsManager<ContactT>::findContactsFromSolver(const mc_control::MCController & ctl,
-                                                       const std::string & robotName)
+                                                       const std::string & robotName,
+                                                       OnAddedContact onAddedContact)
 {
   const auto & measRobot = ctl.robot(robotName);
 
   contactsFound_.clear();
 
-  auto insert_contact = [this, &measRobot](const std::string & surfaceName)
+  auto insert_contact = [this, &measRobot, onAddedContact](const std::string & surfaceName)
   {
     const auto & fs = measRobot.surfaceHasForceSensor(surfaceName) ? measRobot.surfaceForceSensor(surfaceName)
                                                                    : measRobot.indirectSurfaceForceSensor(surfaceName);
-    ContactWithSensor & contactWS = addContactToManager(fs.name(), surfaceName);
+
+    ContactWithSensor & contactWS = addContactToManager(fs.name(), surfaceName, onAddedContact);
     contactWS.forceNorm(fs.wrenchWithoutGravity(measRobot).force().norm());
     if(contactWS.forceNorm() > contactDetectionThreshold_)
     {
