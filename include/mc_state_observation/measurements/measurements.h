@@ -19,14 +19,13 @@ namespace internal
 {
 // map allowing to get the OdometryType value associated to the given string
 inline static const std::unordered_map<std::string, OdometryType> strToOdometryType_ = {
-    {"Odometry6d", OdometryType::Odometry6d},
+    {"6D", OdometryType::Odometry6d},
     {"Flat", OdometryType::Flat},
     {"None", OdometryType::None}};
 // map allowing to get the string value associated to the given OdometryType object
-inline static const std::unordered_map<OdometryType, std::string> odometryTypToStr_ = {
-    {OdometryType::Odometry6d, "Odometry6d"},
-    {OdometryType::Flat, "Flat"},
-    {OdometryType::None, "None"}};
+inline static const std::unordered_map<OdometryType, std::string> odometryTypToStr_ = {{OdometryType::Odometry6d, "6D"},
+                                                                                       {OdometryType::Flat, "Flat"},
+                                                                                       {OdometryType::None, "None"}};
 } // namespace internal
 
 /// @brief Returns an OdometryType object corresponding to the given string
