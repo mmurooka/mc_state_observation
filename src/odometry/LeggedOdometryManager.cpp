@@ -21,7 +21,7 @@ void LeggedOdometryManager::init(const mc_control::MCController & ctl,
   robotName_ = odomConfig.robotName_;
   const auto & robot = ctl.robot(robotName_);
 
-  if(!robot.hasBody("Body"))
+  if(robot.mb().joint(0).dof() != 6)
   {
     mc_rtc::log::error_and_throw<std::runtime_error>("This robot does not have a floating base");
   }
