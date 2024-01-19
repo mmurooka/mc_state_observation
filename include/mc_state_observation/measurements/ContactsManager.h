@@ -4,8 +4,6 @@
 
 #include <mc_state_observation/measurements/ContactsManagerConfiguration.h>
 
-#include <set>
-
 namespace mc_state_observation::measurements
 {
 /// @brief Structure that implements all the necessary functions to manage the map of contacts. Handles their detection
@@ -25,7 +23,6 @@ public:
     Sensors,
     Undefined
   };
-  typedef std::set<int> ContactsSet;
 
   using Configuration = std::variant<ContactsManagerSolverConfiguration,
                                      ContactsManagerSurfacesConfiguration,
@@ -66,26 +63,33 @@ protected:
   /// @details Called by \ref updateContacts(const mc_control::MCController &, const std::string &, OnNewContact,
   /// OnMaintainedContact, OnRemovedContact, OnAddedContact) if @contactsDetection_ is equal to
   /// "Surfaces". The contacts are obtained by thresholded based the force measured by the associated force sensor).
-  void findContactsFromSurfaces(const mc_control::MCController & ctl, const std::string & robotName);
+  template<typename OnNewContact, typename OnMaintainedContact>
+  void findContactsFromSurfaces(const mc_control::MCController & ctl,
+                                const std::string & robotName,
+                                OnNewContact & onNewContact,
+                                OnMaintainedContact & onMaintainedContact);
   /// @brief Updates the list @contactsFound_ of currently set contacts from a thresholding of the measured forces.
   /// @details Called by \ref updateContacts(const mc_control::MCController &, const std::string &, OnNewContact,
   /// OnMaintainedContact, OnRemovedContact, OnAddedContact) if @contactsDetection_ is equal to
   /// "Sensors". The contacts are not required to be given by the controller (the detection is based on a
   /// thresholding of the measured force).
-  void findContactsFromSensors(const mc_control::MCController & ctl, const std::string & robotName);
+  template<typename OnNewContact, typename OnMaintainedContact>
+  void findContactsFromSensors(const mc_control::MCController & ctl,
+                               const std::string & robotName,
+                               OnNewContact & onNewContact,
+                               OnMaintainedContact & onMaintainedContact);
 
   /// @brief Updates the list @contactsFound_ of currently set contacts directly from the controller.
   /// @details Called by \ref updateContacts(const mc_control::MCController &, const std::string &, OnNewContact,
   /// OnMaintainedContact, OnRemovedContact, OnAddedContact) if @contactsDetection_ is equal to "Solver". The
   /// contacts are given by the controller directly (then thresholded based on the measured force).
   /// @param onAddedContact function to call when a contact is added to the manager
-  template<typename OnAddedContact = std::nullptr_t>
+  template<typename OnNewContact, typename OnMaintainedContact, typename OnAddedContact = std::nullptr_t>
   void findContactsFromSolver(const mc_control::MCController & ctl,
                               const std::string & robotName,
-                              OnAddedContact onAddedContact = nullptr);
-
-  /// @brief Returns the desired list of contacts as a string object
-  std::string set_to_string(const ContactsSet & contactSet);
+                              OnNewContact & onNewContact,
+                              OnMaintainedContact & onMaintainedContact,
+                              OnAddedContact & onAddedContact = nullptr);
 
 public:
   // initialization of the contacts manager
@@ -126,31 +130,15 @@ public:
   /// @return contactsWithSensorT&
   inline ContactT & contact(const std::string & name) { return listContacts_.at(name); }
 
-  /// @brief Accessor for the a contact associated to a sensor contained in the map
-  ///
-  /// @param idx The index of the contact to access
-  /// @return ContactWithSensor&
-  inline ContactT & contact(const int idx) { return listContacts_.at(getNameFromIdx(idx)); }
-
   /// @brief Get the map of all the contacts
   ///
   /// @return std::unordered_map<std::string, contactsWithSensorT>&
   inline std::unordered_map<std::string, ContactT> & contacts() { return listContacts_; }
 
-  /// @brief Get the list of all the contacts.
-  /// @return const std::vector<std::string> &
-  inline const std::vector<std::string> & getList() { return insertOrder_; }
-
-  /// @brief Get the name of a contact given its index
-  /// @param idx The index of the contact
-  /// @return const std::string &
-  inline const std::string & getNameFromIdx(const int idx) { return insertOrder_.at(idx); }
-
-  /// @brief Get the list of the currently set contacts.
-  /// @return const std::vector<std::string> &
-  inline const ContactsSet & contactsFound() { return contactsFound_; }
-
   inline const ContactsDetection & getContactsDetection() { return contactsDetectionMethod_; }
+
+  /** Returns true if any contact is detected */
+  inline bool contactsDetected() const noexcept { return contactsDetected_; }
 
   /// @brief Sets the contacts detection method used in the odometry.
   /// @details Allows to set the contacts detection method directly from a string, most likely obtained from a
@@ -162,6 +150,13 @@ public:
     if(it != strToContactsDetection.end()) { return it->second; }
     mc_rtc::log::error_and_throw<std::runtime_error>("[{}]: No known ContactsDetection value for {}", observerName,
                                                      str);
+  }
+
+  ContactT * findContact(const std::string & name)
+  {
+    auto it = listContacts_.find(name);
+    if(it != listContacts_.end()) { return &(it->second); }
+    return nullptr;
   }
 
 private:
@@ -202,8 +197,6 @@ protected:
   // map of contacts used by the manager.
   // unordered map containing all the contacts
   std::unordered_map<std::string, ContactT> listContacts_;
-  // List of the contacts used to access their indexes quickly
-  std::vector<std::string> insertOrder_;
   // Index generator, incremented everytime a new contact is created
   int idx_ = 0;
 
@@ -212,13 +205,6 @@ protected:
   // threshold for the contacts detection
   double contactDetectionThreshold_;
 
-  // list of the current contacts
-  ContactsSet contactsFound_;
-  // list of contacts that were set on last iteration
-  ContactsSet oldContacts_;
-  // list of the contacts that just got removed
-  ContactsSet removedContacts_;
-
   // list of surfaces used for contacts detection if @contactsDetection_ is set to "Surfaces"
   std::vector<std::string> surfacesForContactDetection_;
 
@@ -226,6 +212,9 @@ protected:
   std::string observerName_;
 
   bool verbose_ = true;
+
+  /** True if any contact is detected, false otherwise */
+  bool contactsDetected_ = false;
 };
 } // namespace mc_state_observation::measurements
 

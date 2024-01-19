@@ -228,11 +228,18 @@ void LeggedOdometryManager::updateFbAndContacts(const mc_control::MCController &
   // force weighted sum of the estimated floating base positions
   so::Vector3 totalFbPosition = so::Vector3::Zero();
 
+  // Needed later on
+  std::vector<LoContactWithSensor *> newContacts;
+
   // current estimate of the pose of the robot in the world
   const so::kine::Kinematics worldFbPose =
       conversions::kinematics::fromSva(odometryRobot().posW(), so::kine::Kinematics::Flags::pose);
 
-  auto onNewContact = [this, &logger](LoContactWithSensor & newContact) { addContactLogEntries(logger, newContact); };
+  auto onNewContact = [this, &logger, &newContacts](LoContactWithSensor & newContact)
+  {
+    addContactLogEntries(logger, newContact);
+    newContacts.push_back(&newContact);
+  };
   auto onMaintainedContact = [this, &robot, &posUpdatable, &worldFbPose, &sumForces_position,
                               &totalFbPosition](LoContactWithSensor & maintainedContact)
   {
@@ -321,16 +328,7 @@ void LeggedOdometryManager::updateFbAndContacts(const mc_control::MCController &
 
   // computation of the reference kinematics of the newly set contacts in the world. We cannot use the onNewContacts
   // function as it is used at the beginning of the iteration and we need to compute this at the end
-  for(const int & foundContactIndex : contactsManager().contactsFound())
-  {
-    if(!contactsManager().contact(foundContactIndex).wasAlreadySet()) // the contact was not set so we will
-                                                                      // compute its kinematics
-    {
-      LoContactWithSensor & foundContact = contactsManager_.contact(foundContactIndex);
-
-      setNewContact(foundContact, robot);
-    }
-  }
+  for(auto * nContact : newContacts) { setNewContact(*nContact, robot); }
 }
 
 void LeggedOdometryManager::updateOdometryRobot(const mc_control::MCController & ctl,
@@ -482,10 +480,9 @@ void LeggedOdometryManager::selectForOrientationOdometry(bool & oriUpdatable,
   if(withYawEstimation_)
   {
     contactsManager_.oriOdometryContacts_.clear();
-    for(auto it = contactsManager_.contactsFound().begin(); it != contactsManager_.contactsFound().end(); it++)
+    for(auto & [_, contact] : contactsManager_.contacts())
     {
-      LoContactWithSensor & contact = contactsManager_.contact(*it);
-      if(contact.name().find("Hand") == std::string::npos
+      if(contact.name().find("Hand") == std::string::npos && contact.isSet()
          && contact.wasAlreadySet()) // we don't use hands for the orientation odometry
       {
         contact.useForOrientation_ = true;
@@ -554,28 +551,23 @@ so::kine::Kinematics & LeggedOdometryManager::getAnchorFramePose(const mc_contro
 
   // checks that the position and orientation can be updated from the currently set contacts and computes the pose of
   // the floating base obtained from each contact
-  for(const int & setContactIndex : contactsManager().contactsFound())
+  for(auto & [_, contact] : contactsManager_.contacts())
   {
-    if(contactsManager()
-           .contact(setContactIndex)
-           .wasAlreadySet()) // the contact already exists so we will use it to estimate the floating base pose
+    if(!(contact.isSet() && contact.wasAlreadySet())) { continue; }
+    posUpdatable = true;
+
+    const so::kine::Kinematics & worldContactKine =
+        getCurrentContactKinematics(contact, robot.forceSensor(contact.name()));
+
+    sumForces_position += contact.forceNorm();
+    // force weighted sum of the estimated floating base positions
+    totalAnchorPosition += worldContactKine.position() * contact.forceNorm();
+
+    if(withYawEstimation_ && contact.useForOrientation_)
     {
-      posUpdatable = true;
+      oriUpdatable = true;
 
-      LoContactWithSensor & setContact = contactsManager_.contact(setContactIndex);
-      const so::kine::Kinematics & worldContactKine =
-          getCurrentContactKinematics(setContact, robot.forceSensor(setContact.name()));
-
-      sumForces_position += setContact.forceNorm();
-      // force weighted sum of the estimated floating base positions
-      totalAnchorPosition += worldContactKine.position() * setContact.forceNorm();
-
-      if(withYawEstimation_ && setContact.useForOrientation_)
-      {
-        oriUpdatable = true;
-
-        sumForces_orientation += setContact.forceNorm();
-      }
+      sumForces_orientation += contact.forceNorm();
     }
   }
 

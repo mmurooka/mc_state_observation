@@ -29,8 +29,8 @@ public:
 
   inline int id() const noexcept { return id_; }
   inline const std::string & name() const noexcept { return name_; }
-  inline bool isSet() { return isSet_; }
-  inline bool wasAlreadySet() { return wasAlreadySet_; }
+  inline bool isSet() const noexcept { return isSet_; }
+  inline bool wasAlreadySet() const noexcept { return wasAlreadySet_; }
   inline const std::string & surface() const
   {
     BOOST_ASSERT(!surface_.empty() && "The contact was created without a surface.");

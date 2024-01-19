@@ -115,64 +115,43 @@ void ContactsManager<ContactT>::updateContacts(const mc_control::MCController & 
                                                OnRemovedContact onRemovedContact,
                                                OnAddedContact onAddedContact)
 {
+  // Reset contact detection
+  contactsDetected_ = false;
+  for(auto & [_, c] : listContacts_)
+  {
+    c.wasAlreadySet(c.isSet());
+    c.isSet(false);
+  }
   // Detection of the contacts depending on the configured mode
   switch(contactsDetectionMethod_)
   {
     case Surfaces:
-      findContactsFromSurfaces(ctl, robotName);
+      findContactsFromSurfaces(ctl, robotName, onNewContact, onMaintainedContact);
       break;
     case Sensors:
-      findContactsFromSensors(ctl, robotName);
+      findContactsFromSensors(ctl, robotName, onNewContact, onMaintainedContact);
       break;
     case Solver:
-      findContactsFromSolver(ctl, robotName, onAddedContact);
+      findContactsFromSolver(ctl, robotName, onNewContact, onMaintainedContact, onAddedContact);
       break;
   }
-
-  /** Debugging output **/
-  if(verbose_ && contactsFound_ != oldContacts_)
-    mc_rtc::log::info("[{}] Contacts changed: {}", observerName_, set_to_string(contactsFound_));
-
-  for(const auto & foundContact : contactsFound_)
+  // Handle removed contacts
+  for(auto & [_, c] : listContacts_)
   {
-    if(oldContacts_.find(foundContact)
-       != oldContacts_.end()) // checks if the contact was already set on the last iteration
-    {
-      contact(foundContact).wasAlreadySet(true);
-      onMaintainedContact(contact(foundContact));
-    }
-    else // the contact was not set on the last iteration
-    {
-      contact(foundContact).wasAlreadySet(false);
-      contact(foundContact).isSet(true);
-      onNewContact(contact(foundContact));
-    }
+    if(c.wasAlreadySet() && !c.isSet()) { onRemovedContact(c); }
   }
-  // List of the contact that were set on last iteration but are not set anymore on the current one
-  removedContacts_.clear();
-  std::set_difference(oldContacts_.begin(), oldContacts_.end(), contactsFound_.begin(), contactsFound_.end(),
-                      std::inserter(removedContacts_, removedContacts_.end()));
-
-  for(const auto & removedContact : removedContacts_)
-  {
-    contact(removedContact).resetContact();
-    onRemovedContact(contact(removedContact));
-  }
-  // update the list of previously set contacts
-  oldContacts_ = contactsFound_;
 }
 
 template<typename ContactT>
 template<typename OnAddedContact>
 inline ContactT & ContactsManager<ContactT>::addContactToManager(const std::string & forceSensorName,
                                                                  const std::string & surface,
-                                                                 OnAddedContact onAddedContact)
+                                                                 [[maybe_unused]] OnAddedContact onAddedContact)
 {
   const auto [it, inserted] = listContacts_.insert({forceSensorName, ContactT(idx_, forceSensorName, surface)});
 
   ContactT & contact = (*it).second;
   if(!inserted) { return contact; }
-  insertOrder_.push_back(forceSensorName);
 
   if constexpr(!std::is_same_v<OnAddedContact, std::nullptr_t>) { onAddedContact(contact); }
   idx_++;
@@ -181,26 +160,39 @@ inline ContactT & ContactsManager<ContactT>::addContactToManager(const std::stri
 }
 
 template<typename ContactT>
-template<typename OnAddedContact>
+template<typename OnNewContact, typename OnMaintainedContact, typename OnAddedContact>
 void ContactsManager<ContactT>::findContactsFromSolver(const mc_control::MCController & ctl,
                                                        const std::string & robotName,
-                                                       OnAddedContact onAddedContact)
+                                                       OnNewContact & onNewContact,
+                                                       OnMaintainedContact & onMaintainedContact,
+                                                       OnAddedContact & onAddedContact)
 {
   const auto & measRobot = ctl.robot(robotName);
 
-  contactsFound_.clear();
+  // Filled-up when verbose
+  std::string new_contact_set;
+  bool show_new_contacts = false;
 
-  auto insert_contact = [this, &measRobot, onAddedContact](const std::string & surfaceName)
+  auto insert_contact = [&, this](const std::string & surfaceName)
   {
-    const auto & fs = measRobot.surfaceHasForceSensor(surfaceName) ? measRobot.surfaceForceSensor(surfaceName)
-                                                                   : measRobot.indirectSurfaceForceSensor(surfaceName);
-
-    ContactWithSensor & contactWS = addContactToManager(fs.name(), surfaceName, onAddedContact);
-    contactWS.forceNorm(fs.wrenchWithoutGravity(measRobot).force().norm());
+    ContactT & contactWS =
+        addContactToManager(measRobot.frame(surfaceName).forceSensor().name(), surfaceName, onAddedContact);
+    contactWS.forceNorm(measRobot.frame(surfaceName).wrench().force().norm());
     if(contactWS.forceNorm() > contactDetectionThreshold_)
     {
-      // the contact is added to the map of contacts using the name of the associated sensor
-      contactsFound_.insert(contactWS.id());
+      contactsDetected_ = true;
+      contactWS.isSet(true);
+      if(!contactWS.wasAlreadySet())
+      {
+        show_new_contacts = true;
+        onNewContact(contactWS);
+      }
+      else { onMaintainedContact(contactWS); }
+      if(verbose_)
+      {
+        if(!new_contact_set.empty()) { new_contact_set += ", "; }
+        new_contact_set += contactWS.name();
+      }
     }
   };
 
@@ -216,53 +208,60 @@ void ContactsManager<ContactT>::findContactsFromSolver(const mc_control::MCContr
     }
     else if(r2.name() == measRobot.name())
     {
-      if(r1.mb().nrDof() == 0) { insert_contact(contact.r1Surface()->name()); }
+      if(r1.mb().nrDof() == 0) { insert_contact(contact.r2Surface()->name()); }
     }
   }
+
+  if(verbose_ && show_new_contacts) { mc_rtc::log::info("[{}] Contacts changed: {}", observerName_, new_contact_set); }
 }
 
 template<typename ContactT>
+template<typename OnNewContact, typename OnMaintainedContact>
 void ContactsManager<ContactT>::findContactsFromSurfaces(const mc_control::MCController & ctl,
-                                                         const std::string & robotName)
+                                                         const std::string & robotName,
+                                                         OnNewContact & onNewContact,
+                                                         OnMaintainedContact & onMaintainedContact)
 {
   const auto & measRobot = ctl.robot(robotName);
 
-  contactsFound_.clear();
+  // Filled-up when verbose
+  std::string new_contact_set;
+  bool show_new_contacts = false;
 
-  for(auto & contact : contacts())
+  for(auto & [_, contact] : contacts())
   {
-    const std::string & fsName = contact.second.forceSensor();
+    const std::string & fsName = contact.forceSensor();
     const mc_rbdyn::ForceSensor & forceSensor = measRobot.forceSensor(fsName);
-    contact.second.forceNorm(forceSensor.wrenchWithoutGravity(measRobot).force().norm());
-    if(contact.second.forceNorm() > contactDetectionThreshold_)
+    contact.forceNorm(forceSensor.wrenchWithoutGravity(measRobot).force().norm());
+    if(contact.forceNorm() > contactDetectionThreshold_)
     {
-      //  the contact is added to the map of contacts using the name of the associated surface
-      contactsFound_.insert(contact.second.id());
+      contactsDetected_ = true;
+      contact.isSet(true);
+      if(contact.wasAlreadySet()) { onMaintainedContact(contact); }
+      else
+      {
+        show_new_contacts = true;
+        onNewContact(contact);
+      }
+      if(verbose_)
+      {
+        if(!new_contact_set.empty()) { new_contact_set += ", "; }
+        new_contact_set += contact.name();
+      }
     }
   }
+
+  if(verbose_ && show_new_contacts) { mc_rtc::log::info("[{}] Contacts changed: {}", observerName_, new_contact_set); }
 }
 
 template<typename ContactT>
+template<typename OnNewContact, typename OnMaintainedContact>
 void ContactsManager<ContactT>::findContactsFromSensors(const mc_control::MCController & ctl,
-                                                        const std::string & robotName)
+                                                        const std::string & robotName,
+                                                        OnNewContact & onNewContact,
+                                                        OnMaintainedContact & onMaintainedContact)
 {
-  findContactsFromSurfaces(ctl, robotName);
-}
-
-template<typename ContactT>
-std::string ContactsManager<ContactT>::set_to_string(const ContactsSet & contactSet)
-{
-  if(contactSet.cbegin() == contactSet.cend()) { return ""; }
-  std::ostringstream out;
-  out.precision(std::numeric_limits<int>::digits10);
-  out << std::fixed << getNameFromIdx(*contactSet.cbegin());
-
-  for(auto it = std::next(contactSet.cbegin()); it != contactSet.cend(); ++it)
-  {
-    out << ", ";
-    out << std::fixed << getNameFromIdx(*it);
-  }
-  return out.str();
+  findContactsFromSurfaces(ctl, robotName, onNewContact, onMaintainedContact);
 }
 
 } // namespace mc_state_observation::measurements
