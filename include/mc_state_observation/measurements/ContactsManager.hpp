@@ -46,18 +46,19 @@ void ContactsManager<ContactT>::init_manager(const mc_control::MCController & ct
 
   for(const std::string & surface : surfacesForContactDetection_)
   {
-    // if the surface is associated to a force sensor (for example LeftFootCenter or RightFootCenter)
-    if(robot.surfaceHasForceSensor(surface))
+    if(robot.frame(surface).hasForceSensor() == false)
     {
-      const mc_rbdyn::ForceSensor & forceSensor = robot.surfaceForceSensor(surface);
-      const std::string & fsName = forceSensor.name();
-      addContactToManager(fsName, surface, onAddedContact);
+      mc_rtc::log::warning(
+          "The surface given for the contact detection is not associated to a force sensor, it will be ignored.");
     }
+
+    // we get the name of the force sensor associated to the surface
+    const std::string & fsName = robot.frame(surface).forceSensor().name();
+    // if the surface is associated to a force sensor (for example LeftFootCenter or RightFootCenter)
+    if(robot.surfaceHasForceSensor(surface)) { addContactToManager(fsName, surface, onAddedContact); }
     else // if the surface is not associated to a force sensor, we will fetch the force sensor indirectly attached to
          // the surface
     {
-      const mc_rbdyn::ForceSensor & forceSensor = robot.indirectSurfaceForceSensor(surface);
-      const std::string & fsName = forceSensor.name();
       addContactToManager(fsName, surface, onAddedContact);
     }
   }

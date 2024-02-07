@@ -59,31 +59,47 @@ protected:
     return addContactToManager(forceSensorName, "", onAddedContact);
   }
 
-  /// @brief Updates the list @contactsFound_ of currently set contacts from the surfaces given by the user.
-  /// @details Called by \ref updateContacts(const mc_control::MCController &, const std::string &, OnNewContact,
-  /// OnMaintainedContact, OnRemovedContact, OnAddedContact) if @contactsDetection_ is equal to
-  /// "Surfaces". The contacts are obtained by thresholded based the force measured by the associated force sensor).
+  /// @brief Detects the currently set contacts based on the surfaces given by the user. Applies custom functions for
+  /// each estimator on the newly set and maintained contacts.
+  /// @details Called by \ref updateContacts(const mc_control::MCController &, const std::string & robotName,
+  /// OnNewContact, OnMaintainedContact, OnRemovedContact , OnAddedContact) if @contactsDetection_ is equal to
+  /// "Surfaces". The detection is based on a thresholding of the force measured by the associated force sensor.
+  /// @param ctl Controller
+  /// @param robotName Name of the robot
+  /// @param onNewContact Function to call when a contact just got set with the environment
+  /// @param onMaintainedContact Function to call when a contact is maintained with the environment
   template<typename OnNewContact, typename OnMaintainedContact>
   void findContactsFromSurfaces(const mc_control::MCController & ctl,
                                 const std::string & robotName,
                                 OnNewContact & onNewContact,
                                 OnMaintainedContact & onMaintainedContact);
-  /// @brief Updates the list @contactsFound_ of currently set contacts from a thresholding of the measured forces.
-  /// @details Called by \ref updateContacts(const mc_control::MCController &, const std::string &, OnNewContact,
-  /// OnMaintainedContact, OnRemovedContact, OnAddedContact) if @contactsDetection_ is equal to
-  /// "Sensors". The contacts are not required to be given by the controller (the detection is based on a
-  /// thresholding of the measured force).
+  /// @brief Detects the currently set contacts based on a thresholding of the measured forces. Applies custom functions
+  /// for each estimator on the newly set and maintained contacts.
+  /// @details Called by \ref updateContacts(const mc_control::MCController &, const std::string & robotName,
+  /// OnNewContact, OnMaintainedContact, OnRemovedContact , OnAddedContact) if @contactsDetection_ is equal to
+  /// "Sensors". The contacts are not required to be given by the controller (the detection is based on a thresholding
+  /// of the measured force).
+  /// @param ctl Controller
+  /// @param robotName Name of the robot
+  /// @param onNewContact Function to call when a contact just got set with the environment
+  /// @param onMaintainedContact Function to call when a contact is maintained with the environment
   template<typename OnNewContact, typename OnMaintainedContact>
   void findContactsFromSensors(const mc_control::MCController & ctl,
                                const std::string & robotName,
                                OnNewContact & onNewContact,
                                OnMaintainedContact & onMaintainedContact);
 
-  /// @brief Updates the list @contactsFound_ of currently set contacts directly from the controller.
-  /// @details Called by \ref updateContacts(const mc_control::MCController &, const std::string &, OnNewContact,
-  /// OnMaintainedContact, OnRemovedContact, OnAddedContact) if @contactsDetection_ is equal to "Solver". The
-  /// contacts are given by the controller directly (then thresholded based on the measured force).
-  /// @param onAddedContact function to call when a contact is added to the manager
+  /// @brief Detects the currently contacts directly from the controller. Applies custom functions for
+  /// each estimator on the newly set and maintained contacts, and on the contacts detected for the first time.
+  /// @details Called by \ref updateContacts(const mc_control::MCController &, const std::string & robotName,
+  /// OnNewContact, OnMaintainedContact, OnRemovedContact , OnAddedContact) if @contactsDetection_ is equal to
+  /// "Solver". The contacts are given by the controller directly (then
+  /// thresholded based on the measured force).
+  /// @param ctl Controller
+  /// @param robotName Name of the robot
+  /// @param onNewContact Function to call when a contact just got set with the environment
+  /// @param onMaintainedContact Function to call when a contact is maintained with the environment
+  /// @param onAddedContact Function to call when a contact is added to the manager (detected for the first time)
   template<typename OnNewContact, typename OnMaintainedContact, typename OnAddedContact = std::nullptr_t>
   void findContactsFromSolver(const mc_control::MCController & ctl,
                               const std::string & robotName,
@@ -96,22 +112,25 @@ public:
   /// @param ctl Controller
   /// @param robotName Name of the robot
   /// @param conf Configutation of the manager
-  /// @param onAddedContact function to call when a contact is added to the manager
+  /// @param onAddedContact function to call when a contact is added to the
+  /// manager
   template<typename OnAddedContact = std::nullptr_t>
   void init(const mc_control::MCController & ctl,
             const std::string & robotName,
             Configuration conf,
             OnAddedContact onAddedContact = nullptr);
 
-  /// @brief Updates the list of contacts to inform whether they are newly set, removed, etc., and execute actions
-  /// accordingly
+  /// @brief Updates the list of contacts to inform whether they are newly
+  /// set, removed, etc., and execute actions accordingly
   /// @param ctl Controller
   /// @param robotName Name of the robot
   /// @param onNewContact Function to call on a newly detected contact
   /// @param onNewContact Function to call on a newly detected contact
-  /// @param onMaintainedContact Function to call on a contact maintainted since the last iteration
+  /// @param onMaintainedContact Function to call on a contact maintainted
+  /// since the last iteration
   /// @param onRemovedContact Function to call on a removed contact
-  /// @param onAddedContact function to call when a contact is added to the manager
+  /// @param onAddedContact function to call when a contact is added to the
+  /// manager
   /// @return void
   template<typename OnNewContact,
            typename OnMaintainedContact,
@@ -124,7 +143,8 @@ public:
                       OnRemovedContact onRemovedContact,
                       OnAddedContact onAddedContact = nullptr);
 
-  /// @brief Accessor for the a contact associated to a sensor contained in the map
+  /// @brief Accessor for the a contact associated to a sensor contained in
+  /// the map
   ///
   /// @param name The name of the contact to access
   /// @return contactsWithSensorT&
@@ -135,14 +155,14 @@ public:
   /// @return std::unordered_map<std::string, contactsWithSensorT>&
   inline std::unordered_map<std::string, ContactT> & contacts() { return listContacts_; }
 
-  inline const ContactsDetection & getContactsDetection() { return contactsDetectionMethod_; }
+  inline ContactsDetection getContactsDetection() const noexcept { return contactsDetectionMethod_; }
 
   /** Returns true if any contact is detected */
   inline bool contactsDetected() const noexcept { return contactsDetected_; }
 
   /// @brief Sets the contacts detection method used in the odometry.
-  /// @details Allows to set the contacts detection method directly from a string, most likely obtained from a
-  /// configuration file.
+  /// @details Allows to set the contacts detection method directly from a
+  /// string, most likely obtained from a configuration file.
   /// @param str The string naming the method to be used.
   inline static ContactsDetection stringToContactsDetection(const std::string & str, const std::string & observerName)
   {
@@ -164,7 +184,8 @@ private:
   /// @param ctl The controller
   /// @param robotName Name of the robot
   /// @param conf Configuration of the contacts manager
-  /// @param onAddedContact Function to call when a contact is added to the manager
+  /// @param onAddedContact Function to call when a contact is added to the
+  /// manager
   template<typename OnAddedContact = std::nullptr_t>
   inline void init_manager(const mc_control::MCController & ctl,
                            const std::string & robotName,
@@ -174,19 +195,22 @@ private:
   /// @param ctl The controller
   /// @param robotName Name of the robot
   /// @param conf Configuration of the contacts manager
-  /// @param onAddedContact Function to call when a contact is added to the manager
+  /// @param onAddedContact Function to call when a contact is added to the
+  /// manager
   template<typename OnAddedContact = std::nullptr_t>
   inline void init_manager(const mc_control::MCController & ctl,
                            const std::string & robotName,
                            const ContactsManagerSensorsConfiguration & conf,
                            OnAddedContact onAddedContact = nullptr);
-  /// @brief Initializer for a contacts detection based on the solver's contacts
+  /// @brief Initializer for a contacts detection based on the solver's
+  /// contacts
   /// @param ctl The controller
   /// @param robotName Name of the robot
   /// @param conf Configuration of the contacts manager
-  /// @param onAddedContact Function to call when a contact is added to the manager. Unused here as contacts are added
-  /// to the manager during the run with this detection method, but added anyway to match the syntax of the other
-  /// init_manager variants.
+  /// @param onAddedContact Function to call when a contact is added to the
+  /// manager. Unused here as contacts are added to the manager during the
+  /// run with this detection method, but added anyway to match the syntax
+  /// of the other init_manager variants.
   template<typename OnAddedContact = std::nullptr_t>
   inline void init_manager(const mc_control::MCController & ctl,
                            const std::string & robotName,
@@ -205,7 +229,8 @@ protected:
   // threshold for the contacts detection
   double contactDetectionThreshold_;
 
-  // list of surfaces used for contacts detection if @contactsDetection_ is set to "Surfaces"
+  // list of surfaces used for contacts detection if @contactsDetection_ is
+  // set to "Surfaces"
   std::vector<std::string> surfacesForContactDetection_;
 
   // name of the observer using this contacts manager.
