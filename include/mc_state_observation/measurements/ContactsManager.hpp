@@ -16,8 +16,7 @@ void ContactsManager<ContactT>::init(const mc_control::MCController & ctl,
                                      OnAddedContact onAddedContact)
 {
   std::visit([this, &ctl, &robotName, onAddedContact](const auto & c)
-             { init_manager(ctl, robotName, c, onAddedContact); },
-             conf);
+             { init_manager(ctl, robotName, c, onAddedContact); }, conf);
 }
 
 template<typename ContactT>
