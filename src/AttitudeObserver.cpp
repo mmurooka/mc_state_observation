@@ -1,5 +1,6 @@
 #include <mc_control/MCController.h>
 #include <mc_observers/ObserverMacros.h>
+#include <mc_rtc/gui/plot.h>
 #include <mc_state_observation/AttitudeObserver.h>
 #include <mc_state_observation/gui_helpers.h>
 
@@ -157,6 +158,10 @@ void AttitudeObserver::addToLogger(const mc_control::MCController &,
                      [this]() -> sva::PTransformd {
                        return sva::PTransformd{m_orientation.transpose(), Eigen::Vector3d::Zero()};
                      });
+
+  logger.addLogEntry(category + "_stateCovariances",
+                     [this]() -> Eigen::Vector3d
+                     { return filter_.getStateCovariance().block<3, 3>(indexes::ori, indexes::ori).diagonal(); });
   if(log_kf_) { config_.addToLogger(logger, category); }
 }
 
@@ -186,6 +191,30 @@ void AttitudeObserver::addToGUI(const mc_control::MCController & ctl,
                                            return mc_rbdyn::rpyFromMat(m_orientation.transpose()) * 180.
                                                   / mc_rtc::constants::PI;
                                          }));
+
+  auto debug_category = category;
+  debug_category.push_back("Debug");
+  gui.addElement(
+      debug_category,
+      mc_rtc::gui::Button(
+          "Add plots of state orientation covariances",
+          [this, &gui]()
+          {
+            gui.addPlot("ori x(t)", mc_rtc::gui::plot::X("t", [this]() { return filter_.getCurrentTime(); }),
+                        mc_rtc::gui::plot::Y(
+                            "ori x(t)", [this]() { return filter_.getStateCovariance()(indexes::ori, indexes::ori); },
+                            mc_rtc::gui::Color::Red));
+            gui.addPlot("ori y(t)", mc_rtc::gui::plot::X("t", [this]() { return filter_.getCurrentTime(); }),
+                        mc_rtc::gui::plot::Y(
+                            "ori y(t)",
+                            [this]() { return filter_.getStateCovariance()(indexes::ori + 1, indexes::ori + 1); },
+                            mc_rtc::gui::Color::Red));
+            gui.addPlot("ori z(t)", mc_rtc::gui::plot::X("t", [this]() { return filter_.getCurrentTime(); }),
+                        mc_rtc::gui::plot::Y(
+                            "ori z(t)",
+                            [this]() { return filter_.getStateCovariance()(indexes::ori + 2, indexes::ori + 2); },
+                            mc_rtc::gui::Color::Red));
+          }));
 }
 
 void AttitudeObserver::KalmanFilterConfig::addToLogger(mc_rtc::Logger & logger, const std::string & category)
@@ -217,6 +246,7 @@ void AttitudeObserver::KalmanFilterConfig::addToGUI(mc_rtc::gui::StateBuilder & 
     mc_state_observation::gui::make_input_element("stateCov", stateCov),
     mc_state_observation::gui::make_input_element("stateInitCov", stateInitCov),
     mc_state_observation::gui::make_rpy_input("offset", offset));
+
   // clang-format on
 }
 
