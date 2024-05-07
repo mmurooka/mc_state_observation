@@ -1,6 +1,7 @@
 #include <mc_control/MCController.h>
 #include <mc_observers/ObserverMacros.h>
 #include <mc_rtc/gui/plot.h>
+#include <iomanip>
 #include <mc_state_observation/AttitudeObserver.h>
 #include <mc_state_observation/gui_helpers.h>
 
@@ -75,6 +76,8 @@ void AttitudeObserver::reset(const mc_control::MCController & ctl)
 
 bool AttitudeObserver::run(const mc_control::MCController & ctl)
 {
+  time_ += dt_;
+
   const auto & c = config_;
   bool ret = true;
 
@@ -157,7 +160,7 @@ void AttitudeObserver::addToLogger(const mc_control::MCController &,
   logger.addLogEntry(category + "_orientation", [this]() -> sva::PTransformd
                      { return sva::PTransformd{m_orientation.transpose(), Eigen::Vector3d::Zero()}; });
 
-  logger.addLogEntry(category + "_stateCovariances",
+  logger.addLogEntry(category + "_orientationCovariance",
                      [this]() -> Eigen::Vector3d
                      { return filter_.getStateCovariance().block<3, 3>(indexes::ori, indexes::ori).diagonal(); });
 
@@ -167,6 +170,7 @@ void AttitudeObserver::addToLogger(const mc_control::MCController &,
 void AttitudeObserver::removeFromLogger(mc_rtc::Logger & logger, const std::string & category)
 {
   logger.removeLogEntry(category + "_orientation");
+  logger.removeLogEntry(category + "_orientationCovariance");
   if(log_kf_) { config_.removeFromLogger(logger, category); }
 }
 
@@ -191,27 +195,70 @@ void AttitudeObserver::addToGUI(const mc_control::MCController & ctl,
 
   auto debug_category = category;
   debug_category.push_back("Debug");
+  gui.addElement(debug_category,
+                 mc_rtc::gui::Label("OrientationCovariance_x",
+                                    [this]()
+                                    {
+                                      std::ostringstream ss;
+                                      ss << std::scientific << std::setprecision(2)
+                                         << filter_.getStateCovariance()(indexes::ori + 0, indexes::ori + 0);
+                                      return ss.str();
+                                    }),
+                 mc_rtc::gui::Label("OrientationCovariance_y",
+                                    [this]()
+                                    {
+                                      std::ostringstream ss;
+                                      ss << std::scientific << std::setprecision(2)
+                                         << filter_.getStateCovariance()(indexes::ori + 1, indexes::ori + 1);
+                                      return ss.str();
+                                    }),
+                 mc_rtc::gui::Label("OrientationCovariance_z",
+                                    [this]()
+                                    {
+                                      std::ostringstream ss;
+                                      ss << std::scientific << std::setprecision(2)
+                                         << filter_.getStateCovariance()(indexes::ori + 2, indexes::ori + 2);
+                                      return ss.str();
+                                    }));
   gui.addElement(
-      debug_category,
+      debug_category, mc_rtc::gui::ElementsStacking::Horizontal,
       mc_rtc::gui::Button(
-          "Add plots of state orientation covariances",
+          "Add plots of roll covariance",
           [this, &gui]()
           {
-            gui.addPlot("ori x(t)", mc_rtc::gui::plot::X("t", [this]() { return filter_.getCurrentTime(); }),
+            gui.addPlot("RollCovariance", mc_rtc::gui::plot::X("t", [this]() { return time_; }),
                         mc_rtc::gui::plot::Y(
-                            "ori x(t)", [this]() { return filter_.getStateCovariance()(indexes::ori, indexes::ori); },
+                            "roll cov",
+                            [this]() { return filter_.getStateCovariance()(indexes::ori + 0, indexes::ori + 0); },
                             mc_rtc::gui::Color::Red));
-            gui.addPlot("ori y(t)", mc_rtc::gui::plot::X("t", [this]() { return filter_.getCurrentTime(); }),
+          }),
+      mc_rtc::gui::Button("Remove plots of roll covariance", [&gui]() { gui.removePlot("RollCovariance"); }));
+  gui.addElement(
+      debug_category, mc_rtc::gui::ElementsStacking::Horizontal,
+      mc_rtc::gui::Button(
+          "Add plots of pitch covariance",
+          [this, &gui]()
+          {
+            gui.addPlot("PitchCovariance", mc_rtc::gui::plot::X("t", [this]() { return time_; }),
                         mc_rtc::gui::plot::Y(
-                            "ori y(t)",
+                            "pitch cov",
                             [this]() { return filter_.getStateCovariance()(indexes::ori + 1, indexes::ori + 1); },
                             mc_rtc::gui::Color::Red));
-            gui.addPlot("ori z(t)", mc_rtc::gui::plot::X("t", [this]() { return filter_.getCurrentTime(); }),
-                        mc_rtc::gui::plot::Y(
-                            "ori z(t)",
-                            [this]() { return filter_.getStateCovariance()(indexes::ori + 2, indexes::ori + 2); },
-                            mc_rtc::gui::Color::Red));
-          }));
+          }),
+      mc_rtc::gui::Button("Remove plots of pitch covariance", [&gui]() { gui.removePlot("PitchCovariance"); }));
+  gui.addElement(debug_category, mc_rtc::gui::ElementsStacking::Horizontal,
+                 mc_rtc::gui::Button(
+                     "Add plots of yaw covariance",
+                     [this, &gui]()
+                     {
+                       gui.addPlot("YawCovariance", mc_rtc::gui::plot::X("t", [this]() { return time_; }),
+                                   mc_rtc::gui::plot::Y(
+                                       "yaw cov",
+                                       [this]()
+                                       { return filter_.getStateCovariance()(indexes::ori + 2, indexes::ori + 2); },
+                                       mc_rtc::gui::Color::Red));
+                     }),
+                 mc_rtc::gui::Button("Remove plots of yaw covariance", [&gui]() { gui.removePlot("YawCovariance"); }));
 }
 
 void AttitudeObserver::KalmanFilterConfig::addToLogger(mc_rtc::Logger & logger, const std::string & category)
@@ -243,7 +290,6 @@ void AttitudeObserver::KalmanFilterConfig::addToGUI(mc_rtc::gui::StateBuilder & 
     mc_state_observation::gui::make_input_element("stateCov", stateCov),
     mc_state_observation::gui::make_input_element("stateInitCov", stateInitCov),
     mc_state_observation::gui::make_rpy_input("offset", offset));
-
   // clang-format on
 }
 

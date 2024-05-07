@@ -97,6 +97,8 @@ protected:
   stateObservation::Matrix3 Kpo_, Kdo_;
 
   Eigen::Matrix3d m_orientation = Eigen::Matrix3d::Identity(); ///< Result
+
+  double time_ = 0.0; ///< Current time
 };
 
 } // namespace mc_state_observation
